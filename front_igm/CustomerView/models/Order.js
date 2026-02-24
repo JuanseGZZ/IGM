@@ -4,7 +4,7 @@ export class Order{
     static VALID_STATUS = ["pending","paid","canceled","expired"];
 
     constructor(id,client_email,status,lines,currency){
-        this.id = id; // int
+        this.id = id; // str
         this.client_email = client_email; // str
         this.status = Order.VALID_STATUS[status]; // int
         this.lines = lines ?? []; // list<Lines> 

@@ -10,7 +10,7 @@ export class Product{
     }
 
     // to save state in db
-    save(){}
+    save(newImage){}
     // to look for item by id
     static bringByTitle(title) {
         let product = Product();
