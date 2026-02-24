@@ -1,0 +1,14 @@
+# dependencias
+pip install fastapi uvicorn requests celery redis python-dotenv
+
+# celery necesita ser iniciado con venv
+.\venv\Scripts\activate
+python -m celery -A celery_worker.celery_app worker -l INFO -P solo
+
+# necesita tener un redis andando
+docker run -p 6379:6379 redis:7
+
+# uso
+En send.py esta el ejemplo de uso pero en sintecis es enqueue_email(mail:str, subject:str, msg:str)
+
+En la practica heredas el callback/webhook, y incluis el enqueue_email, levantas el worker celery y usas.

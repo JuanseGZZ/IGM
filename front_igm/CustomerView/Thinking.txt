@@ -1,0 +1,2 @@
+customer es mi cliente, quien tiene las shops.
+client es el cliente de la shop de mi customer.

@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vincular cuenta MercadoPago</title>
+  </head>
+  <body>
+    <h1>Vincular organizador</h1>
+
+    <label for="str">Str a asociar con cuenta de mp (esto va por back al user que este logeado sin associar)</label>
+    <input type="text" name="str" id="str" placeholder="STR a asociar ej: juan">
+    <button type="button" id="attach">asosiarme en la app</button>
+    
+
+    <script>
+    // <a href="/asosiar/">
+      document.getElementById("attach").addEventListener("click", ()=>{
+        let state = document.getElementById("str");
+        window.location.href = "/attach/"+state.value;
+      })
+
+    </script>
+  </body>
+</html>

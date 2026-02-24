@@ -1,0 +1,28 @@
+# Entornos virtuales
+venv/
+
+# Variables de entorno
+.env
+env
+mail/env
+
+# Bases de datos
+*.db
+*.sqlite3
+
+# Cache Python
+__pycache__/
+*.pyc
+
+# Logs
+*.log
+
+# VS Code
+.vscode/
+
+# py credentials
+credentials.py
+
+# olds
+old/
+oldBoy/

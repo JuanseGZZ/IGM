@@ -1,0 +1,18 @@
+En main.py voy a tener apis heredables necesarias y funciones estilo facade de las de mercadopago.py pero que ademas buscan en la db.
+APIs:
+# functional apis
+- /asociar/str
+- /oauth/callback
+- /webhooks/
+
+Funcs:
+# deberia agregar mejores porque esto solo trabaja con link de pago.
+- create_commissioned_payment(associated:str,email:str,title:str, price:int, payer_email:str, app_fee:int,external_reference:str)
+- create_payment(title:str, price:int, payer_email:str, external_reference:str):
+
+
+En mercadopago.py estan las llamadas y las credenciales de la api de mp:
+funcs:
+- create_payment_link(title, price, payer_email, external_reference)
+- create_payment_with_commission(title, price, payer_email, organizer_access_token, app_fee,external_reference)
+

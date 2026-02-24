@@ -1,0 +1,5 @@
+- Generar logica de pagos, y de pedidos.
+{
+Como metodo inicial para el mvp hacemos el retry del front.
+una api heredable a la cual consultar.
+}
