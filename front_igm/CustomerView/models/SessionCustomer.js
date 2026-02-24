@@ -1,0 +1,4 @@
+
+class SessionCustomer{
+    constructor(){}
+}
