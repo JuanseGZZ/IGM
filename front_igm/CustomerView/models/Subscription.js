@@ -1,13 +1,13 @@
 
 class Subscription{
-    static STATE = ["paid","waiting","expired"]
+    static STATE = ["waiting","paid","expired"]
 
-    constructor(id,shop,plan,state,expired){
+    constructor(id,shop,plan,state,until_date){
         this.id = id;
         this.shop = shop;
         this.plan = plan;
         this.state = state;
-        this.expired = expired
+        this.until_date = until_date
     }
 
     static fromJson(json){}

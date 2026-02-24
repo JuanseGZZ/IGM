@@ -1,12 +1,12 @@
 
 class Customer{
-    constructor(id,name,surname,email,mpAsociated,subscription){
-        this.id = id;
-        this.name = name;
-        this.surname = surname;
-        this.email = email;
-        this.mpAsociated = mpAsociated;
-        this.subscription = subscription;
+    constructor(id,name,surname,email,mpAssociated,subscription){
+        this.id = id; // int
+        this.name = name; // str
+        this.surname = surname; // str
+        this.email = email;  // str
+        this.mpAssociated = mpAssociated; // int 
+        this.subscription = subscription; // Suscription()
         
     }
 
