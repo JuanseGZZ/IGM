@@ -1,10 +1,10 @@
-from suscription import Suscription
+from subscription import Subscription
 import json
 
 
 class Costumer:
 
-    def __init__(self,id:int,name:str,surname:str,email:str,mpAssociated:int,suscription:Suscription):
+    def __init__(self,id:int,name:str,surname:str,email:str,mpAssociated:int,suscription:Subscription):
         self.id = id
         self.name = name
         self.surname = surname

@@ -1,5 +1,5 @@
-import { Product } from "./Product";
-import { Client } from "./Client";
+import { Product } from "./Product.js";
+import { Client } from "./Client.js";
 
 export class Shop {
     constructor(id, name, products = [], clients = []) {

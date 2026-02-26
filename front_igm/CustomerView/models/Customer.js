@@ -1,3 +1,4 @@
+import {Subscription} from "./Subscription"
 
 class Customer{
     constructor(id,name,surname,email,mpAssociated,subscription){
