@@ -1,17 +1,22 @@
 import { Subscription } from "./Subscription.js";
+import { JWT } from "./jwts.js";
 
 export class Customer {
-    constructor(id, name, surname, email, mpAssociated, subscription) {
+    constructor(id, name, surname, email, mpAssociated = 0, subscription = [], jwt = null) {
         this.id = id; // number
         this.name = name; // string
         this.surname = surname; // string
         this.email = email; // string
         this.mpAssociated = mpAssociated; // number
-        this.subscription = subscription; // Subscription
+        this.subscription = subscription; // List<Subscription>
+        this.jwt = jwt; // JWT (at/rt)
     }
 
     static fromJson(json) {
         if (!json) return null;
+
+        const subs = (json.subscription ?? []).map(s => Subscription.fromJson(s));
+        const jwt = json.jwt ? JWT.fromJson(json.jwt) : null;
 
         return new Customer(
             Number(json.id),
@@ -19,7 +24,8 @@ export class Customer {
             String(json.surname),
             String(json.email),
             Number(json.mpAssociated),
-            json.subscription ? Subscription.fromJson(json.subscription) : null
+            subs,
+            jwt
         );
     }
 
@@ -30,7 +36,8 @@ export class Customer {
             surname: this.surname,
             email: this.email,
             mpAssociated: this.mpAssociated,
-            subscription: this.subscription ? this.subscription.toJson() : null
+            subscription: (this.subscription ?? []).map(s => s.toJson()),
+            jwt: this.jwt ? this.jwt.toJson() : null
         };
     }
 }

@@ -1,28 +1,29 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 from subscription import Subscription
 from jwts import JWT
 
 
 class Customer:
     def __init__(self, id: int, name: str, surname: str,
-                 email: str, mpAssociated: int, subscription: Subscription,jwt: JWT = None):
+                 email: str, mpAssociated: int, subscription: List[Subscription], jwt: JWT = None):
         self.id = id
         self.name = name
         self.surname = surname
         self.email = email
         self.mpAssociated = mpAssociated
-        self.subscription = subscription
+        self.subscription = subscription or []
         self.jwt = jwt if jwt else JWT(email, "client")
 
     @staticmethod
     def fromJson(data: Dict[str, Any]) -> "Customer":
+        
         return Customer(
             id=int(data["id"]),
             name=str(data["name"]),
             surname=str(data["surname"]),
             email=str(data["email"]),
             mpAssociated=int(data["mpAssociated"]),
-            subscription=Subscription.fromJson(data["subscription"]) if data.get("subscription") else None,
+            subscription=[Subscription.fromJson(s) for s in data.get("subscription", [])],
             jwt=JWT.fromJson(data["jwt"]) if data.get("jwt") else None
         )
 
@@ -33,6 +34,6 @@ class Customer:
             "surname": self.surname,
             "email": self.email,
             "mpAssociated": self.mpAssociated,
-            "subscription": self.subscription.toJson() if self.subscription else None,
+            "subscription": [s.toJson() for s in (self.subscription or [])],
             "jwt": self.jwt.toJson() if self.jwt else None,
         }
