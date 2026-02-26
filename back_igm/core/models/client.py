@@ -3,11 +3,11 @@ from order import Order
 from jwts import JWT
 
 class Client:
-    def __init__(self, name: str, email: str, orders: List[Order]):
+    def __init__(self, name: str, email: str, orders: List[Order],jwt: JWT = None):
         self.name = name
         self.email = email
         self.orders = orders
-        self.jwt = JWT(email,"client")
+        self.jwt = jwt if jwt else JWT(email, "client")
 
     def save(self):
         pass
