@@ -22,5 +22,7 @@ r = redis.Redis(
     decode_responses=True  # devuelve strings en vez de bytes
 )
 
+#docker volume create redisdata && docker run -d --name app-redis -p 6379:6379 -v redisdata:/data redis:7 redis-server --appendonly yes
+
 # Test conexión
-print(r.ping())
+#print(r.ping())
