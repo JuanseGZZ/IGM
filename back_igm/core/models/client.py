@@ -9,9 +9,6 @@ class Client:
         self.orders = orders
         self.jwt = jwt if jwt else JWT(email, "client")
 
-    def save(self):
-        pass
-
     @staticmethod
     def fromJson(data: Dict[str, Any]) -> "Client":
         return Client(

@@ -1,0 +1,4 @@
+jtw 1-1 custom 1 - * suscription *- 1 plan.
+suscription 1 - 1 shop 1 - * product. 
+shop 1 - * client 1 - * order 1 - * line * - 1 product. 
+jwt 1 - 1 client.
