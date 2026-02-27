@@ -3,7 +3,8 @@ from order import Order
 from jwts import JWT
 
 class Client:
-    def __init__(self, name: str, email: str, orders: List[Order],jwt: JWT = None):
+    def __init__(self,id: int, name: str, email: str, orders: List[Order],jwt: JWT = None):
+        self.id = id
         self.name = name
         self.email = email
         self.orders = orders
@@ -12,6 +13,7 @@ class Client:
     @staticmethod
     def fromJson(data: Dict[str, Any]) -> "Client":
         return Client(
+            id=int(data["id"]),
             name=str(data["name"]),
             email=str(data["email"]),
             orders=[Order.fromJson(order) for order in data.get("orders", [])],
@@ -20,6 +22,7 @@ class Client:
 
     def toJson(self) -> Dict[str, Any]:
         return {
+            "id":self.id,
             "name": self.name,
             "email": self.email,
             "orders": [order.toJson() for order in self.orders],
@@ -29,7 +32,7 @@ class Client:
 
 def test():
 
-    c = Client(name="jhon",email="jhon@mail.com",orders=[])
+    c = Client(id = 1,name="jhon",email="jhon@mail.com",orders=[])
 
     print(c.email)
     print(c.jwt.access_token)

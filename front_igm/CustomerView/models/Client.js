@@ -2,9 +2,10 @@ import { Order } from "./Order.js";
 import { JWT } from "./JWT.js";
 
 export class Client{
-    constructor(name,email,orders = [], jwt = null){
+    constructor(id,name,email,orders = [], jwt = null){
+        this.id = id; // int pk
         this.name = name; // str
-        this.email = email; // str [Id]
+        this.email = email; // str 
         this.orders = orders; // List<Order>
         this.jwt = jwt; // JWT (at/rt)
     }
@@ -17,14 +18,15 @@ export class Client{
         const orders = (json.orders ?? []).map(o => Order.fromJson(o));
         const jwt = json.jwt ? JWT.fromJson(json.jwt) : null;
 
-        return new Client(json.name, json.email, orders, jwt);
+        return new Client(json.id,json.name, json.email, orders, jwt);
     }
     toJson() {
         return {
-            name: this.name,
-            email: this.email,
-            orders: (this.orders ?? []).map(o => o.toJson()),
-            jwt: this.jwt ? this.jwt.toJson() : null
+            "id":this.id,
+            "name": this.name,
+            "email": this.email,
+            "orders": (this.orders ?? []).map(o => o.toJson()),
+            "jwt": this.jwt ? this.jwt.toJson() : null
         };
     }
 }

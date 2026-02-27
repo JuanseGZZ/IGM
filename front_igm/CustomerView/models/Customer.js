@@ -31,13 +31,13 @@ export class Customer {
 
     toJson() {
         return {
-            id: this.id,
-            name: this.name,
-            surname: this.surname,
-            email: this.email,
-            mpAssociated: this.mpAssociated,
-            subscription: (this.subscription ?? []).map(s => s.toJson()),
-            jwt: this.jwt ? this.jwt.toJson() : null
+            "id": this.id,
+            "name": this.name,
+            "surname": this.surname,
+            "email": this.email,
+            "mpAssociated": this.mpAssociated,
+            "subscription": (this.subscription ?? []).map(s => s.toJson()),
+            "jwt": this.jwt ? this.jwt.toJson() : null
         };
     }
 }

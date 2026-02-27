@@ -6,9 +6,10 @@ class Order:
     VALID_STATUS = ["pending", "paid", "canceled", "expired"]
     CURRENCYS = {"ARS", "USD"}
 
-    def __init__(self, id: str, client_email: str, status: int, lines: List[Line], currency: str):
+    def __init__(self, id: str, client_email: str,client_id:int, status: int, lines: List[Line], currency: str):
         self.id = id
         self.client_email = client_email
+        self.client_id = client_id
         self.status = Order.VALID_STATUS[status]
         self.lines = lines
         self.currency = currency
@@ -18,6 +19,7 @@ class Order:
         return Order(
             id=str(data["id"]),
             client_email=str(data["client_email"]),
+            client_id=int(data["client_id"]),
             status=int(data["status"]),
             lines=[Line.fromJson(line) for line in data["lines"]],
             currency=str(data["currency"])
@@ -27,6 +29,7 @@ class Order:
         return {
             "id": self.id,
             "client_email": self.client_email,
+            "client_id":self-self.client_id,
             "status": self.status,
             "lines": [line.toJson() for line in self.lines],
             "currency": self.currency

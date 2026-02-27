@@ -3,9 +3,10 @@ import { Line } from "./Line.js";
 export class Order{
     static VALID_STATUS = ["pending","paid","canceled","expired"];
 
-    constructor(id,client_email,status,lines,currency){
+    constructor(id,client_email,client_id,status,lines,currency){
         this.id = id; // str
         this.client_email = client_email; // str
+        this.client_id = client_id; // int
         this.status = Order.VALID_STATUS[status]; // int
         this.lines = lines ?? []; // list<Lines> 
         this.currency = currency; // str
@@ -48,8 +49,6 @@ export class Order{
     }
 
     save(){};
-    static getAllOrders(){};
-    static getOrderByEmail(){};
 
     // json handlers
     static fromJson(json){
@@ -63,6 +62,7 @@ export class Order{
             return new Order(
                 json.id,
                 json.client_email,
+                json.client_id,
                 statusIndex >= 0 ? statusIndex : 0,
                 lines,
                 json.currency
@@ -72,6 +72,7 @@ export class Order{
         return {
             "id": this.id,
             "client_email": this.client_email,
+            "client_id":this.client_id,
             "status": this.status,
             "lines": (this.lines ?? []).map(line => line.toJson()),
             "currency": this.currency
