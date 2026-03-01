@@ -7,7 +7,6 @@ from .crud_plans import CrudPlans
 from .crud_products import CrudProducts
 from .crud_shops import CrudShops
 from .crud_subscriptions import CrudSubscriptions
-from .crudJwt import CrudJwt  # si ese es el nombre real de la clase
 
 __all__ = [
     "CrudBase",
@@ -19,5 +18,4 @@ __all__ = [
     "CrudProducts",
     "CrudShops",
     "CrudSubscriptions",
-    "CrudJwt",
 ]
