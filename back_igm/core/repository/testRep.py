@@ -1,4 +1,5 @@
 from ..db import CrudCustomers
+from ..models import Customer
 
 CrudCustomers.refresh_meta()
 
@@ -9,7 +10,9 @@ c = CrudCustomers.create({
     "email": "juan.perez@test.com",
     "mp_associated": 123
 })
+costumer = Customer.fromJson(c)
 
 
-print(c)
+print(costumer.email)
+input("")
 CrudCustomers.delete(1)

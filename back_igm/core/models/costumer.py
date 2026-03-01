@@ -22,7 +22,7 @@ class Customer:
             name=str(data["name"]),
             surname=str(data["surname"]),
             email=str(data["email"]),
-            mpAssociated=int(data["mpAssociated"]),
+            mpAssociated=int(data["mp_associated"]),
             subscription=[Subscription.fromJson(s) for s in data.get("subscription", [])],
             jwt=JWT.fromJson(data["jwt"]) if data.get("jwt") else None
         )
@@ -33,7 +33,7 @@ class Customer:
             "name": self.name,
             "surname": self.surname,
             "email": self.email,
-            "mpAssociated": self.mpAssociated,
+            "mp_associated": self.mpAssociated,
             "subscription": [s.toJson() for s in (self.subscription or [])],
             "jwt": self.jwt.toJson() if self.jwt else None,
         }

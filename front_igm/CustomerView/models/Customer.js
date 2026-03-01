@@ -23,7 +23,7 @@ export class Customer {
             String(json.name),
             String(json.surname),
             String(json.email),
-            Number(json.mpAssociated),
+            Number(json.mp_associated),
             subs,
             jwt
         );
@@ -35,7 +35,7 @@ export class Customer {
             "name": this.name,
             "surname": this.surname,
             "email": this.email,
-            "mpAssociated": this.mpAssociated,
+            "mp_associated": this.mpAssociated,
             "subscription": (this.subscription ?? []).map(s => s.toJson()),
             "jwt": this.jwt ? this.jwt.toJson() : null
         };
