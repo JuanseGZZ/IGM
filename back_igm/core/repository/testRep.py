@@ -1,6 +1,5 @@
 from ..db import CrudCustomers
 
-
 CrudCustomers.refresh_meta()
 
 c = CrudCustomers.create({

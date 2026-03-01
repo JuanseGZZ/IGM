@@ -1,6 +1,6 @@
 from typing import Dict, Any, List
-from subscription import Subscription
-from jwts import JWT
+from .subscription import Subscription
+from .jwts import JWT
 
 
 class Customer:

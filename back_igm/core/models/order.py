@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from line import Line
+from .line import Line
 
 
 class Order:

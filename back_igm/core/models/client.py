@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
-from order import Order
-from jwts import JWT
+from .order import Order
+from .jwts import JWT
 
 class Client:
     def __init__(self,id: int, name: str, email: str, orders: List[Order],jwt: JWT = None):

@@ -1,5 +1,5 @@
-from product import Product
-from client import Client
+from .product import Product
+from .client import Client
 
 from typing import List, Dict, Any
 

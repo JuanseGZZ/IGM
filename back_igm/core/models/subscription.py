@@ -1,5 +1,5 @@
-from plan import Plan
-from shop import Shop
+from .plan import Plan
+from .shop import Shop
 from typing import Dict, Any
 
 class Subscription:

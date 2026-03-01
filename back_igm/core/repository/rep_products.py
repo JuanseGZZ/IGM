@@ -1,5 +1,5 @@
-from db.crud_products import CrudProducts
-from models.product import Product
+from ..db.crud_products import CrudProducts
+from ..models.product import Product
 from typing import List
 
 

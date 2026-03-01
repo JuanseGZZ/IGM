@@ -1,8 +1,8 @@
 from psycopg import sql
 from psycopg.rows import dict_row
 
-from config import conn
-from crud_base import CrudBase
+from .config import conn
+from .crud_base import CrudBase
 
 
 class CrudSubscriptions(CrudBase):

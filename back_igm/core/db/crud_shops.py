@@ -1,4 +1,4 @@
-from crud_base import CrudBase
+from .crud_base import CrudBase
 
 
 class CrudShops(CrudBase):

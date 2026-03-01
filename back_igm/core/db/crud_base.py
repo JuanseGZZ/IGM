@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Type, TypeVar
 from psycopg import sql
 from psycopg.rows import dict_row
 
-from config import conn
+from .config import conn
 
 
 class SchemaError(RuntimeError):

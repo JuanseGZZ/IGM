@@ -1,4 +1,4 @@
-from crud_customers import CrudCustomers
+from .crud_customers import CrudCustomers
 
 
 def pause(msg: str):
