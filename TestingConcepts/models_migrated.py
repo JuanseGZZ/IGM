@@ -89,7 +89,22 @@ class Variant: # hereda todas las propiedades por asociacion con el producto, y 
         self.product = product
         self.attribute_implementations = attribute_implementations # lista de objetos AttributeImplementation, implementamos atributos no staticos, es decir, los que no se muestran como informacion del producto, sino que son opciones para elegir.
 
-def crateVariant(variant: Variant):
+    def add_attribute_implementation(self, attribute_implementation):
+        if attribute_implementation.attribute.is_static:
+            raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' es estático y no puede ser implementado en una variante.")
+        # verificar que el atributo este definido en el producto o en la categoria
+        if attribute_implementation.attribute not in self.product.attributes and attribute_implementation.attribute not in self.product.category_id.attributes:
+            raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' no está definido para el producto '{self.product.title}'.")
+        # verificar que el valor sea valido segun el tipo de dato
+        if not attribute_implementation.attribute.check_value(attribute_implementation.value):
+            raise ValueError(f"El valor '{attribute_implementation.value}' no es válido para el atributo '{attribute_implementation.attribute.name}'.")
+        #verificar que el atributo no este ya implementado en la variante
+        for impl in self.attribute_implementations:
+            if impl.attribute == attribute_implementation.attribute:
+                raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado en esta variante.")
+        self.attribute_implementations.append(attribute_implementation)
+
+def crateVariant(impementations):
     # esta funcion crea variantes de producto, se le pasa un objeto variant, y verifica que cumpla con las reglas de implementacion de atributos, es decir, que implemente todos los atributos del producto y de la categoria, y que los valores sean validos segun el tipo de dato.
     if variant.product is None:
         raise ValueError("La variante debe estar asociada a un producto.")
@@ -100,21 +115,11 @@ def crateVariant(variant: Variant):
 
         # Verificar que el atributo esté definido en el producto o en la categoría
         if attribute not in variant.product.attributes and attribute not in variant.product.category_id.attributes:
-            raise ValueError(f"El atributo '{attribute.name}' no está definido en el producto ni en la categoría.")
+            raise ValueError(f"El atributo '{attribute.name}' no está definido para el producto '{variant.product.title}'.")
 
-        # Verificar que el valor sea válido según el tipo de dato
-        if attribute.data_type == "text":
-            if not isinstance(value, str):
-                raise ValueError(f"El valor para el atributo '{attribute.name}' debe ser una cadena de texto.")
-        elif attribute.data_type == "number":
-            if not isinstance(value, (int, float)):
-                raise ValueError(f"El valor para el atributo '{attribute.name}' debe ser un número.")
-        elif attribute.data_type == "boolean":
-            if not isinstance(value, bool):
-                raise ValueError(f"El valor para el atributo '{attribute.name}' debe ser un booleano.")
-        elif attribute.data_type == "enum":
-            if value not in attribute.enum_values:
-                raise ValueError(f"El valor para el atributo '{attribute.name}' debe ser uno de los siguientes: {', '.join(attribute.enum_values)}.")
+        # Verificar que el valor sea válido según el tipo de dato del atributo
+        if not attribute.check_value(value):
+            raise ValueError(f"El valor '{value}' no es válido para el atributo '{attribute.name}'.")
 
     
     pass
