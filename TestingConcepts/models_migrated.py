@@ -84,7 +84,7 @@ class AtribbuteImplementation: # esta clase representa la implementacion de un a
         self.value = value
 
 class Variant: # hereda todas las propiedades por asociacion con el producto, y implementa obligatoriamente los atributos del producto y de la categoria.
-    def __init__(self, id, product, attribute_implementations):
+    def __init__(self, product, attribute_implementations, id=None,):
         self.id = id
         self.product = product
         self.attribute_implementations = attribute_implementations # lista de objetos AttributeImplementation, implementamos atributos no staticos, es decir, los que no se muestran como informacion del producto, sino que son opciones para elegir.
@@ -104,25 +104,16 @@ class Variant: # hereda todas las propiedades por asociacion con el producto, y 
                 raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado en esta variante.")
         self.attribute_implementations.append(attribute_implementation)
 
-def crateVariant(impementations):
-    # esta funcion crea variantes de producto, se le pasa un objeto variant, y verifica que cumpla con las reglas de implementacion de atributos, es decir, que implemente todos los atributos del producto y de la categoria, y que los valores sean validos segun el tipo de dato.
-    if variant.product is None:
-        raise ValueError("La variante debe estar asociada a un producto.")
+def crateVariant(product, impementations):
+    variant = Variant(product=product, attribute_implementations=[])
+    try:
+        for impl in impementations:
+            variant.add_attribute_implementation(impl)
+    except ValueError as e:
+        print(f"Error al crear la variante: {e}")
+        return None
+    return variant
 
-    for attribute_implementation in variant.attribute_implementations:
-        attribute = attribute_implementation.attribute
-        value = attribute_implementation.value
-
-        # Verificar que el atributo esté definido en el producto o en la categoría
-        if attribute not in variant.product.attributes and attribute not in variant.product.category_id.attributes:
-            raise ValueError(f"El atributo '{attribute.name}' no está definido para el producto '{variant.product.title}'.")
-
-        # Verificar que el valor sea válido según el tipo de dato del atributo
-        if not attribute.check_value(value):
-            raise ValueError(f"El valor '{value}' no es válido para el atributo '{attribute.name}'.")
-
-    
-    pass
 
 #como va a viajar la informacion?
 # la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.
