@@ -169,8 +169,14 @@ except ValueError as e:
 
 # i_imp+=1
 i_imp+=1 
-variant3 = createVariant(product2, [AttributeImplementation(i_imp, atribute, "red")])
-variant3.id = i_var
+try:
+    variant3 = createVariant(product2, [AttributeImplementation(i_imp, atribute, "blue")])
+    if variant3 is not None:
+        variant3.id = i_var
+except ValueError as e:
+    print(f"Error al crear variante: {e}")
+
+
 
 print(f"Producto: {product2.title}, Categoria: {product2.category_id.name}")
 for impl in product2.attributes_implementations:
