@@ -77,7 +77,7 @@ class Product:
                 if attribute_implementation.attribute.check_value(attribute_implementation.value):
                     self.attributes_implementations.append(attribute_implementation)
 
-class AtribbuteImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
+class AttributeImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
     def __init__(self, id, attribute, value):
         self.id = id
         self.attribute = attribute # objeto Attribute referencia.
@@ -90,6 +90,7 @@ class Variant: # hereda todas las propiedades por asociacion con el producto, y 
         self.attribute_implementations = attribute_implementations # lista de objetos AttributeImplementation, implementamos atributos no staticos, es decir, los que no se muestran como informacion del producto, sino que son opciones para elegir.
 
     def add_attribute_implementation(self, attribute_implementation):
+        # verificar que el atributo no sea estatico
         if attribute_implementation.attribute.is_static:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' es estático y no puede ser implementado en una variante.")
         # verificar que el atributo este definido en el producto o en la categoria
@@ -134,7 +135,9 @@ atribute.add_enum_value("red")
 atribute.add_enum_value("blue")
 
 i_attr+=1
-atribute2 = Attribute(i_attr, "large_cm", "Large (cm)", "number", True)
+atribute2 = Attribute(i_attr, "large_cm", "Large (cm)", "number", is_static=False)
+atribute3 = Attribute(i_attr, "ancho_cm", "Ancho (cm)", "number", is_static=True)
+atribute4 = Attribute(i_attr, "altura_cm", "Altura (cm)", "number", is_static=True)
 
 i_cat+=1
 category = Category(i_cat, "Shirts", [atribute])
@@ -142,6 +145,13 @@ i_prod+=1
 product = Product(i_prod, "T-Shirt", 19.99, "A comfortable t-shirt", "BrandX", category, [])
 
 i_var+=1
-variant1 = Variant(i_var, product, [AtribbuteImplementation(i_imp, atribute, "red")])
+variant1 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "red")])
 i_var+=1
-variant2 = Variant(i_var, product, [AtribbuteImplementation(i_imp, atribute, "blue")])
+variant2 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "blue")])
+
+i_cat+=1
+category2 = Category(i_cat, "Muebles", [atribute2, atribute3, atribute4]) # le agregamos ancho, alto y largo, como heredables.
+
+i_prod+=1
+product2 = Product(i_prod, "Desk", 199.99, "A sturdy desk", "BrandY", category2, [atribute2])
+
