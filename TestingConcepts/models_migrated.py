@@ -105,10 +105,10 @@ class Variant: # hereda todas las propiedades por asociacion con el producto, y 
                 raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado en esta variante.")
         self.attribute_implementations.append(attribute_implementation)
 
-def crateVariant(product, impementations):
+def createVariant(product, implementations):
     variant = Variant(product=product, attribute_implementations=[])
     try:
-        for impl in impementations:
+        for impl in implementations:
             variant.add_attribute_implementation(impl)
     except ValueError as e:
         print(f"Error al crear la variante: {e}")
@@ -130,12 +130,13 @@ i_attr = 0
 i_imp = 0
 
 i_attr+=1
-atribute = Attribute(i_attr, "color", "Color", "enum")
+atribute = Attribute(i_attr, "color", "Color", "enum",is_static=False) # atributo de variable.
 atribute.add_enum_value("red")
 atribute.add_enum_value("blue")
 
 i_attr+=1
-atribute2 = Attribute(i_attr, "large_cm", "Large (cm)", "number", is_static=False)
+#atributos de producto
+atribute2 = Attribute(i_attr, "large_cm", "Large (cm)", "number", is_static=True)
 atribute3 = Attribute(i_attr, "ancho_cm", "Ancho (cm)", "number", is_static=True)
 atribute4 = Attribute(i_attr, "altura_cm", "Altura (cm)", "number", is_static=True)
 
@@ -143,15 +144,20 @@ i_cat+=1
 category = Category(i_cat, "Shirts", [atribute])
 i_prod+=1
 product = Product(i_prod, "T-Shirt", 19.99, "A comfortable t-shirt", "BrandX", category, [])
-
 i_var+=1
 variant1 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "red")])
 i_var+=1
 variant2 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "blue")])
 
 i_cat+=1
-category2 = Category(i_cat, "Muebles", [atribute2, atribute3, atribute4]) # le agregamos ancho, alto y largo, como heredables.
-
+category2 = Category(i_cat, "Muebles", [atribute2, atribute3]) # le agregamos ancho, alto y largo, como heredables.
 i_prod+=1
-product2 = Product(i_prod, "Desk", 199.99, "A sturdy desk", "BrandY", category2, [atribute2])
+#creamos producto y le implementamos los atributos heredados estaticos, por eso los implementamos en producto.
+product2 = Product(i_prod, "Desk", 199.99, "A sturdy desk", "BrandY", category2, [atribute4,atribute])
+product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute4, 75))
+product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute3, 60))
+product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute2, 150))
 
+# i_imp+=1
+i_imp+=1 
+variant3 = createVariant(product2, [AttributeImplementation(i_imp, atribute, "red")])
