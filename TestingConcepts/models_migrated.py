@@ -76,6 +76,8 @@ class Product:
                 # verificar que el valor sea valido segun el tipo de dato
                 if attribute_implementation.attribute.check_value(attribute_implementation.value):
                     self.attributes_implementations.append(attribute_implementation)
+        else:
+            raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' no es estático y no puede ser implementado en el producto.")
 
 class AttributeImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
     def __init__(self, id, attribute, value):
@@ -158,6 +160,24 @@ product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute4, 
 product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute3, 60))
 product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute2, 150))
 
+#bad request
+try:
+    product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute, "red")) 
+except ValueError as e:
+    print(f"Error al agregar atributo: {e}")
+
+
 # i_imp+=1
 i_imp+=1 
 variant3 = createVariant(product2, [AttributeImplementation(i_imp, atribute, "red")])
+variant3.id = i_var
+
+print(f"Producto: {product2.title}, Categoria: {product2.category_id.name}")
+for impl in product2.attributes_implementations:
+    print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
+product2.add_variant(variant3)
+print(f"Variante de {product2.title}:")
+for variant in product2.variants:
+    print(f"Variante ID: {variant.id}")
+    for impl in variant.attribute_implementations:
+        print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
