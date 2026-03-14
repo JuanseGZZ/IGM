@@ -23,6 +23,18 @@ class Attribute:
         else:
             raise ValueError("El valor ya existe en la lista de valores posibles.")
 
+    def check_value(self, value):
+        if self.data_type == "text":
+            return isinstance(value, str)
+        elif self.data_type == "number":
+            return isinstance(value, (int, float))
+        elif self.data_type == "boolean":
+            return isinstance(value, bool)
+        elif self.data_type == "enum":
+            return value in self.enum_values
+        else:
+            raise ValueError("Tipo de dato no reconocido.")
+
 class Category:
     def __init__(self, id, name, attributes):
         self.id = id
@@ -55,8 +67,14 @@ class Product:
 
     def add_attribute_implementation(self, attribute_implementation):
         if attribute_implementation.attribute.is_static:
+            # verificar si el atributo ya esta implementado
+            for impl in self.attributes_implementations:
+                if impl.attribute == attribute_implementation.attribute:
+                    raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto.")
+            #verificar que sea un atributo del producto o de la categoria
             if attribute_implementation.attribute in self.attributes or attribute_implementation.attribute in self.category_id.attributes:
-                if attribute_implementation not in self.attributes_implementations:
+                # verificar que el valor sea valido segun el tipo de dato
+                if attribute_implementation.attribute.check_value(attribute_implementation.value):
                     self.attributes_implementations.append(attribute_implementation)
 
 class AtribbuteImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
