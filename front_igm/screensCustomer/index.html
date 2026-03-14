@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tu Ecommerce - Suscripcion</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <style>
+        :root {
+            --section-pad-y: 56px;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            padding-top: 64px;
+        }
+
+        /* offset navbar fixed */
+
+        section {
+            padding: var(--section-pad-y) 0;
+        }
+
+        .section-title {
+            letter-spacing: 0.2px;
+        }
+
+        .bg-soft {
+            background: #f8fafc;
+        }
+
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            background: #eef2ff;
+            color: #3730a3;
+            font-weight: 700;
+        }
+
+        /* mejor anclaje con navbar fixed */
+        .anchor-offset {
+            scroll-margin-top: 84px;
+        }
+
+        /* botones full width en mobile, normales en sm+ */
+        .btn-responsive {
+            width: 100%;
+        }
+
+        @media (min-width: 576px) {
+            .btn-responsive {
+                width: auto;
+            }
+        }
+    </style>
+    <style>
+        :root {
+            --section-pad-y: 56px;
+            --soft: #f8fafc;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            padding-top: 64px;
+        }
+
+        section {
+            padding: var(--section-pad-y) 0;
+        }
+
+        .anchor-offset {
+            scroll-margin-top: 84px;
+        }
+
+        .bg-soft {
+            background: var(--soft);
+        }
+
+        .section-kicker {
+            display: inline-flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.78);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            backdrop-filter: blur(6px);
+        }
+
+        .plan-card {
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            transition: transform 120ms ease, box-shadow 120ms ease;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 26px rgba(2, 6, 23, 0.10);
+        }
+
+        .plan-pill {
+            font-size: 0.75rem;
+            border-radius: 999px;
+            padding: 6px 10px;
+        }
+
+        .price {
+            font-size: 2.1rem;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .feat li {
+            margin-bottom: 8px;
+        }
+
+        .feat i {
+            margin-right: 8px;
+        }
+
+        .table thead th {
+            white-space: nowrap;
+        }
+
+        .table td,
+        .table th {
+            vertical-align: middle;
+        }
+
+        .compare-head {
+            border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+        }
+    </style>
+</head>
+
+<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow">
+
+      <div class="modal-header">
+        <h5 class="modal-title">Cuenta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs mb-3" id="authTabs" role="tablist">
+          <li class="nav-item">
+            <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#loginTab">
+              Login
+            </button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" data-bs-toggle="tab" data-bs-target="#registerTab">
+              Register
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+
+          <!-- LOGIN -->
+          <div class="tab-pane fade show active" id="loginTab">
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="loginEmail">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" class="form-control" id="loginPassword">
+            </div>
+
+            <div class="d-grid">
+              <button class="btn btn-primary" id="loginBtn">
+                Iniciar sesion
+              </button>
+            </div>
+
+            <div class="text-danger small mt-2 d-none" id="loginError">
+              Credenciales invalidas
+            </div>
+          </div>
+
+          <!-- REGISTER -->
+          <div class="tab-pane fade" id="registerTab">
+            <div class="mb-3">
+              <label class="form-label">Nombre</label>
+              <input type="text" class="form-control" id="registerName">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" class="form-control" id="registerEmail">
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" class="form-control" id="registerPassword">
+            </div>
+
+            <div class="d-grid">
+              <button class="btn btn-success" id="registerBtn">
+                Crear cuenta
+              </button>
+            </div>
+
+            <div class="text-danger small mt-2 d-none" id="registerError">
+              Completa todos los campos
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<body>
+    <!-- NAV -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" href="#top">TuEcom</a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain"
+                aria-controls="navMain" aria-expanded="false" aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#how">How it works</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#benefits">Benefices</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#costs">Costs</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#who">Who we are</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#make">Make yours</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="account.html" id="accountLink">Account</a>
+                    </li>
+
+                    <li class="nav-item d-none" id="logoutItem">
+                        <a class="nav-link" href="#" id="logoutLink">Logout</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main id="top">
+        <!-- HERO -->
+        <header class="py-5 bg-soft">
+            <div class="container">
+                <div class="row align-items-center g-4">
+                    <div class="col-12 col-lg-6">
+                        <h1 class="display-6 fw-bold mb-3">
+                            Lanza tu ecommerce por suscripcion, sin complicarte
+                        </h1>
+                        <p class="text-secondary mb-4">
+                            Plantillas, pagos, catalogo, y configuracion guiada. Pensado para celular,
+                            listo para crecer en desktop.
+                        </p>
+
+                        <div class="d-flex flex-column flex-sm-row gap-2">
+                            <a class="btn btn-primary btn-lg btn-responsive" href="#make">
+                                Empezar ahora
+                            </a>
+                            <a class="btn btn-outline-secondary btn-lg btn-responsive" href="#how">
+                                Ver como funciona
+                            </a>
+                        </div>
+
+                        <div class="mt-4 small text-secondary">
+                            Sin compromiso. Cancela cuando quieras.
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body p-4">
+                                <div class="d-flex align-items-center justify-content-between mb-3">
+                                    <div class="fw-semibold">Preview</div>
+                                    <span class="badge text-bg-success">Mobile-first</span>
+                                </div>
+
+                                <div class="border rounded-4 p-3 bg-light">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="fw-semibold">Tu tienda</div>
+                                        <span class="badge text-bg-dark">Demo</span>
+                                    </div>
+
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="border rounded-3 p-2">
+                                                <div class="bg-secondary-subtle rounded-2" style="height:72px;"></div>
+                                                <div class="mt-2 small fw-semibold">Producto A</div>
+                                                <div class="small text-secondary">$ 10.000</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="border rounded-3 p-2">
+                                                <div class="bg-secondary-subtle rounded-2" style="height:72px;"></div>
+                                                <div class="mt-2 small fw-semibold">Producto B</div>
+                                                <div class="small text-secondary">$ 18.000</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <button class="btn btn-primary w-100" type="button" disabled>
+                                                Comprar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3 small text-secondary">
+                                    Esto es solo un placeholder visual.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- HOW IT WORKS -->
+        <section id="how" class="anchor-offset">
+            <div class="container">
+                <div class="d-flex align-items-baseline justify-content-between mb-4">
+                    <h2 class="h3 fw-bold section-title mb-0">How it works</h2>
+                    <span class="text-secondary small">3 pasos</span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-12 col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="card-icon mb-3">1</div>
+                                <h3 class="h6 fw-bold">Crea tu cuenta</h3>
+                                <p class="text-secondary mb-0">
+                                    Email, nombre de marca y un par de datos basicos.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="card-icon mb-3">2</div>
+                                <h3 class="h6 fw-bold">Carga productos</h3>
+                                <p class="text-secondary mb-0">
+                                    Fotos, precio, stock y categorias. Todo desde el celu.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-4">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="card-icon mb-3">3</div>
+                                <h3 class="h6 fw-bold">Publica y vende</h3>
+                                <p class="text-secondary mb-0">
+                                    Comparte tu link, activa pagos y empieza a vender.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <a class="btn btn-outline-primary btn-responsive" href="#make">
+                        Quiero mi tienda
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- BENEFITS (comparacion + highlights) -->
+        <section id="benefits" class="bg-soft anchor-offset">
+            <div class="container">
+                <div class="mb-4">
+                    <div class="section-kicker mb-2">
+                        <i class="bi bi-stars"></i>
+                        <span>Planes y beneficios</span>
+                    </div>
+                    <h2 class="h3 fw-bold mb-2">Beneficios por plan</h2>
+                    <p class="text-secondary mb-0">
+                        Limites de productos y envios de mail claros. Herramientas de seguimiento y estadisticas para
+                        crecer.
+                    </p>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-lg-4">
+                        <div class="card glass border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex gap-3">
+                                    <div class="rounded-3 d-inline-flex align-items-center justify-content-center"
+                                        style="width:44px;height:44px;background:#eef2ff;color:#3730a3;">
+                                        <i class="bi bi-box-seam fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">Productos por plan</div>
+                                        <div class="text-secondary small">
+                                            Free hasta 9, Standard hasta 100, Shop hasta 500, Enterprise custom desde
+                                            600.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <div class="card glass border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex gap-3">
+                                    <div class="rounded-3 d-inline-flex align-items-center justify-content-center"
+                                        style="width:44px;height:44px;background:#ecfeff;color:#0e7490;">
+                                        <i class="bi bi-megaphone fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">Campanas de mailing</div>
+                                        <div class="text-secondary small">
+                                            Standard hasta 100 mails/semana, Shop hasta 1000, Enterprise ilimitado.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-4">
+                        <div class="card glass border-0 shadow-sm h-100">
+                            <div class="card-body">
+                                <div class="d-flex gap-3">
+                                    <div class="rounded-3 d-inline-flex align-items-center justify-content-center"
+                                        style="width:44px;height:44px;background:#fef9c3;color:#854d0e;">
+                                        <i class="bi bi-graph-up fs-5"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">Estadisticas</div>
+                                        <div class="text-secondary small">
+                                            Standard con estadisticas, Shop con avanzadas, Enterprise con avanzadas
+                                            asistidas con IA.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- tabla comparativa -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white compare-head py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="fw-semibold">Comparacion rapida</div>
+                            <div class="text-secondary small">Scroll horizontal en celular</div>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Feature</th>
+                                        <th class="text-center">Free</th>
+                                        <th class="text-center">Standard</th>
+                                        <th class="text-center">Shop</th>
+                                        <th class="text-center">Enterprise</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Productos</th>
+                                        <td class="text-center">Hasta 9</td>
+                                        <td class="text-center">Hasta 100</td>
+                                        <td class="text-center">Hasta 500</td>
+                                        <td class="text-center">Custom (desde 600)</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th scope="row">Seguimiento de ventas</th>
+                                        <td class="text-center"><i class="bi bi-x-circle text-secondary"></i></td>
+                                        <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                                        <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                                        <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th scope="row">Campanas de mailing</th>
+                                        <td class="text-center"><i class="bi bi-x-circle text-secondary"></i></td>
+                                        <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                                        <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                                        <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                                    </tr>
+
+                                    <tr>
+                                        <th scope="row">Mails por semana</th>
+                                        <td class="text-center">0</td>
+                                        <td class="text-center">Hasta 100</td>
+                                        <td class="text-center">Hasta 1000</td>
+                                        <td class="text-center">Ilimitados</td>
+                                    </tr>
+
+                                    <tr>
+                                        <th scope="row">Estadisticas</th>
+                                        <td class="text-center"><i class="bi bi-x-circle text-secondary"></i></td>
+                                        <td class="text-center"><span class="badge text-bg-success">Incluidas</span>
+                                        </td>
+                                        <td class="text-center"><span class="badge text-bg-primary">Avanzadas</span>
+                                        </td>
+                                        <td class="text-center"><span class="badge text-bg-dark">Avanzadas + IA</span>
+                                        </td>
+                                    </tr>
+
+                                    <tr>
+                                        <th scope="row">IA asistida</th>
+                                        <td class="text-center"><i class="bi bi-x-circle text-secondary"></i></td>
+                                        <td class="text-center"><i class="bi bi-x-circle text-secondary"></i></td>
+                                        <td class="text-center"><i class="bi bi-x-circle text-secondary"></i></td>
+                                        <td class="text-center"><i class="bi bi-check-circle text-success"></i></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- COSTS (cards bonitas) -->
+        <section id="costs" class="anchor-offset">
+            <div class="container">
+                <div class="mb-4">
+                    <div class="section-kicker mb-2">
+                        <i class="bi bi-tags"></i>
+                        <span>Precios</span>
+                    </div>
+                    <h2 class="h3 fw-bold mb-2">Planes</h2>
+                    <p class="text-secondary mb-0">
+                        Free para probar. Standard para vender. Shop para catalogo grande. Enterprise para custom.
+                    </p>
+                </div>
+
+                <div class="row g-3">
+                    <!-- FREE -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="card plan-card h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex align-items-start justify-content-between mb-2">
+                                    <div>
+                                        <div class="fw-bold">Free</div>
+                                        <div class="text-secondary small">Para probar</div>
+                                    </div>
+                                    <span class="plan-pill bg-light text-dark border">0</span>
+                                </div>
+
+                                <div class="mt-2 mb-3">
+                                    <div class="price fw-bold">$0</div>
+                                    <div class="text-secondary small">por mes</div>
+                                </div>
+
+                                <ul class="feat list-unstyled text-secondary small mb-4">
+                                    <li><i class="bi bi-check-circle text-success"></i>Hasta 9 productos</li>
+                                    <li><i class="bi bi-x-circle"></i>Seguimiento de ventas</li>
+                                    <li><i class="bi bi-x-circle"></i>Campanas de mailing</li>
+                                    <li><i class="bi bi-x-circle"></i>Estadisticas</li>
+                                </ul>
+
+                                <a class="btn btn-outline-dark w-100 mt-auto" href="#make">Empezar</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- STANDARD (destacado) -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="card plan-card h-100 shadow-sm border border-primary">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex align-items-start justify-content-between mb-2">
+                                    <div>
+                                        <div class="fw-bold">Standard</div>
+                                        <div class="text-secondary small">Para vender en serio</div>
+                                    </div>
+                                    <span class="plan-pill bg-primary text-white">Recomendado</span>
+                                </div>
+
+                                <div class="mt-2 mb-3">
+                                    <div class="price fw-bold">$X</div>
+                                    <div class="text-secondary small">por mes</div>
+                                </div>
+
+                                <ul class="feat list-unstyled text-secondary small mb-4">
+                                    <li><i class="bi bi-check-circle text-success"></i>Hasta 100 productos</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Seguimiento de ventas</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Campanas de mailing</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Hasta 100 mails por semana</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Estadisticas</li>
+                                </ul>
+
+                                <a class="btn btn-primary w-100 mt-auto" href="#make">Elegir Standard</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SHOP -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="card plan-card h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex align-items-start justify-content-between mb-2">
+                                    <div>
+                                        <div class="fw-bold">Shop</div>
+                                        <div class="text-secondary small">Catalogo grande</div>
+                                    </div>
+                                    <span class="plan-pill bg-dark text-white">Avanzado</span>
+                                </div>
+
+                                <div class="mt-2 mb-3">
+                                    <div class="price fw-bold">$Y</div>
+                                    <div class="text-secondary small">por mes</div>
+                                </div>
+
+                                <ul class="feat list-unstyled text-secondary small mb-4">
+                                    <li><i class="bi bi-check-circle text-success"></i>Hasta 500 productos</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Seguimiento de ventas</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Campanas de mailing</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Hasta 1000 mails por semana</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Estadisticas avanzadas</li>
+                                </ul>
+
+                                <a class="btn btn-outline-dark w-100 mt-auto" href="#make">Elegir Shop</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ENTERPRISE -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <div class="card plan-card h-100 shadow-sm">
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex align-items-start justify-content-between mb-2">
+                                    <div>
+                                        <div class="fw-bold">Enterprise</div>
+                                        <div class="text-secondary small">Custom para equipos</div>
+                                    </div>
+                                    <span class="plan-pill bg-success text-white">Custom</span>
+                                </div>
+
+                                <div class="mt-2 mb-3">
+                                    <div class="price fw-bold">Custom</div>
+                                    <div class="text-secondary small">cotizacion</div>
+                                </div>
+
+                                <ul class="feat list-unstyled text-secondary small mb-4">
+                                    <li><i class="bi bi-check-circle text-success"></i>Desde 600 productos (custom)</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Mails ilimitados</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Estadisticas avanzadas</li>
+                                    <li><i class="bi bi-check-circle text-success"></i>Avanzadas asistidas con IA</li>
+                                </ul>
+
+                                <a class="btn btn-success w-100 mt-auto" href="#make">Hablar con ventas</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-3 small text-secondary">
+                    Precios Standard y Shop quedan como placeholders (X/Y).
+                </div>
+            </div>
+        </section>
+
+        <!-- WHO WE ARE -->
+        <section id="who" class="bg-soft anchor-offset">
+            <div class="container">
+                <h2 class="h3 fw-bold section-title mb-4">Who we are</h2>
+
+                <div class="row g-3 align-items-stretch">
+                    <div class="col-12 col-lg-7">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <p class="text-secondary mb-3">
+                                    Somos un equipo que construye herramientas simples para vender online.
+                                    Priorizamos experiencia mobile, performance y flujos claros.
+                                </p>
+
+                                <div class="row g-3">
+                                    <div class="col-12 col-sm-6">
+                                        <div class="p-3 border rounded-4 bg-light h-100">
+                                            <div class="fw-semibold">Enfoque</div>
+                                            <div class="text-secondary small">
+                                                ecommerce, automatizacion, UX
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <div class="p-3 border rounded-4 bg-light h-100">
+                                            <div class="fw-semibold">Soporte</div>
+                                            <div class="text-secondary small">
+                                                docs, guia de setup, ayuda
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-lg-5">
+                        <div class="card h-100 border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <h3 class="h6 fw-bold">Contacto</h3>
+                                <p class="text-secondary small mb-3">
+                                    Placeholder. Despues definimos mail, redes o form.
+                                </p>
+
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-secondary" type="button" disabled>
+                                        Email
+                                    </button>
+                                    <button class="btn btn-outline-secondary" type="button" disabled>
+                                        Instagram
+                                    </button>
+                                    <button class="btn btn-outline-secondary" type="button" disabled>
+                                        WhatsApp
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- MAKE YOURS -->
+        <section id="make" class="anchor-offset">
+            <div class="container">
+                <div class="row g-4 align-items-center">
+                    <div class="col-12 col-lg-6">
+                        <h2 class="h3 fw-bold section-title mb-2">Make yours</h2>
+                        <p class="text-secondary mb-0">
+                            Completa este formulario (UI). Luego lo conectamos a tu flujo real de account.
+                        </p>
+                    </div>
+
+                    <div class="col-12 col-lg-6">
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body p-4">
+                                <form>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="brand">Nombre de la marca</label>
+                                        <input class="form-control" id="brand" type="text" placeholder="Mi tienda"
+                                            autocomplete="organization" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="email">Email</label>
+                                        <input class="form-control" id="email" type="email" placeholder="tu@email.com"
+                                            autocomplete="email" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label" for="plan">Plan</label>
+                                        <select class="form-select" id="plan">
+                                            <option value="starter">Starter</option>
+                                            <option value="pro" selected>Pro</option>
+                                            <option value="business">Business</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="terms" />
+                                        <label class="form-check-label small text-secondary" for="terms">
+                                            Acepto terminos y condiciones (placeholder)
+                                        </label>
+                                    </div>
+
+                                    <button class="btn btn-primary w-100" type="button">
+                                        Crear mi ecommerce
+                                    </button>
+
+                                    <div class="mt-3 small text-secondary">
+                                        Si ya tenes cuenta, entra en Account (placeholder).
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="py-4 border-top">
+            <div class="container">
+                <div class="d-flex flex-column flex-sm-row justify-content-between gap-2">
+                    <div class="small text-secondary">
+                        © <span id="year"></span> TuEcom
+                    </div>
+                    <div class="small">
+                        <a class="text-decoration-none me-3" href="#who">Quienes somos</a>
+                        <a class="text-decoration-none" href="/account.html">Account</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+    <script>
+        // anio en footer
+        document.getElementById("year").textContent = new Date().getFullYear();
+
+        // al clickear un link del menu, cerrar el navbar (mobile)
+        const nav = document.getElementById("navMain");
+        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(nav, { toggle: false });
+
+        nav.querySelectorAll("a.nav-link").forEach((a) => {
+            a.addEventListener("click", () => {
+                const isShown = nav.classList.contains("show");
+                if (isShown) bsCollapse.hide();
+            });
+        });
+    </script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const authModal = new bootstrap.Modal(document.getElementById("authModal"));
+
+  const accountLink = document.getElementById("accountLink");
+  const logoutItem = document.getElementById("logoutItem");
+
+  function isLogged() {
+    return localStorage.getItem("logged") === "true";
+  }
+
+  function updateUI() {
+    if (isLogged()) logoutItem.classList.remove("d-none");
+    else logoutItem.classList.add("d-none");
+  }
+
+  updateUI();
+
+  // Interceptar Account
+  accountLink.addEventListener("click", function (e) {
+    if (!isLogged()) {
+      e.preventDefault();
+      authModal.show();
+    }
+  });
+
+  // LOGIN
+  document.getElementById("loginBtn").addEventListener("click", function () {
+    const email = document.getElementById("loginEmail").value.trim();
+    const pass = document.getElementById("loginPassword").value.trim();
+
+    const savedUser = JSON.parse(localStorage.getItem("user"));
+
+    if (!savedUser || savedUser.email !== email || savedUser.password !== pass) {
+      document.getElementById("loginError").classList.remove("d-none");
+      return;
+    }
+
+    localStorage.setItem("logged", "true");
+    authModal.hide();
+    updateUI();
+  });
+
+  // REGISTER
+  document.getElementById("registerBtn").addEventListener("click", function () {
+
+    const name = document.getElementById("registerName").value.trim();
+    const email = document.getElementById("registerEmail").value.trim();
+    const pass = document.getElementById("registerPassword").value.trim();
+
+    if (!name || !email || !pass) {
+      document.getElementById("registerError").classList.remove("d-none");
+      return;
+    }
+
+    const user = { name, email, password: pass };
+
+    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem("logged", "true");
+
+    authModal.hide();
+    updateUI();
+  });
+
+});
+</script>
+</body>
+
+</html>

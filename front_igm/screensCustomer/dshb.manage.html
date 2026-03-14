@@ -1,0 +1,892 @@
+<!-- dashboard.html -->
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Shop Dashboard</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+    <style>
+        .thumb {
+            width: 54px;
+            height: 54px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .money {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .soft-card {
+            border: 1px solid rgba(0, 0, 0, .08);
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+    <!-- Topbar -->
+    <nav class="navbar navbar-dark bg-dark sticky-top">
+        <div class="container" style="max-width: 1100px;">
+            <div class="d-flex align-items-center gap-2">
+                <a class="btn btn-outline-light btn-sm" href="dshb.shops.html">Shops</a>
+                <span class="navbar-brand mb-0 h1 fs-6">Dashboard</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge text-bg-secondary d-none d-sm-inline">shop_id: <span
+                        id="shopIdLabel">shop_001</span></span>
+            </div>
+        </div>
+    </nav>
+
+
+    <div class="container py-4" style="max-width: 1100px;">
+        <section id="screenPanel">
+            <ul class="nav nav-tabs" id="tabs">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tabProducts" type="button">
+                        Products
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabOrders" type="button">
+                        Orders
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabStadistics" type="button">
+                        Stadistics
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#tabCampains" type="button" disabled>
+                        Campains
+                    </button>
+                <li class="nav-item ms-auto">
+                    <button id="btnRefreshAll" class="btn btn-sm btn-outline-primary mt-1 me-1" type="button">
+                        Refrescar
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content border border-top-0 bg-white p-3 shadow-sm">
+                <!-- PRODUCTS -->
+                <div class="tab-pane fade show active" id="tabProducts">
+                    <div class="row g-3">
+                        <div class="col-lg-5">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="h6">Crear / Editar producto</h3>
+                                    <form id="prodForm" class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label">ID</label>
+                                            <input id="prodId" class="form-control" placeholder="Ej: P001"
+                                                value="P001" />
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">title</label>
+                                            <input id="prodTitle" class="form-control" placeholder="Ej: Coca Cola 500ml"
+                                                value="Coca Cola 500ml" />
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">price</label>
+                                            <input id="prodPrice" type="number" step="0.01" class="form-control"
+                                                placeholder="Ej: 123.45" value="1200.00" />
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">description</label>
+                                            <textarea id="prodDesc" class="form-control"
+                                                rows="2">Bebida gaseosa 500ml.</textarea>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">Photo</label>
+                                            <input id="prodPhoto" class="form-control" type="file" accept="image/*" />
+                                        </div>
+
+                                        <div class="col-12 d-flex gap-2">
+                                            <button class="btn btn-primary" type="button" disabled>Guardar</button>
+                                            <button id="prodClear" class="btn btn-outline-secondary" type="button"
+                                                disabled>Limpiar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-7">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h3 class="h6 m-0">Listado</h3>
+                                <div class="d-flex gap-2">
+                                    <button id="btnLoadProds" class="btn btn-sm btn-outline-secondary" type="button"
+                                        disabled>Cargar</button>
+                                    <button class="btn btn-sm btn-outline-secondary" type="button"
+                                        disabled>Buscar</button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm table-striped align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Foto</th>
+                                            <th>ID</th>
+                                            <th>Title</th>
+                                            <th class="text-end">Price</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="prodsTbody">
+                                        <tr>
+                                            <td style="width:72px;">
+                                                <img src="https://picsum.photos/seed/p001/56/56" class="rounded"
+                                                    width="40" height="40" alt="P001" />
+                                            </td>
+                                            <td><code>P001</code></td>
+                                            <td>Coca Cola 500ml</td>
+                                            <td class="text-end">$ 1200.00</td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button class="btn btn-outline-primary" type="button"
+                                                        disabled>Editar</button>
+                                                    <button class="btn btn-outline-danger" type="button"
+                                                        disabled>Borrar</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <img src="https://picsum.photos/seed/p002/56/56" class="rounded"
+                                                    width="40" height="40" alt="P002" />
+                                            </td>
+                                            <td><code>P002</code></td>
+                                            <td>Hamburguesa completa</td>
+                                            <td class="text-end">$ 4500.00</td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button class="btn btn-outline-primary" type="button"
+                                                        disabled>Editar</button>
+                                                    <button class="btn btn-outline-danger" type="button"
+                                                        disabled>Borrar</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <img src="https://picsum.photos/seed/p003/56/56" class="rounded"
+                                                    width="40" height="40" alt="P003" />
+                                            </td>
+                                            <td><code>P003</code></td>
+                                            <td>Papas fritas</td>
+                                            <td class="text-end">$ 2500.00</td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button class="btn btn-outline-primary" type="button"
+                                                        disabled>Editar</button>
+                                                    <button class="btn btn-outline-danger" type="button"
+                                                        disabled>Borrar</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ORDERS -->
+                <div class="tab-pane fade" id="tabOrders">
+                    <div class="row g-3">
+                        <div class="col-lg-5">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="h6">Acciones / Filtros</h3>
+                                    <form id="orderFilters" class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label">Status</label>
+                                            <select id="ordStatus" class="form-select">
+                                                <option selected>Todos</option>
+                                                <option>pending</option>
+                                                <option>paid</option>
+                                                <option>canceled</option>
+                                                <option>expired</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">Cliente (email)</label>
+                                            <input id="ordEmail" class="form-control" placeholder="cliente@mail.com" />
+                                        </div>
+
+                                        <div class="col-12 d-flex gap-2">
+                                            <button class="btn btn-outline-primary" type="button"
+                                                disabled>Aplicar</button>
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                disabled>Limpiar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-7">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h3 class="h6 m-0">Listado</h3>
+                                <button id="btnLoadOrders" class="btn btn-sm btn-outline-secondary" type="button"
+                                    disabled>Cargar</button>
+                            </div>
+
+                            <div class="accordion" id="ordersAcc">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                            data-bs-target="#ord1">
+                                            <div class="w-100 d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="fw-semibold">#1001</span>
+                                                    <span class="text-muted ms-2 small">juan@mail.com</span>
+                                                </div>
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <span class="badge text-bg-warning">pending</span>
+                                                    <span class="fw-semibold">$ 8200.00</span>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="ord1" class="accordion-collapse collapse show" data-bs-parent="#ordersAcc">
+                                        <div class="accordion-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm align-middle mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Producto</th>
+                                                            <th class="text-end">Qty</th>
+                                                            <th class="text-end">Price</th>
+                                                            <th class="text-end">Subtotal</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>Coca Cola 500ml <span
+                                                                    class="text-muted small">(P001)</span></td>
+                                                            <td class="text-end">2</td>
+                                                            <td class="text-end">$ 1200.00</td>
+                                                            <td class="text-end">$ 2400.00</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Hamburguesa completa <span
+                                                                    class="text-muted small">(P002)</span></td>
+                                                            <td class="text-end">1</td>
+                                                            <td class="text-end">$ 4500.00</td>
+                                                            <td class="text-end">$ 4500.00</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Papas fritas <span
+                                                                    class="text-muted small">(P003)</span></td>
+                                                            <td class="text-end">1</td>
+                                                            <td class="text-end">$ 1300.00</td>
+                                                            <td class="text-end">$ 1300.00</td>
+                                                        </tr>
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <th colspan="3" class="text-end">Total</th>
+                                                            <th class="text-end">$ 8200.00</th>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+
+                                            <div class="d-flex gap-2 mt-3">
+                                                <button class="btn btn-sm btn-outline-success" type="button"
+                                                    disabled>Marcar paid</button>
+                                                <button class="btn btn-sm btn-outline-danger" type="button"
+                                                    disabled>Cancelar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button collapsed" type="button"
+                                            data-bs-toggle="collapse" data-bs-target="#ord2">
+                                            <div class="w-100 d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="fw-semibold">#1002</span>
+                                                    <span class="text-muted ms-2 small">ana@mail.com</span>
+                                                </div>
+                                                <div class="d-flex gap-2 align-items-center">
+                                                    <span class="badge text-bg-success">paid</span>
+                                                    <span class="fw-semibold">$ 3700.00</span>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div id="ord2" class="accordion-collapse collapse" data-bs-parent="#ordersAcc">
+                                        <div class="accordion-body">
+                                            <div class="table-responsive">
+                                                <table class="table table-sm align-middle mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Producto</th>
+                                                            <th class="text-end">Qty</th>
+                                                            <th class="text-end">Price</th>
+                                                            <th class="text-end">Subtotal</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td>Papas fritas <span
+                                                                    class="text-muted small">(P003)</span></td>
+                                                            <td class="text-end">1</td>
+                                                            <td class="text-end">$ 2500.00</td>
+                                                            <td class="text-end">$ 2500.00</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>Coca Cola 500ml <span
+                                                                    class="text-muted small">(P001)</span></td>
+                                                            <td class="text-end">1</td>
+                                                            <td class="text-end">$ 1200.00</td>
+                                                            <td class="text-end">$ 1200.00</td>
+                                                        </tr>
+                                                    </tbody>
+                                                    <tfoot>
+                                                        <tr>
+                                                            <th colspan="3" class="text-end">Total</th>
+                                                            <th class="text-end">$ 3700.00</th>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
+                                            </div>
+
+                                            <div class="d-flex gap-2 mt-3">
+                                                <button class="btn btn-sm btn-outline-secondary" type="button"
+                                                    disabled>Ver</button>
+                                                <button class="btn btn-sm btn-outline-danger" type="button"
+                                                    disabled>Reembolsar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /ORDERS -->
+                <!-- STADISTICS -->
+                <div class="tab-pane fade" id="tabStadistics">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="h6 m-0">Stadistics</h3>
+                        <div class="d-flex gap-2">
+                            <select class="form-select form-select-sm" style="width:auto" disabled>
+                                <option selected>Ultimos 7 dias</option>
+                                <option>Hoy</option>
+                                <option>Ultimos 30 dias</option>
+                                <option>Rango personalizado</option>
+                            </select>
+                            <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Exportar</button>
+                        </div>
+                    </div>
+
+                    <!-- KPI CARDS -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <div class="text-muted small">Total revenue</div>
+                                    <div class="fs-5 fw-semibold money">$ 1.245.300</div>
+                                    <div class="small text-success">+12% vs periodo anterior</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <div class="text-muted small">Orders</div>
+                                    <div class="fs-5 fw-semibold">342</div>
+                                    <div class="small text-muted">Ticket prom: <span class="money">$ 3.640</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <div class="text-muted small">Conversion rate</div>
+                                    <div class="fs-5 fw-semibold">3.8%</div>
+                                    <div class="small text-muted">Checkout completados</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <div class="text-muted small">Items vendidos</div>
+                                    <div class="fs-5 fw-semibold">890</div>
+                                    <div class="small text-muted">Unidades totales</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- CHART PLACEHOLDER -->
+                        <div class="col-lg-8">
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h3 class="h6 m-0">Ventas en el tiempo</h3>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-sm btn-outline-secondary" type="button"
+                                                disabled>Refrescar</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="bg-light border rounded p-3" style="height: 280px;">
+                                        <div class="text-muted small mb-2">Placeholder chart</div>
+
+                                        <!-- mini barras fake -->
+                                        <div class="d-flex align-items-end gap-2" style="height: 220px;">
+                                            <div class="bg-primary rounded"
+                                                style="width: 10%; height: 35%; opacity:.65"></div>
+                                            <div class="bg-primary rounded"
+                                                style="width: 10%; height: 55%; opacity:.65"></div>
+                                            <div class="bg-primary rounded"
+                                                style="width: 10%; height: 45%; opacity:.65"></div>
+                                            <div class="bg-primary rounded"
+                                                style="width: 10%; height: 70%; opacity:.65"></div>
+                                            <div class="bg-primary rounded"
+                                                style="width: 10%; height: 62%; opacity:.65"></div>
+                                            <div class="bg-primary rounded"
+                                                style="width: 10%; height: 78%; opacity:.65"></div>
+                                            <div class="bg-primary rounded"
+                                                style="width: 10%; height: 60%; opacity:.65"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mt-2 small text-muted">
+                                        Tip: despues lo reemplazas por Chart.js o similar.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STATUS BREAKDOWN -->
+                        <div class="col-lg-4">
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <h3 class="h6">Orders por status</h3>
+
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between small">
+                                            <span>paid</span>
+                                            <span class="text-muted">62%</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-success" style="width: 62%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between small">
+                                            <span>pending</span>
+                                            <span class="text-muted">24%</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-warning" style="width: 24%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="d-flex justify-content-between small">
+                                            <span>canceled</span>
+                                            <span class="text-muted">10%</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-danger" style="width: 10%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <div class="d-flex justify-content-between small">
+                                            <span>expired</span>
+                                            <span class="text-muted">4%</span>
+                                        </div>
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar bg-secondary" style="width: 4%"></div>
+                                        </div>
+                                    </div>
+
+                                    <hr />
+                                    <div class="small text-muted">
+                                        (mock) Total orders: 342
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- TOP PRODUCTS -->
+                        <div class="col-lg-8">
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h3 class="h6 m-0">Top productos</h3>
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Ver
+                                            todos</button>
+                                    </div>
+
+                                    <div class="table-responsive">
+                                        <table class="table table-sm table-striped align-middle mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th class="text-end">Units</th>
+                                                    <th class="text-end">Revenue</th>
+                                                    <th class="text-end">% del total</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td>Hamburguesa completa <span
+                                                            class="text-muted small">(P002)</span></td>
+                                                    <td class="text-end">120</td>
+                                                    <td class="text-end money">$ 540.000</td>
+                                                    <td class="text-end">34%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Coca Cola 500ml <span class="text-muted small">(P001)</span>
+                                                    </td>
+                                                    <td class="text-end">98</td>
+                                                    <td class="text-end money">$ 117.600</td>
+                                                    <td class="text-end">9%</td>
+                                                </tr>
+                                                <tr>
+                                                    <td>Papas fritas <span class="text-muted small">(P003)</span></td>
+                                                    <td class="text-end">86</td>
+                                                    <td class="text-end money">$ 215.000</td>
+                                                    <td class="text-end">7%</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CUSTOMERS -->
+                        <div class="col-lg-4">
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <h3 class="h6">Clientes</h3>
+
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span>Nuevos</span>
+                                        <span class="fw-semibold">41%</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small mb-2">
+                                        <span>Recurrentes</span>
+                                        <span class="fw-semibold">59%</span>
+                                    </div>
+
+                                    <hr />
+
+                                    <div class="text-muted small mb-2">Top clientes (mock)</div>
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item px-0 d-flex justify-content-between">
+                                            <span>ana@mail.com</span>
+                                            <span class="money">$ 58.200</span>
+                                        </li>
+                                        <li class="list-group-item px-0 d-flex justify-content-between">
+                                            <span>juan@mail.com</span>
+                                            <span class="money">$ 44.900</span>
+                                        </li>
+                                        <li class="list-group-item px-0 d-flex justify-content-between">
+                                            <span>maria@mail.com</span>
+                                            <span class="money">$ 39.300</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- /STADISTICS -->
+
+                <!-- CAMPAINS -->
+                <div class="tab-pane fade" id="tabCampains">
+                    <div class="row g-3">
+                        <!-- FORM -->
+                        <div class="col-lg-5">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h3 class="h6">Crear / Editar campain</h3>
+
+                                    <form id="campForm" class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label">ID</label>
+                                            <input class="form-control" placeholder="Ej: CAMP_001" value="CAMP_001" />
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">Name</label>
+                                            <input class="form-control" placeholder="Ej: Promo Verano"
+                                                value="Promo Verano" />
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">Type</label>
+                                            <select class="form-select" disabled>
+                                                <option selected>Percentage discount</option>
+                                                <option>Fixed discount</option>
+                                                <option>2x1</option>
+                                                <option>Free shipping</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-6">
+                                            <label class="form-label">Discount</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">%</span>
+                                                <input class="form-control" type="number" step="1" value="15" />
+                                            </div>
+                                        </div>
+
+                                        <div class="col-6">
+                                            <label class="form-label">Code (opcional)</label>
+                                            <input class="form-control" placeholder="VERANO15" value="VERANO15" />
+                                        </div>
+
+                                        <div class="col-12">
+                                            <label class="form-label">Target</label>
+                                            <select class="form-select" disabled>
+                                                <option selected>Todos los productos</option>
+                                                <option>Productos especificos</option>
+                                                <option>Categoria</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-6">
+                                            <label class="form-label">Start</label>
+                                            <input class="form-control" type="date" value="2026-01-01" />
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">End</label>
+                                            <input class="form-control" type="date" value="2026-01-31" />
+                                        </div>
+
+                                        <div class="col-6">
+                                            <label class="form-label">Max redemptions</label>
+                                            <input class="form-control" type="number" value="500" />
+                                        </div>
+
+                                        <div class="col-6">
+                                            <label class="form-label">Status</label>
+                                            <select class="form-select" disabled>
+                                                <option>draft</option>
+                                                <option selected>active</option>
+                                                <option>paused</option>
+                                                <option>ended</option>
+                                            </select>
+                                        </div>
+
+                                        <div class="col-12 d-flex gap-2">
+                                            <button class="btn btn-primary" type="button" disabled>Guardar</button>
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                disabled>Limpiar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3 soft-card">
+                                <div class="card-body">
+                                    <h3 class="h6">Simular impacto</h3>
+                                    <div class="row g-2">
+                                        <div class="col-12">
+                                            <label class="form-label">Producto</label>
+                                            <select class="form-select" disabled>
+                                                <option selected>Hamburguesa completa (P002)</option>
+                                                <option>Coca Cola 500ml (P001)</option>
+                                                <option>Papas fritas (P003)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Precio actual</label>
+                                            <input class="form-control money" value="$ 4500.00" disabled />
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">Precio con descuento</label>
+                                            <input class="form-control money" value="$ 3825.00" disabled />
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="small text-muted">
+                                                (mock) Aca despues metes tu logica de margen, elasticidad, etc.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LIST + PERFORMANCE -->
+                        <div class="col-lg-7">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h3 class="h6 m-0">Listado</h3>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-secondary" type="button"
+                                        disabled>Cargar</button>
+                                    <button class="btn btn-sm btn-outline-secondary" type="button"
+                                        disabled>Buscar</button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm table-striped align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Name</th>
+                                            <th>Type</th>
+                                            <th>Status</th>
+                                            <th>Period</th>
+                                            <th class="text-end">Revenue</th>
+                                            <th class="text-end">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><code>CAMP_001</code></td>
+                                            <td>Promo Verano</td>
+                                            <td>Discount %</td>
+                                            <td><span class="badge text-bg-success">active</span></td>
+                                            <td class="small text-muted">2026-01-01 a 2026-01-31</td>
+                                            <td class="text-end money">$ 320.000</td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button class="btn btn-outline-primary" type="button"
+                                                        disabled>Editar</button>
+                                                    <button class="btn btn-outline-warning" type="button"
+                                                        disabled>Pausar</button>
+                                                    <button class="btn btn-outline-danger" type="button"
+                                                        disabled>Borrar</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+
+                                        <tr>
+                                            <td><code>CAMP_002</code></td>
+                                            <td>Envio gratis</td>
+                                            <td>Free shipping</td>
+                                            <td><span class="badge text-bg-secondary">draft</span></td>
+                                            <td class="small text-muted">2026-02-01 a 2026-02-15</td>
+                                            <td class="text-end money">$ 0</td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button class="btn btn-outline-primary" type="button"
+                                                        disabled>Editar</button>
+                                                    <button class="btn btn-outline-success" type="button"
+                                                        disabled>Activar</button>
+                                                    <button class="btn btn-outline-danger" type="button"
+                                                        disabled>Borrar</button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="card soft-card">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h3 class="h6 m-0">Campaign performance</h3>
+                                        <button class="btn btn-sm btn-outline-secondary" type="button" disabled>Ver
+                                            detalle</button>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <div class="bg-light border rounded p-2">
+                                                <div class="text-muted small">Revenue</div>
+                                                <div class="fw-semibold money">$ 320.000</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-light border rounded p-2">
+                                                <div class="text-muted small">Orders</div>
+                                                <div class="fw-semibold">87</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-light border rounded p-2">
+                                                <div class="text-muted small">Avg ticket</div>
+                                                <div class="fw-semibold money">$ 3.900</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="bg-light border rounded p-2">
+                                                <div class="text-muted small">Usage rate</div>
+                                                <div class="fw-semibold">22%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr />
+
+                                    <div class="text-muted small mb-2">Distribucion (mock)</div>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Applied</span>
+                                                <span class="text-muted">87</span>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-primary" style="width: 70%"></div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex justify-content-between small">
+                                                <span>Not applied</span>
+                                                <span class="text-muted">308</span>
+                                            </div>
+                                            <div class="progress" style="height: 8px;">
+                                                <div class="progress-bar bg-secondary" style="width: 30%"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                <!-- /CAMPAINS -->
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const sid = params.get("shop_id");
+                if (sid) document.getElementById("shopIdLabel").textContent = sid;
+            } catch (e) { }
+        })();
+    </script>
+    <script src="auth.js"></script>
+</body>
+
+</html>

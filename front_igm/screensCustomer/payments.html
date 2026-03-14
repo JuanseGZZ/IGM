@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tu Ecommerce - Payments</title>
+
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+        crossorigin="anonymous" />
+
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <style>
+        body {
+            padding-top: 64px;
+        }
+
+        .page-kicker {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .card-soft {
+            border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .table thead th {
+            white-space: nowrap;
+        }
+
+        .table td,
+        .table th {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- NAV (igual que index) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" href="index.html#top">TuEcom</a>
+
+            <button class="navbar-toggler" type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navMain"
+                aria-controls="navMain"
+                aria-expanded="false"
+                aria-label="Abrir menu">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navMain">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="account.html">Account</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <main class="py-5">
+        <div class="container">
+
+            <div class="d-flex align-items-start justify-content-between gap-3 mb-4">
+                <div>
+                    <h1 class="h3 fw-bold mb-1">Payments</h1>
+                    <div class="page-kicker">Listado de compras realizadas (placeholder UI)</div>
+                </div>
+
+                <a class="btn btn-outline-secondary" href="account.html">
+                    <i class="bi bi-arrow-left"></i>
+                    Volver
+                </a>
+            </div>
+
+            <!-- Resumen -->
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-4">
+                    <div class="card shadow-sm card-soft">
+                        <div class="card-body">
+                            <div class="text-secondary small">Compras</div>
+                            <div class="h4 fw-bold mb-0">12</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card shadow-sm card-soft">
+                        <div class="card-body">
+                            <div class="text-secondary small">Total gastado</div>
+                            <div class="h4 fw-bold mb-0">$ 185.400</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card shadow-sm card-soft">
+                        <div class="card-body">
+                            <div class="text-secondary small">Ultima compra</div>
+                            <div class="h4 fw-bold mb-0">2026-03-01</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="card shadow-sm card-soft">
+                <div class="card-header bg-white">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="fw-semibold">Compras</div>
+                        <div class="text-secondary small">Scroll horizontal en celular</div>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Orden</th>
+                                    <th>Tienda</th>
+                                    <th>Items</th>
+                                    <th class="text-end">Total</th>
+                                    <th class="text-center">Estado</th>
+                                    <th class="text-end">Accion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>2026-03-01</td>
+                                    <td class="fw-semibold">#A1029</td>
+                                    <td>Mi Tienda</td>
+                                    <td>2</td>
+                                    <td class="text-end">$ 24.800</td>
+                                    <td class="text-center">
+                                        <span class="badge text-bg-success">Pagado</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary" type="button" disabled>
+                                            Ver detalle
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>2026-02-18</td>
+                                    <td class="fw-semibold">#A1012</td>
+                                    <td>Urban Shop</td>
+                                    <td>1</td>
+                                    <td class="text-end">$ 9.999</td>
+                                    <td class="text-center">
+                                        <span class="badge text-bg-warning">Pendiente</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary" type="button" disabled>
+                                            Ver detalle
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>2026-02-02</td>
+                                    <td class="fw-semibold">#A0993</td>
+                                    <td>Mi Tienda</td>
+                                    <td>4</td>
+                                    <td class="text-end">$ 56.200</td>
+                                    <td class="text-center">
+                                        <span class="badge text-bg-success">Pagado</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary" type="button" disabled>
+                                            Ver detalle
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>2026-01-20</td>
+                                    <td class="fw-semibold">#A0977</td>
+                                    <td>Deco House</td>
+                                    <td>3</td>
+                                    <td class="text-end">$ 18.500</td>
+                                    <td class="text-center">
+                                        <span class="badge text-bg-danger">Rechazado</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary" type="button" disabled>
+                                            Ver detalle
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <td>2026-01-05</td>
+                                    <td class="fw-semibold">#A0951</td>
+                                    <td>Mi Tienda</td>
+                                    <td>2</td>
+                                    <td class="text-end">$ 11.900</td>
+                                    <td class="text-center">
+                                        <span class="badge text-bg-success">Pagado</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-primary" type="button" disabled>
+                                            Ver detalle
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-white text-secondary small">
+                    Nota: los datos son placeholders. Despues lo conectas a tu backend / fetch.
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+        crossorigin="anonymous"></script>
+
+</body>
+
+</html>

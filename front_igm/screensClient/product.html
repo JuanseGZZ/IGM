@@ -1,0 +1,738 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Producto 1 — ShopName</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+
+    <style>
+      :root{
+        --bg: #0b1020;
+        --panel2: rgba(255,255,255,.04);
+        --border: rgba(255,255,255,.10);
+        --muted: rgba(233,238,247,.72);
+        --shadow: 0 18px 50px rgba(0,0,0,.45);
+        --r: 16px;
+      }
+
+      body{
+        background:
+          radial-gradient(900px 500px at 15% -5%, rgba(13,110,253,.18), transparent 60%),
+          radial-gradient(900px 500px at 90% 0%, rgba(32,201,151,.12), transparent 55%),
+          var(--bg);
+        color: #e9eef7;
+        min-height: 100vh;
+      }
+
+      .navglass{
+        background: rgba(11,16,32,.72) !important;
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .pill{
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,.04);
+      }
+
+      .touch{ min-height: 44px; }
+      .muted{ color: var(--muted) !important; }
+
+      /* Badge del carrito */
+      .icon-btn{ position: relative; overflow: visible; }
+      .cart-badge{
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        z-index: 50;
+        border: 1px solid rgba(255,255,255,.25);
+        box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      }
+
+      /* Offcanvas dark */
+      .offcanvas{
+        background: rgba(11,16,32,.94);
+        color:#e9eef7;
+        border-left: 1px solid var(--border);
+      }
+      .offcanvas .list-group-item{
+        background: rgba(255,255,255,.03);
+        border-color: var(--border);
+        color:#e9eef7;
+      }
+
+      /* Control de cantidad */
+      .qty{
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(255,255,255,.03);
+        border-radius: 999px;
+        padding: .15rem .25rem;
+      }
+      .qty .btn{
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .qty .count{
+        min-width: 26px;
+        text-align: center;
+        font-weight: 800;
+        font-size: .95rem;
+      }
+
+      /* Carrito */
+      .cart-body{
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
+      .cart-scroll{
+        flex: 1 1 auto;
+        overflow: auto;
+        padding-bottom: .75rem;
+      }
+      .cart-footer{
+        position: sticky;
+        bottom: 0;
+        background: rgba(11,16,32,.94);
+        border-top: 1px solid rgba(255,255,255,.10);
+        padding-top: .75rem;
+        padding-bottom: .25rem;
+        backdrop-filter: blur(10px);
+      }
+
+      /* ── PRODUCT PAGE SPECIFIC ── */
+
+      /* Breadcrumb */
+      .breadcrumb-item a{ color: var(--muted); text-decoration: none; }
+      .breadcrumb-item a:hover{ color: #e9eef7; }
+      .breadcrumb-item.active{ color: var(--muted); }
+      .breadcrumb-item + .breadcrumb-item::before{ color: rgba(255,255,255,.3); }
+
+      /* Main image */
+      .product-img-main{
+        border: 1px solid var(--border);
+        border-radius: var(--r);
+        overflow: hidden;
+        background: var(--panel2);
+        aspect-ratio: 1/1;
+      }
+      .product-img-main img{
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* Thumbnails */
+      .thumb-wrap{
+        display: flex;
+        gap: .5rem;
+        overflow-x: auto;
+        padding-bottom: .25rem;
+        scrollbar-width: none;
+      }
+      .thumb-wrap::-webkit-scrollbar{ display: none; }
+      .thumb{
+        flex-shrink: 0;
+        width: 68px;
+        height: 68px;
+        border-radius: 10px;
+        border: 2px solid var(--border);
+        overflow: hidden;
+        cursor: pointer;
+        transition: border-color .15s ease;
+        background: var(--panel2);
+      }
+      .thumb.active{ border-color: #0d6efd; }
+      .thumb img{ width: 100%; height: 100%; object-fit: cover; display: block; }
+
+      /* Info panel */
+      .info-panel{
+        border: 1px solid var(--border);
+        background: var(--panel2);
+        border-radius: var(--r);
+        padding: 1.5rem;
+      }
+
+      .price-big{
+        font-size: 2rem;
+        font-weight: 900;
+        letter-spacing: .3px;
+      }
+      .price-old{
+        font-size: 1.1rem;
+        font-weight: 500;
+        text-decoration: line-through;
+        color: var(--muted);
+      }
+
+      /* Color swatches */
+      .swatch{
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: border-color .15s;
+      }
+      .swatch.active{ border-color: #fff; }
+
+      /* Size pills */
+      .size-btn{
+        min-width: 44px;
+        height: 36px;
+        padding: 0 .75rem;
+        font-size: .85rem;
+        font-weight: 600;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,.04);
+        color: #e9eef7;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all .15s;
+      }
+      .size-btn:hover{ border-color: rgba(255,255,255,.35); }
+      .size-btn.active{
+        background: #0d6efd;
+        border-color: #0d6efd;
+        color: #fff;
+      }
+
+      /* Rating stars */
+      .star{ color: #ffc107; font-size: .9rem; }
+      .star-empty{ color: rgba(255,255,255,.25); font-size: .9rem; }
+
+      /* Divider */
+      .divider{ border-color: var(--border) !important; }
+
+      /* Reviews card */
+      .review-card{
+        border: 1px solid var(--border);
+        background: var(--panel2);
+        border-radius: 12px;
+        padding: 1rem;
+      }
+
+      /* Related products — reusing p-card from index */
+      .p-card{
+        border: 1px solid var(--border);
+        background: var(--panel2);
+        border-radius: var(--r);
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,.25);
+        transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+      }
+      .p-card:active{ transform: scale(.99); }
+      @media (hover:hover){
+        .p-card:hover{
+          transform: translateY(-2px);
+          border-color: rgba(13,110,253,.45);
+          box-shadow: var(--shadow);
+          color: inherit;
+        }
+      }
+      .p-card .p-img{
+        width: 100%;
+        height: 160px;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* Badge descuento */
+      .badge-discount{
+        position: absolute;
+        top: .75rem;
+        left: .75rem;
+        background: #dc3545;
+        color: #fff;
+        font-size: .75rem;
+        font-weight: 700;
+        padding: .2rem .55rem;
+        border-radius: 999px;
+        letter-spacing: .4px;
+      }
+
+      /* Stock indicator */
+      .stock-dot{
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #20c997;
+        display: inline-block;
+        margin-right: .35rem;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- NAVBAR (idéntico al index) -->
+    <nav class="navbar navbar-dark navglass sticky-top">
+      <div class="container py-2">
+        <a class="navbar-brand fw-bold m-0" href="index.html" aria-label="Inicio">ShopName</a>
+
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <button
+            class="btn btn-outline-light pill touch px-3 icon-btn"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#accountCanvas"
+            aria-controls="accountCanvas"
+            aria-label="Account"
+          >
+            <i class="bi bi-person-circle"></i>
+          </button>
+
+          <button
+            class="btn btn-outline-light pill touch px-3 icon-btn"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#cartCanvas"
+            aria-controls="cartCanvas"
+            aria-label="Carrito"
+          >
+            <i class="bi bi-bag"></i>
+            <span class="badge rounded-pill text-bg-danger cart-badge">3</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <main class="py-3 py-md-4">
+      <div class="container">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+          <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item"><a href="index.html">Inicio</a></li>
+            <li class="breadcrumb-item"><a href="#">Categoría</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Producto 1</li>
+          </ol>
+        </nav>
+
+        <!-- ── PRODUCTO PRINCIPAL ── -->
+        <div class="row g-4 mb-5">
+
+          <!-- Columna imágenes -->
+          <div class="col-12 col-md-6">
+
+            <!-- Imagen principal -->
+            <div class="product-img-main mb-3 position-relative">
+              <img
+                id="mainImg"
+                src="https://picsum.photos/seed/shop-1/900/900"
+                alt="Producto 1"
+              />
+              <span class="badge-discount">-20%</span>
+            </div>
+
+            <!-- Thumbnails -->
+            <div class="thumb-wrap">
+              <div class="thumb active" onclick="switchImg(this,'https://picsum.photos/seed/shop-1/900/900')">
+                <img src="https://picsum.photos/seed/shop-1/900/900" alt="Vista 1" />
+              </div>
+              <div class="thumb" onclick="switchImg(this,'https://picsum.photos/seed/shop-1b/900/900')">
+                <img src="https://picsum.photos/seed/shop-1b/900/900" alt="Vista 2" />
+              </div>
+              <div class="thumb" onclick="switchImg(this,'https://picsum.photos/seed/shop-1c/900/900')">
+                <img src="https://picsum.photos/seed/shop-1c/900/900" alt="Vista 3" />
+              </div>
+              <div class="thumb" onclick="switchImg(this,'https://picsum.photos/seed/shop-1d/900/900')">
+                <img src="https://picsum.photos/seed/shop-1d/900/900" alt="Vista 4" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna info -->
+          <div class="col-12 col-md-6 d-flex flex-column gap-3">
+            <div class="info-panel">
+
+              <!-- Nombre + rating -->
+              <div class="mb-1">
+                <span class="badge text-bg-secondary rounded-pill small mb-2">Categoría</span>
+                <h1 class="h4 fw-bold mb-1">Producto 1</h1>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star-empty">★</span>
+                  <span class="muted small">4.0 <span class="opacity-50">(128 reseñas)</span></span>
+                </div>
+              </div>
+
+              <hr class="divider my-3" />
+
+              <!-- Precios -->
+              <div class="d-flex align-items-end gap-3 mb-3">
+                <div class="price-big text-info">$19.99</div>
+                <div class="price-old mb-1">$24.99</div>
+              </div>
+
+              <!-- Stock -->
+              <div class="d-flex align-items-center mb-3 small">
+                <span class="stock-dot"></span>
+                <span class="muted">En stock — quedan <strong class="text-white">7</strong></span>
+              </div>
+
+              <!-- Descripción corta -->
+              <p class="muted small mb-3">
+                Descripcion corta pensada para mobile. Podes poner hasta 2-3 lineas aqui para dar contexto sin abrumar al usuario.
+              </p>
+
+              <hr class="divider my-3" />
+
+              <!-- Color -->
+              <div class="mb-3">
+                <div class="small fw-semibold mb-2">Color: <span class="muted fw-normal" id="colorLabel">Negro</span></div>
+                <div class="d-flex gap-2">
+                  <span class="swatch active" style="background:#1a1a2e" title="Negro" onclick="selectSwatch(this,'Negro')"></span>
+                  <span class="swatch" style="background:#0d6efd" title="Azul" onclick="selectSwatch(this,'Azul')"></span>
+                  <span class="swatch" style="background:#20c997" title="Verde" onclick="selectSwatch(this,'Verde')"></span>
+                  <span class="swatch" style="background:#dc3545" title="Rojo" onclick="selectSwatch(this,'Rojo')"></span>
+                </div>
+              </div>
+
+              <!-- Talle -->
+              <div class="mb-4">
+                <div class="small fw-semibold mb-2">Talle</div>
+                <div class="d-flex gap-2 flex-wrap">
+                  <button class="size-btn" onclick="selectSize(this)">XS</button>
+                  <button class="size-btn active" onclick="selectSize(this)">S</button>
+                  <button class="size-btn" onclick="selectSize(this)">M</button>
+                  <button class="size-btn" onclick="selectSize(this)">L</button>
+                  <button class="size-btn" onclick="selectSize(this)">XL</button>
+                </div>
+              </div>
+
+              <!-- Cantidad + Botones -->
+              <div class="d-flex align-items-center gap-3 mb-3 flex-wrap">
+                <div class="qty" aria-label="Cantidad">
+                  <button type="button" class="btn btn-sm btn-outline-light pill" onclick="changeQty(-1)" aria-label="Restar">
+                    <i class="bi bi-dash-lg"></i>
+                  </button>
+                  <span class="count" id="qty">1</span>
+                  <button type="button" class="btn btn-sm btn-outline-light pill" onclick="changeQty(1)" aria-label="Sumar">
+                    <i class="bi bi-plus-lg"></i>
+                  </button>
+                </div>
+                <button type="button" class="btn btn-primary flex-grow-1 touch">
+                  <i class="bi bi-cart-plus me-2"></i>Agregar al carrito
+                </button>
+              </div>
+
+              <div class="d-grid">
+                <button type="button" class="btn btn-success touch">
+                  <i class="bi bi-credit-card me-2"></i>Comprar ahora
+                </button>
+              </div>
+
+            </div><!-- /info-panel -->
+
+            <!-- Extras: envio / devoluciones -->
+            <div class="info-panel d-flex flex-column gap-2">
+              <div class="d-flex align-items-center gap-2 small">
+                <i class="bi bi-truck text-info fs-5"></i>
+                <span><span class="fw-semibold">Envio gratis</span> <span class="muted">en compras +$50</span></span>
+              </div>
+              <div class="d-flex align-items-center gap-2 small">
+                <i class="bi bi-arrow-counterclockwise text-success fs-5"></i>
+                <span><span class="fw-semibold">Devoluciones</span> <span class="muted">30 dias sin costo</span></span>
+              </div>
+              <div class="d-flex align-items-center gap-2 small">
+                <i class="bi bi-shield-check text-warning fs-5"></i>
+                <span><span class="fw-semibold">Garantia</span> <span class="muted">12 meses oficial</span></span>
+              </div>
+            </div>
+
+          </div><!-- /col info -->
+        </div><!-- /row principal -->
+
+        <!-- ── DESCRIPCION COMPLETA / TABS ── -->
+        <div class="mb-5">
+          <ul class="nav nav-pills gap-2 mb-3" id="productTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+              <button class="nav-link active pill px-4" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc" type="button">Descripcion</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link pill px-4" id="specs-tab" data-bs-toggle="tab" data-bs-target="#specs" type="button">Especificaciones</button>
+            </li>
+            <li class="nav-item" role="presentation">
+              <button class="nav-link pill px-4" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" type="button">Reseñas <span class="badge text-bg-secondary ms-1">128</span></button>
+            </li>
+          </ul>
+
+          <div class="tab-content info-panel">
+            <!-- Descripcion -->
+            <div class="tab-pane fade show active" id="desc" role="tabpanel">
+              <p class="muted mb-3">
+                Esta es la descripcion larga del producto. Podes poner todo el detalle que necesites aca: materiales, instrucciones de uso, caracteristicas destacadas, etc.
+              </p>
+              <p class="muted mb-0">
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Pellentesque euismod,
+                nisi vel consectetur interdum, nisl nunc egestas nunc, vitae tincidunt nisl nunc
+                euismod nisi. Todo estatico, sin logica.
+              </p>
+            </div>
+
+            <!-- Especificaciones -->
+            <div class="tab-pane fade" id="specs" role="tabpanel">
+              <table class="table table-borderless small mb-0" style="--bs-table-bg:transparent;--bs-table-color:#e9eef7;">
+                <tbody>
+                  <tr><td class="muted ps-0" style="width:40%">Material</td><td>Mock material 100%</td></tr>
+                  <tr><td class="muted ps-0">Peso</td><td>250 g</td></tr>
+                  <tr><td class="muted ps-0">Dimensiones</td><td>30 × 20 × 5 cm</td></tr>
+                  <tr><td class="muted ps-0">Origen</td><td>Mock Country</td></tr>
+                  <tr><td class="muted ps-0">SKU</td><td>#MOCK-001</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Reseñas -->
+            <div class="tab-pane fade" id="reviews" role="tabpanel">
+              <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="text-center">
+                  <div class="h2 fw-black text-info mb-0">4.0</div>
+                  <div>
+                    <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star-empty">★</span>
+                  </div>
+                  <div class="muted small">128 reseñas</div>
+                </div>
+              </div>
+
+              <div class="d-flex flex-column gap-3">
+                <!-- Review 1 -->
+                <div class="review-card">
+                  <div class="d-flex justify-content-between align-items-start mb-1">
+                    <div class="fw-semibold small">Usuario Mock</div>
+                    <div class="muted small">hace 2 dias</div>
+                  </div>
+                  <div class="mb-2">
+                    <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+                  </div>
+                  <p class="muted small mb-0">Muy buen producto, llego rapido y en perfectas condiciones. Lo recomiendo.</p>
+                </div>
+
+                <!-- Review 2 -->
+                <div class="review-card">
+                  <div class="d-flex justify-content-between align-items-start mb-1">
+                    <div class="fw-semibold small">Otro Usuario</div>
+                    <div class="muted small">hace 5 dias</div>
+                  </div>
+                  <div class="mb-2">
+                    <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star-empty">★</span>
+                  </div>
+                  <p class="muted small mb-0">Buena calidad, aunque el envio tardo un poco mas de lo esperado. El producto en si es excelente.</p>
+                </div>
+              </div>
+            </div>
+          </div><!-- /tab-content -->
+        </div>
+
+        <!-- ── PRODUCTOS RELACIONADOS ── -->
+        <div class="mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h6 fw-bold mb-0">Productos relacionados</h2>
+            <a href="index.html" class="small muted text-decoration-none">Ver todos <i class="bi bi-arrow-right"></i></a>
+          </div>
+
+          <div class="row g-3">
+            <div class="col-6 col-md-3">
+              <a href="product.html" class="p-card">
+                <img class="p-img" src="https://picsum.photos/seed/shop-2/900/900" alt="Producto 2" />
+                <div class="p-3">
+                  <div class="small fw-semibold mb-1">Producto 2</div>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="fw-bold text-info small">$29.99</div>
+                    <button type="button" class="btn btn-primary btn-sm p-1 lh-1" style="width:28px;height:28px" aria-label="Agregar">
+                      <i class="bi bi-plus-lg" style="font-size:.8rem"></i>
+                    </button>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <a href="product.html" class="p-card">
+                <img class="p-img" src="https://picsum.photos/seed/shop-3/900/900" alt="Producto 3" />
+                <div class="p-3">
+                  <div class="small fw-semibold mb-1">Producto 3</div>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="fw-bold text-info small">$49.00</div>
+                    <button type="button" class="btn btn-primary btn-sm p-1 lh-1" style="width:28px;height:28px" aria-label="Agregar">
+                      <i class="bi bi-plus-lg" style="font-size:.8rem"></i>
+                    </button>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <a href="product.html" class="p-card">
+                <img class="p-img" src="https://picsum.photos/seed/shop-4/900/900" alt="Producto 4" />
+                <div class="p-3">
+                  <div class="small fw-semibold mb-1">Producto 4</div>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="fw-bold text-info small">$15.50</div>
+                    <button type="button" class="btn btn-primary btn-sm p-1 lh-1" style="width:28px;height:28px" aria-label="Agregar">
+                      <i class="bi bi-plus-lg" style="font-size:.8rem"></i>
+                    </button>
+                  </div>
+                </div>
+              </a>
+            </div>
+
+            <div class="col-6 col-md-3">
+              <a href="product.html" class="p-card">
+                <img class="p-img" src="https://picsum.photos/seed/shop-5/900/900" alt="Producto 5" />
+                <div class="p-3">
+                  <div class="small fw-semibold mb-1">Producto 5</div>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="fw-bold text-info small">$39.00</div>
+                    <button type="button" class="btn btn-primary btn-sm p-1 lh-1" style="width:28px;height:28px" aria-label="Agregar">
+                      <i class="bi bi-plus-lg" style="font-size:.8rem"></i>
+                    </button>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-2 pb-2 text-center muted small">
+          Mock UI: sin logica. Solo Bootstrap + CSS.
+        </div>
+
+      </div>
+    </main>
+
+    <!-- OFFCANVAS: ACCOUNT -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="accountCanvas" aria-labelledby="accountCanvasLabel" data-bs-scroll="true">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="accountCanvasLabel">
+          <i class="bi bi-person-circle me-2"></i>Account
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div class="p-3 mb-3" style="border:1px solid var(--border);background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.03));border-radius:18px;">
+          <div class="fw-semibold mb-1">Usuario mock</div>
+          <div class="muted small">mock@email.com</div>
+        </div>
+        <div class="list-group mb-3">
+          <a href="#" class="list-group-item list-group-item-action rounded-3 mb-2"><i class="bi bi-receipt me-2"></i>Mis pedidos</a>
+          <a href="#" class="list-group-item list-group-item-action rounded-3 mb-2"><i class="bi bi-geo-alt me-2"></i>Direcciones</a>
+          <a href="#" class="list-group-item list-group-item-action rounded-3"><i class="bi bi-gear me-2"></i>Configuracion</a>
+        </div>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-outline-light pill touch">Iniciar sesion</button>
+          <button type="button" class="btn btn-outline-danger pill touch">Cerrar sesion</button>
+        </div>
+        <hr class="my-4" style="border-color:var(--border);" />
+        <div class="muted small">Todo estatico.</div>
+      </div>
+    </div>
+
+    <!-- OFFCANVAS: CARRITO -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="cartCanvas" aria-labelledby="cartCanvasLabel" data-bs-scroll="true">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="cartCanvasLabel"><i class="bi bi-bag me-2"></i>Carrito</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body cart-body">
+        <div class="cart-scroll">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="muted small">Items (mock)</div>
+            <span class="badge rounded-pill text-bg-danger">3</span>
+          </div>
+          <div class="list-group mb-3">
+            <div class="list-group-item rounded-3 mb-2">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div class="pe-2">
+                  <div class="fw-semibold">Producto 1</div>
+                  <div class="muted small">Precio: $19.99</div>
+                  <div class="mt-2 qty">
+                    <button type="button" class="btn btn-sm btn-outline-light pill" aria-label="Restar"><i class="bi bi-dash-lg"></i></button>
+                    <span class="count">1</span>
+                    <button type="button" class="btn btn-sm btn-outline-light pill" aria-label="Sumar"><i class="bi bi-plus-lg"></i></button>
+                  </div>
+                </div>
+                <div class="d-flex flex-column align-items-end gap-2">
+                  <button type="button" class="btn btn-sm btn-outline-light pill" aria-label="Eliminar"><i class="bi bi-x-lg"></i></button>
+                  <div class="fw-bold">$19.99</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr style="border-color:var(--border);" />
+          <div class="muted small">Mock estatico, sin logica.</div>
+        </div>
+        <div class="cart-footer">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="muted">Total</div>
+            <div class="h5 mb-0">$129.99</div>
+          </div>
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-outline-danger pill touch"><i class="bi bi-trash me-2"></i>Vaciar</button>
+            <button type="button" class="btn btn-success touch"><i class="bi bi-credit-card me-2"></i>Pagar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmSjKzA0FAcNEXJAV5rYwf7b2vV"
+      crossorigin="anonymous"></script>
+
+    <script>
+      // Thumbnail switch
+      function switchImg(el, src){
+        document.getElementById('mainImg').src = src;
+        document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+      }
+
+      // Color swatch
+      function selectSwatch(el, label){
+        document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('colorLabel').textContent = label;
+      }
+
+      // Size
+      function selectSize(el){
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+      }
+
+      // Quantity
+      function changeQty(delta){
+        const el = document.getElementById('qty');
+        let val = parseInt(el.textContent) + delta;
+        if(val < 1) val = 1;
+        if(val > 99) val = 99;
+        el.textContent = val;
+      }
+    </script>
+  </body>
+</html>

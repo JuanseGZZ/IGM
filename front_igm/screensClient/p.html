@@ -1,0 +1,607 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Producto – ShopName</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+
+    <!-- Bootstrap Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+    />
+
+    <style>
+      :root {
+        --bg: #0b1020;
+        --panel2: rgba(255,255,255,.04);
+        --border: rgba(255,255,255,.10);
+        --muted: rgba(233,238,247,.72);
+        --shadow: 0 18px 50px rgba(0,0,0,.45);
+        --r: 16px;
+      }
+
+      body {
+        background:
+          radial-gradient(900px 500px at 15% -5%, rgba(13,110,253,.18), transparent 60%),
+          radial-gradient(900px 500px at 90% 0%, rgba(32,201,151,.12), transparent 55%),
+          var(--bg);
+        color: #e9eef7;
+        min-height: 100vh;
+      }
+
+      .navglass {
+        background: rgba(11,16,32,.72) !important;
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .pill {
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,.04);
+      }
+
+      .touch { min-height: 44px; }
+      .muted { color: var(--muted) !important; }
+
+      /* Badge del carrito */
+      .icon-btn { position: relative; overflow: visible; }
+      .cart-badge {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        z-index: 50;
+        border: 1px solid rgba(255,255,255,.25);
+        box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      }
+
+      /* Offcanvas dark */
+      .offcanvas {
+        background: rgba(11,16,32,.94);
+        color: #e9eef7;
+        border-left: 1px solid var(--border);
+      }
+      .offcanvas .list-group-item {
+        background: rgba(255,255,255,.03);
+        border-color: var(--border);
+        color: #e9eef7;
+      }
+
+      /* ─── Breadcrumb ─── */
+      .breadcrumb-item + .breadcrumb-item::before { color: var(--muted); }
+      .breadcrumb-item a { color: var(--muted); text-decoration: none; }
+      .breadcrumb-item a:hover { color: #e9eef7; }
+      .breadcrumb-item.active { color: #e9eef7; }
+
+      /* ─── Imagen principal ─── */
+      .product-img-wrap {
+        border-radius: var(--r);
+        overflow: hidden;
+        border: 1px solid var(--border);
+        background: var(--panel2);
+        aspect-ratio: 1 / 1;
+        position: relative;
+      }
+
+      .product-img-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
+      /* Badge de descuento sobre la imagen */
+      .discount-badge {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        z-index: 10;
+        font-size: .85rem;
+        font-weight: 800;
+        letter-spacing: .3px;
+        padding: .35rem .75rem;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #dc3545, #c0392b);
+        box-shadow: 0 4px 14px rgba(220,53,69,.45);
+        color: #fff;
+      }
+
+      /* ─── Panel de info ─── */
+      .info-panel {
+        border: 1px solid var(--border);
+        background: var(--panel2);
+        border-radius: var(--r);
+        padding: 1.4rem 1.25rem;
+      }
+
+      /* Precios */
+      .price-original {
+        color: var(--muted);
+        text-decoration: line-through;
+        font-size: .95rem;
+      }
+      .price-final {
+        font-size: 2rem;
+        font-weight: 900;
+        letter-spacing: .3px;
+        color: #0dcaf0; /* text-info */
+        line-height: 1;
+      }
+      .price-saving {
+        font-size: .8rem;
+        font-weight: 700;
+        background: rgba(220,53,69,.15);
+        color: #f87171;
+        border: 1px solid rgba(220,53,69,.25);
+        border-radius: 999px;
+        padding: .2rem .6rem;
+      }
+
+      /* Divider sutil */
+      .divider {
+        border-top: 1px solid var(--border);
+        margin: 1.1rem 0;
+      }
+
+      /* Selector de variantes */
+      .variant-label {
+        font-size: .78rem;
+        font-weight: 700;
+        letter-spacing: .5px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: .5rem;
+      }
+
+      .variant-btn {
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,.04);
+        color: #e9eef7;
+        border-radius: 999px;
+        padding: .35rem .9rem;
+        font-size: .88rem;
+        cursor: pointer;
+        transition: border-color .14s, background .14s, color .14s;
+      }
+      .variant-btn:hover,
+      .variant-btn.active {
+        border-color: #0d6efd;
+        background: rgba(13,110,253,.18);
+        color: #fff;
+      }
+
+      /* Selector de color */
+      .color-dot {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        border: 2px solid transparent;
+        cursor: pointer;
+        transition: transform .14s, border-color .14s;
+        flex-shrink: 0;
+      }
+      .color-dot:hover,
+      .color-dot.active {
+        transform: scale(1.18);
+        border-color: #fff;
+      }
+      .color-dot.active {
+        outline: 2px solid #0d6efd;
+        outline-offset: 2px;
+      }
+
+      /* Botones de acción */
+      .btn-buy {
+        background: linear-gradient(135deg, #0d6efd, #0a58ca);
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        border-radius: 12px;
+        padding: .85rem 1rem;
+        font-size: 1rem;
+        box-shadow: 0 6px 20px rgba(13,110,253,.35);
+        transition: opacity .14s, transform .12s;
+      }
+      .btn-buy:hover { opacity: .88; transform: translateY(-1px); color: #fff; }
+      .btn-buy:active { transform: scale(.98); }
+
+      .btn-cart {
+        background: rgba(255,255,255,.06);
+        border: 1px solid var(--border);
+        color: #e9eef7;
+        font-weight: 700;
+        border-radius: 12px;
+        padding: .85rem 1rem;
+        font-size: 1rem;
+        transition: background .14s, border-color .14s, transform .12s;
+      }
+      .btn-cart:hover {
+        background: rgba(255,255,255,.11);
+        border-color: rgba(255,255,255,.25);
+        color: #fff;
+        transform: translateY(-1px);
+      }
+      .btn-cart:active { transform: scale(.98); }
+
+      /* Features row */
+      .feature-chip {
+        background: rgba(255,255,255,.04);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: .6rem .75rem;
+        font-size: .78rem;
+        color: var(--muted);
+        flex: 1 1 0;
+        text-align: center;
+      }
+      .feature-chip i {
+        display: block;
+        font-size: 1.15rem;
+        margin-bottom: .25rem;
+        color: #e9eef7;
+      }
+
+      /* Descripción larga */
+      .desc-block {
+        font-size: .93rem;
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      /* Back link */
+      .back-link {
+        color: var(--muted);
+        text-decoration: none;
+        font-size: .9rem;
+        transition: color .12s;
+      }
+      .back-link:hover { color: #e9eef7; }
+
+      /* Control de cantidad */
+      .qty {
+        display: inline-flex;
+        align-items: center;
+        gap: .35rem;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(255,255,255,.03);
+        border-radius: 999px;
+        padding: .15rem .25rem;
+      }
+      .qty .btn {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .qty .count {
+        min-width: 26px;
+        text-align: center;
+        font-weight: 800;
+        font-size: .95rem;
+      }
+
+      /* ─── Responsive ─── */
+      @media (max-width: 575px) {
+        .price-final { font-size: 1.7rem; }
+        .info-panel { padding: 1.1rem 1rem; }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark navglass sticky-top">
+      <div class="container py-2">
+        <a class="navbar-brand fw-bold m-0" href="index.html" aria-label="Inicio">ShopName</a>
+
+        <div class="d-flex align-items-center gap-2 ms-auto">
+          <button
+            class="btn btn-outline-light pill touch px-3 icon-btn"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#accountCanvas"
+            aria-controls="accountCanvas"
+            aria-label="Account"
+          >
+            <i class="bi bi-person-circle"></i>
+          </button>
+
+          <button
+            class="btn btn-outline-light pill touch px-3 icon-btn"
+            type="button"
+            data-bs-toggle="offcanvas"
+            data-bs-target="#cartCanvas"
+            aria-controls="cartCanvas"
+            aria-label="Carrito"
+          >
+            <i class="bi bi-bag"></i>
+            <span class="badge rounded-pill text-bg-danger cart-badge">3</span>
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="py-3 py-md-5">
+      <div class="container">
+
+        <!-- Back + Breadcrumb -->
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <a href="index.html" class="back-link d-flex align-items-center gap-1">
+            <i class="bi bi-arrow-left"></i>
+            <span class="d-none d-sm-inline">Volver</span>
+          </a>
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+              <li class="breadcrumb-item"><a href="index.html">Inicio</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Nombre del Producto</li>
+            </ol>
+          </nav>
+        </div>
+
+        <!-- Producto: imagen + info -->
+        <div class="row g-4 g-md-5 align-items-start">
+
+          <!-- ── Imagen ── -->
+          <div class="col-12 col-md-6">
+            <div class="product-img-wrap">
+              <span class="discount-badge">
+                <i class="bi bi-tag-fill me-1"></i>20% OFF
+              </span>
+              <img
+                src="https://picsum.photos/seed/prod-hero/900/900"
+                alt="Nombre del Producto"
+                loading="eager"
+              />
+            </div>
+          </div>
+
+          <!-- ── Info ── -->
+          <div class="col-12 col-md-6">
+            <div class="info-panel">
+
+              <!-- Nombre -->
+              <h1 class="h4 fw-bold mb-1">Nombre del Producto</h1>
+              <p class="muted small mb-3">Ref: SKU-00123</p>
+
+              <!-- Precios con descuento -->
+              <div class="d-flex align-items-end gap-3 flex-wrap mb-1">
+                <div class="price-final">$39.99</div>
+                <div class="d-flex flex-column gap-1">
+                  <span class="price-original">$49.99</span>
+                  <span class="price-saving">Ahorrás $10.00</span>
+                </div>
+              </div>
+
+              <div class="divider"></div>
+
+              <!-- Selector de talle -->
+              <div class="mb-4">
+                <div class="variant-label">Talle</div>
+                <div class="d-flex flex-wrap gap-2">
+                  <button type="button" class="variant-btn">XS</button>
+                  <button type="button" class="variant-btn active">S</button>
+                  <button type="button" class="variant-btn">M</button>
+                  <button type="button" class="variant-btn">L</button>
+                  <button type="button" class="variant-btn">XL</button>
+                  <button type="button" class="variant-btn">XXL</button>
+                </div>
+              </div>
+
+              <!-- Selector de color -->
+              <div class="mb-4">
+                <div class="variant-label">Color — <span class="text-white fw-semibold">Negro</span></div>
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                  <button
+                    type="button"
+                    class="color-dot active"
+                    style="background:#1a1a2e;"
+                    aria-label="Negro"
+                    title="Negro"
+                  ></button>
+                  <button
+                    type="button"
+                    class="color-dot"
+                    style="background:#f0f0f0;"
+                    aria-label="Blanco"
+                    title="Blanco"
+                  ></button>
+                  <button
+                    type="button"
+                    class="color-dot"
+                    style="background:#0d6efd;"
+                    aria-label="Azul"
+                    title="Azul"
+                  ></button>
+                  <button
+                    type="button"
+                    class="color-dot"
+                    style="background:#198754;"
+                    aria-label="Verde"
+                    title="Verde"
+                  ></button>
+                  <button
+                    type="button"
+                    class="color-dot"
+                    style="background:#dc3545;"
+                    aria-label="Rojo"
+                    title="Rojo"
+                  ></button>
+                </div>
+              </div>
+
+              <!-- Cantidad + Botones -->
+              <div class="divider"></div>
+
+              <!-- Cantidad -->
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="muted small">Cantidad</span>
+                <div class="qty" aria-label="Cantidad">
+                  <button type="button" class="btn btn-sm btn-outline-light pill" aria-label="Restar">
+                    <i class="bi bi-dash-lg"></i>
+                  </button>
+                  <span class="count">1</span>
+                  <button type="button" class="btn btn-sm btn-outline-light pill" aria-label="Sumar">
+                    <i class="bi bi-plus-lg"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- CTAs -->
+              <div class="d-grid gap-2">
+                <button type="button" class="btn btn-buy touch">
+                  <i class="bi bi-credit-card me-2"></i>Comprar ahora
+                </button>
+                <button type="button" class="btn btn-cart touch">
+                  <i class="bi bi-cart-plus me-2"></i>Agregar al carrito
+                </button>
+              </div>
+
+              <div class="divider"></div>
+
+              <!-- Feature chips -->
+              <div class="d-flex gap-2">
+                <div class="feature-chip">
+                  <i class="bi bi-truck"></i>
+                  Envío gratis
+                </div>
+                <div class="feature-chip">
+                  <i class="bi bi-arrow-counterclockwise"></i>
+                  30 días
+                </div>
+                <div class="feature-chip">
+                  <i class="bi bi-shield-check"></i>
+                  Garantía
+                </div>
+              </div>
+
+            </div><!-- /info-panel -->
+
+            <!-- Descripción -->
+            <div class="mt-3 info-panel">
+              <div class="fw-semibold mb-2">Descripción</div>
+              <p class="desc-block mb-0">
+                Este es el placeholder de la descripción del producto. Acá va el texto real que describe
+                materiales, características, y beneficios. Puede ser más largo y ocupar varias líneas.
+                Ideal para detallar lo que hace especial a este artículo, el proceso de fabricación,
+                o los usos recomendados. El diseño se adapta sin problema a textos más cortos o extensos.
+              </p>
+            </div>
+
+          </div><!-- /col info -->
+        </div><!-- /row -->
+
+      </div>
+    </main>
+
+    <!-- OFFCANVAS: ACCOUNT -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="accountCanvas" aria-labelledby="accountCanvasLabel" data-bs-scroll="true">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="accountCanvasLabel">
+          <i class="bi bi-person-circle me-2"></i>Account
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body">
+        <div class="mb-3 p-3" style="border:1px solid var(--border);background:rgba(255,255,255,.04);border-radius:var(--r);">
+          <div class="fw-semibold mb-1">Usuario mock</div>
+          <div class="muted small">usuario@mail.com</div>
+        </div>
+        <div class="list-group mb-3">
+          <a href="#" class="list-group-item list-group-item-action rounded-3 mb-2">
+            <i class="bi bi-receipt me-2"></i>Mis pedidos
+          </a>
+          <a href="#" class="list-group-item list-group-item-action rounded-3 mb-2">
+            <i class="bi bi-geo-alt me-2"></i>Direcciones
+          </a>
+          <a href="#" class="list-group-item list-group-item-action rounded-3">
+            <i class="bi bi-gear me-2"></i>Configuracion
+          </a>
+        </div>
+        <div class="d-grid gap-2">
+          <button type="button" class="btn btn-outline-light pill touch">Iniciar sesion</button>
+          <button type="button" class="btn btn-outline-danger pill touch">Cerrar sesion</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OFFCANVAS: CARRITO -->
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="cartCanvas" aria-labelledby="cartCanvasLabel" data-bs-scroll="true">
+      <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="cartCanvasLabel">
+          <i class="bi bi-bag me-2"></i>Carrito
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <div class="offcanvas-body d-flex flex-column">
+        <div class="flex-grow-1 overflow-auto pb-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="muted small">Items (mock)</div>
+            <span class="badge rounded-pill text-bg-danger">3</span>
+          </div>
+          <div class="list-group mb-3">
+            <div class="list-group-item rounded-3 mb-2">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <div class="fw-semibold">Producto 1</div>
+                  <div class="muted small">Precio: $19.99</div>
+                </div>
+                <div class="d-flex flex-column align-items-end gap-1">
+                  <button type="button" class="btn btn-sm btn-outline-light pill" aria-label="Eliminar">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                  <div class="fw-bold">$19.99</div>
+                </div>
+              </div>
+            </div>
+            <div class="list-group-item rounded-3">
+              <div class="d-flex justify-content-between align-items-start gap-2">
+                <div>
+                  <div class="fw-semibold">Nombre del Producto</div>
+                  <div class="muted small">Precio: $39.99</div>
+                </div>
+                <div class="d-flex flex-column align-items-end gap-1">
+                  <button type="button" class="btn btn-sm btn-outline-light pill" aria-label="Eliminar">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                  <div class="fw-bold">$39.99</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:.75rem;background:rgba(11,16,32,.94);">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="muted">Total</div>
+            <div class="h5 mb-0">$59.98</div>
+          </div>
+          <div class="d-grid gap-2">
+            <button type="button" class="btn btn-outline-danger pill touch">
+              <i class="bi bi-trash me-2"></i>Vaciar
+            </button>
+            <button type="button" class="btn btn-success touch">
+              <i class="bi bi-credit-card me-2"></i>Pagar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bootstrap JS bundle -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc4s9bIOgUxi8T/jzmRpUDjpU1sMq7tT9DUdREuCCJoH"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>

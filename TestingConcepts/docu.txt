@@ -1,0 +1,23 @@
+Son solo clases Python puras, sin ORM. Sin Django, sin SQLAlchemy, nada. Solo `dataclass` que es una feature nativa de Python para definir estructuras de datos con menos boilerplate.
+
+El CRUD que viene después va a ser el que hable con Postgres directamente con `psycopg2`.
+
+Ahora el diagrama:Ahora te explico el flujo de forma concreta para que tenga sentido antes de ver el diagrama.
+
+---
+
+**El flujo de arriba hacia abajo**
+
+Arrancás con una `Category` (Zapatillas). A esa categoría le decís qué atributos descriptivos tienen sus productos vía `CategoryAttribute` — por ejemplo que `peso_g` es filtrable con un slider, y que `pais_origen` es requerido y usa chips.
+
+Después creás un `Product` dentro de esa categoría. El producto tiene dos familias de datos colgando:
+
+**Rama izquierda — las opciones** que generan variantes. El producto tiene `ProductOption` ("Color", "Talla"), cada opción tiene sus `ProductOptionValue` ("Negro", "Blanco", "42", "43"). Las variantes son combinaciones de esos valores, y `VariantOptionValue` es la tabla pivote que dice "esta Variant es la combinación Negro + 42".
+
+**Rama derecha — los atributos** descriptivos. El producto tiene `ProductAttributeValue` que guarda en una columna jsonb el valor de cada atributo ("peso: 310g", "waterproof: false"). Si el atributo es enum, `AttributeEnumValue` define los valores permitidos.
+
+---
+
+**Por qué está separado así**
+
+Cuando el usuario en la tienda elige Color=Negro y Talla=42, estás buscando en la rama izquierda para encontrar la `Variant` exacta con su stock y precio. Cuando querés filtrar el catálogo por "zapatillas impermeables de menos de 400g", estás filtrando por la rama derecha. Son dos operaciones completamente distintas y por eso viven separadas.
