@@ -7,7 +7,7 @@ DataTypes = ["text", "number", "boolean", "enum"]
 # enum puede ser de producto o de variante, si es de producto se muestra como info, si es de variante se muestra como una opcion para elegir.
 
 class Attribute:
-    def __init__(self,id, key, name, data_type, is_static=False):
+    def __init__(self,id:int, key:str, name:str, data_type:str, is_static=False):
         self.id = id
         self.key = key
         self.name = name

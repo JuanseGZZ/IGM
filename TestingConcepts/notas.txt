@@ -1,0 +1,5 @@
+- ver la rentabilidad de agregarle typado a enum_values
+- luego expandir con:
+* stock
+* multi category o category non functional (solo de nombre)
+-
