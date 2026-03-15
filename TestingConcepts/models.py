@@ -124,70 +124,72 @@ def createVariant(product, implementations):
 
 # ---------------------- thinking
 
-# iteradores para id
-i_var = 0
-i_cat = 0
-i_prod = 0
-i_attr = 0 
-i_imp = 0
-
-#atributos de variante
-i_attr+=1
-atribute = Attribute(i_attr, "color", "Color", "enum",is_static=False) # atributo de variable.
-atribute.add_enum_value("red")
-atribute.add_enum_value("blue")
-
-i_attr+=1
-atribute3 = Attribute(i_attr, "impermeable", "Impermeable", "boolean", is_static=False) # atributo de variable.
-
-i_attr+=1
-#atributos de producto
-atribute2 = Attribute(i_attr, "large_cm", "Large (cm)", "number", is_static=True)
-atribute3 = Attribute(i_attr, "ancho_cm", "Ancho (cm)", "number", is_static=True)
-atribute4 = Attribute(i_attr, "altura_cm", "Altura (cm)", "number", is_static=True)
-
-i_cat+=1
-category = Category(i_cat, "Shirts", [atribute])
-i_prod+=1
-product = Product(i_prod, "T-Shirt", 19.99, "A comfortable t-shirt", "BrandX", category, [])
-i_var+=1
-variant1 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "red")])
-i_var+=1
-variant2 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "blue")])
-
-i_cat+=1
-category2 = Category(i_cat, "Muebles", [atribute2, atribute3]) # le agregamos ancho, alto y largo, como heredables.
-i_prod+=1
-#creamos producto y le implementamos los atributos heredados estaticos, por eso los implementamos en producto.
-product2 = Product(i_prod, "Desk", 199.99, "A sturdy desk", "BrandY", category2, [atribute4,atribute])
-product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute4, 75))
-product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute3, 60))
-product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute2, 150))
-
-#bad request
-try:
-    product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute, "red")) 
-except ValueError as e:
-    print(f"Error al agregar atributo: {e}")
-
-
-# i_imp+=1
-i_imp+=1 
-try:
-    variant3 = createVariant(product2, [AttributeImplementation(i_imp, atribute, "blue")])
-    if variant3 is not None:
-        variant3.id = i_var
-except ValueError as e:
-    print(f"Error al crear variante: {e}")
-
-
-
-print(f"Producto: {product2.title}, Categoria: {product2.category.name}")
-for impl in product2.attributes_implementations:
-    print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
-product2.add_variant(variant3)
-print(f"Variante de {product2.title}:")
-for variant in product2.variants:
-    print(f"Variante ID: {variant.id}")
-    for impl in variant.attribute_implementations:
+def test():
+    # iteradores para id
+    i_var = 0
+    i_cat = 0
+    i_prod = 0
+    i_attr = 0 
+    i_imp = 0
+    
+    #atributos de variante
+    i_attr+=1
+    atribute = Attribute(i_attr, "color", "Color", "enum",is_static=False) # atributo de variable.
+    atribute.add_enum_value("red")
+    atribute.add_enum_value("blue")
+    
+    i_attr+=1
+    atribute3 = Attribute(i_attr, "impermeable", "Impermeable", "boolean", is_static=False) # atributo de variable.
+    
+    i_attr+=1
+    #atributos de producto
+    atribute2 = Attribute(i_attr, "large_cm", "Large (cm)", "number", is_static=True)
+    atribute3 = Attribute(i_attr, "ancho_cm", "Ancho (cm)", "number", is_static=True)
+    atribute4 = Attribute(i_attr, "altura_cm", "Altura (cm)", "number", is_static=True)
+    
+    i_cat+=1
+    category = Category(i_cat, "Shirts", [atribute])
+    i_prod+=1
+    product = Product(i_prod, "T-Shirt", 19.99, "A comfortable t-shirt", "BrandX", category, [])
+    i_var+=1
+    variant1 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "red")])
+    i_var+=1
+    variant2 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "blue")])
+    
+    i_cat+=1
+    category2 = Category(i_cat, "Muebles", [atribute2, atribute3]) # le agregamos ancho, alto y largo, como heredables.
+    i_prod+=1
+    #creamos producto y le implementamos los atributos heredados estaticos, por eso los implementamos en producto.
+    product2 = Product(i_prod, "Desk", 199.99, "A sturdy desk", "BrandY", category2, [atribute4,atribute])
+    product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute4, 75))
+    product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute3, 60))
+    product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute2, 150))
+    
+    #bad request
+    try:
+        product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute, "red")) 
+    except ValueError as e:
+        print(f"Error al agregar atributo: {e}")
+    
+    
+    # i_imp+=1
+    i_imp+=1 
+    try:
+        variant3 = createVariant(product2, [AttributeImplementation(i_imp, atribute, "blue")])
+        if variant3 is not None:
+            variant3.id = i_var
+    except ValueError as e:
+        print(f"Error al crear variante: {e}")
+    
+    
+    
+    print(f"Producto: {product2.title}, Categoria: {product2.category.name}")
+    for impl in product2.attributes_implementations:
         print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
+    product2.add_variant(variant3)
+    print(f"Variante de {product2.title}:")
+    for variant in product2.variants:
+        print(f"Variante ID: {variant.id}")
+        for impl in variant.attribute_implementations:
+            print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
+    
