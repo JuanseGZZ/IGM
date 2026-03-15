@@ -8,10 +8,11 @@ import os
 DB_CONFIG = {
     "host":     os.getenv("DB_HOST",     "localhost"),
     "port":     os.getenv("DB_PORT",     "5432"),
-    "dbname":   os.getenv("DB_NAME",     "mi_base"),
+    "dbname":   os.getenv("DB_NAME",     "productos"),
     "user":     os.getenv("DB_USER",     "postgres"),
-    "password": os.getenv("DB_PASSWORD", "postgres"),
+    "password": os.getenv("DB_PASSWORD", "13adsASD21."),
 }
+
 
 SQL_FILE = os.path.join(os.path.dirname(__file__), "create_tables.sql")
 
