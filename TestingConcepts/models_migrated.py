@@ -46,19 +46,19 @@ class Category:
             self.attributes.append(attribute)
 
 class Product:
-    def __init__(self, id, title, price, description,brand, category_id, attributes =[], variants=[]):
+    def __init__(self, id, title, price, description,brand, category: Category,attributes_implementations: list = None, attributes: list = None, variants: list = None):
         self.id = id
         self.title = title
         self.price = price
         self.description = description
         self.brand = brand
-        self.category_id = category_id
-        self.attributes_implementations = [] # implementamos atributos estaticos
-        self.attributes = attributes # lista de objetos Attribute
-        self.variants = variants # lista de objetos Variant
+        self.category = category
+        self.attributes_implementations = attributes_implementations or [] # implementaciones de atributos estaticos
+        self.attributes = attributes or [] # lista de objetos Attribute
+        self.variants = variants or [] # lista de objetos Variant
 
     def add_attribute(self, attribute): 
-        if attribute not in self.attributes and attribute not in self.category_id.attributes:
+        if attribute not in self.attributes and attribute not in self.category.attributes:
             self.attributes.append(attribute)
 
     def add_variant(self, variant):
@@ -72,7 +72,7 @@ class Product:
                 if impl.attribute == attribute_implementation.attribute:
                     raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto.")
             #verificar que sea un atributo del producto o de la categoria
-            if attribute_implementation.attribute in self.attributes or attribute_implementation.attribute in self.category_id.attributes:
+            if attribute_implementation.attribute in self.attributes or attribute_implementation.attribute in self.category.attributes:
                 # verificar que el valor sea valido segun el tipo de dato
                 if attribute_implementation.attribute.check_value(attribute_implementation.value):
                     self.attributes_implementations.append(attribute_implementation)
@@ -96,7 +96,7 @@ class Variant: # hereda todas las propiedades por asociacion con el producto, y 
         if attribute_implementation.attribute.is_static:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' es estático y no puede ser implementado en una variante.")
         # verificar que el atributo este definido en el producto o en la categoria
-        if attribute_implementation.attribute not in self.product.attributes and attribute_implementation.attribute not in self.product.category_id.attributes:
+        if attribute_implementation.attribute not in self.product.attributes and attribute_implementation.attribute not in self.product.category.attributes:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' no está definido para el producto '{self.product.title}'.")
         # verificar que el valor sea valido segun el tipo de dato
         if not attribute_implementation.attribute.check_value(attribute_implementation.value):
@@ -131,10 +131,14 @@ i_prod = 0
 i_attr = 0 
 i_imp = 0
 
+#atributos de variante
 i_attr+=1
 atribute = Attribute(i_attr, "color", "Color", "enum",is_static=False) # atributo de variable.
 atribute.add_enum_value("red")
 atribute.add_enum_value("blue")
+
+i_attr+=1
+atribute3 = Attribute(i_attr, "impermeable", "Impermeable", "boolean", is_static=False) # atributo de variable.
 
 i_attr+=1
 #atributos de producto
@@ -178,7 +182,7 @@ except ValueError as e:
 
 
 
-print(f"Producto: {product2.title}, Categoria: {product2.category_id.name}")
+print(f"Producto: {product2.title}, Categoria: {product2.category.name}")
 for impl in product2.attributes_implementations:
     print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
 product2.add_variant(variant3)
