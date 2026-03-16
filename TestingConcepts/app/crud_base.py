@@ -16,6 +16,10 @@ class CrudBase(Generic[T]):
     MODEL_CLASS: Type[T] | None = None
 
     @classmethod
+    def _obj_to_row(cls, obj: T) -> Dict[str, Any]:
+        return vars(obj).copy()
+
+    @classmethod
     def _row_to_obj(cls, row: Optional[Dict[str, Any]]) -> Optional[T]:
         if row is None:
             return None
@@ -30,47 +34,11 @@ class CrudBase(Generic[T]):
         if cls.MODEL_CLASS is None:
             raise ValueError("MODEL_CLASS no definido")
 
-        data = vars(obj).copy()
+        data = cls._obj_to_row(obj)
         obj_id = data.get("id")
 
         if obj_id is None:
-            cols = [k for k, v in data.items() if v is not None]
-            values = {k: data[k] for k in cols}
-
-            q = sql.SQL(
-                "INSERT INTO {table} ({cols}) VALUES ({vals}) RETURNING *"
-            ).format(
-                table=sql.Identifier(cls.TABLE),
-                cols=sql.SQL(", ").join(sql.Identifier(c) for c in cols),
-                vals=sql.SQL(", ").join(sql.Placeholder(c) for c in cols),
-            )
-        else:
-            cols = [k for k in data.keys() if k != "id"]
-            values = {k: data[k] for k in cols}
-            values["id"] = obj_id
-
-            assignments = sql.SQL(", ").join(
-                sql.SQL("{col} = {ph}").format(
-                    col=sql.Identifier(c),
-                    ph=sql.Placeholder(c),
-                )
-                for c in cols
-            )
-
-            q = sql.SQL(
-                "UPDATE {table} SET {assignments} WHERE id = {id_ph} RETURNING *"
-            ).format(
-                table=sql.Identifier(cls.TABLE),
-                assignments=assignments,
-                id_ph=sql.Placeholder("id"),
-            )
-
-        with conn.cursor(row_factory=dict_row) as cur:
-            cur.execute(q, values)
-            row = cur.fetchone()
-
-        if row is None and obj_id is not None:
-            cols = list(data.keys())
+            cols = [k for k, v in data.items() if k != "id" and v is not None]
             values = {k: data[k] for k in cols}
 
             q = sql.SQL(
@@ -83,6 +51,49 @@ class CrudBase(Generic[T]):
 
             with conn.cursor(row_factory=dict_row) as cur:
                 cur.execute(q, values)
+                row = cur.fetchone()
+
+            conn.commit()
+            return cls._row_to_obj(row)
+
+        cols = [k for k in data.keys() if k != "id"]
+        values = {k: data[k] for k in cols}
+        values["id"] = obj_id
+
+        assignments = sql.SQL(", ").join(
+            sql.SQL("{col} = {ph}").format(
+                col=sql.Identifier(c),
+                ph=sql.Placeholder(c),
+            )
+            for c in cols
+        )
+
+        q_update = sql.SQL(
+            "UPDATE {table} SET {assignments} WHERE id = {id_ph} RETURNING *"
+        ).format(
+            table=sql.Identifier(cls.TABLE),
+            assignments=assignments,
+            id_ph=sql.Placeholder("id"),
+        )
+
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(q_update, values)
+            row = cur.fetchone()
+
+        if row is None:
+            insert_cols = list(data.keys())
+            insert_values = {k: data[k] for k in insert_cols}
+
+            q_insert = sql.SQL(
+                "INSERT INTO {table} ({cols}) VALUES ({vals}) RETURNING *"
+            ).format(
+                table=sql.Identifier(cls.TABLE),
+                cols=sql.SQL(", ").join(sql.Identifier(c) for c in insert_cols),
+                vals=sql.SQL(", ").join(sql.Placeholder(c) for c in insert_cols),
+            )
+
+            with conn.cursor(row_factory=dict_row) as cur:
+                cur.execute(q_insert, insert_values)
                 row = cur.fetchone()
 
         conn.commit()
