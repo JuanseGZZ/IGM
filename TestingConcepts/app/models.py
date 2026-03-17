@@ -46,8 +46,9 @@ class Category:
             self.attributes.append(attribute)
 
 class Product:
-    def __init__(self, id, title, price, description,brand, category: Category,attributes_implementations: list = None, attributes: list = None, variants: list = None):
+    def __init__(self, id, code, title, price, description,brand, category: Category,attributes_implementations: list = None, attributes: list = None, variants: list = None):
         self.id = id
+        self.code = code
         self.title = title
         self.price = price
         self.description = description
