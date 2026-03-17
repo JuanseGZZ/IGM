@@ -75,7 +75,14 @@ class AttributeRepo(CrudBase[Attribute]):
 
     @classmethod
     def save(cls, obj: Attribute) -> Attribute:
+        original_enum_values = list(obj.enum_values)
         saved = super().save(obj)
+
+        # super().save() retorna un objeto reconstruido desde la fila,
+        # sin los enum_values originales si aun no fueron insertados.
+        if saved.data_type == "enum":
+            saved.enum_values = original_enum_values
+
         cls._save_enum_values(saved)
         conn.commit()
         return cls.read(saved.id)
