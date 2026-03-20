@@ -1,0 +1,10 @@
+repos:
+- category
+- attributes
+- products
+{ desde products manejo las variants }
+
+to do: 
+- checkear products, que cargue todo bien.
+- plantear todos los casos para prod_repo.
+- implementar las funciones en prod_repo.
