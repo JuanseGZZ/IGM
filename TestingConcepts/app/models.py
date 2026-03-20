@@ -90,18 +90,22 @@ class Product:
         else:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' no es estático y no puede ser implementado en el producto.")
 
-    def get_variant_needed_atributes_implementations(self):
+    # da los atributos necesario que requeriria una variante o producto depende del parametro
+    def get_needed_atributes_implementations(self, is_static:bool=False): 
         attributes = []
         for attr in self.attributes:
-            if attr.is_static == False:
+            if attr.is_static == is_static:
                 attributes.append(attr)
         for attr in self.category.attributes:
-            if attr.is_static == False:
+            if attr.is_static == is_static:
                 attributes.append(attr)
         return attributes
 
-    def create_variant_by_implementations(self,implementations:AttributeImplementation):
+    def create_variant_by_implementations(self,implementations:AttributeImplementation): # crea en base a implementaciones
         variant = Variant(attribute_implementations=[])
+        # chequeamos que las implementaciones sean las necesarias
+        if len(implementaciones) != len(self.get_needed_atributes_implementations()):
+            return None
         try:
             for impl in implementations:
                 self.add_variant_implementation(variant,impl)
@@ -130,77 +134,7 @@ class Product:
 #como va a viajar la informacion?
 # la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.
 
-# ---------------------- thinking
-
-def test():
-    # iteradores para id
-    i_var = 0
-    i_cat = 0
-    i_prod = 0
-    i_attr = 0 
-    i_imp = 0
-    
-    #atributos de variante
-    i_attr+=1
-    atribute = Attribute(i_attr, "color", "Color", "enum",is_static=False) # atributo de variable.
-    atribute.add_enum_value("red")
-    atribute.add_enum_value("blue")
-    
-    i_attr+=1
-    atribute3 = Attribute(i_attr, "impermeable", "Impermeable", "boolean", is_static=False) # atributo de variable.
-    
-    i_attr+=1
-    #atributos de producto
-    atribute2 = Attribute(i_attr, "large_cm", "Large (cm)", "number", is_static=True)
-    atribute3 = Attribute(i_attr, "ancho_cm", "Ancho (cm)", "number", is_static=True)
-    atribute4 = Attribute(i_attr, "altura_cm", "Altura (cm)", "number", is_static=True)
-    
-    i_cat+=1
-    category = Category(i_cat, "Shirts", [atribute])
-    i_prod+=1
-    product = Product(i_prod, "T-Shirt", 19.99, "A comfortable t-shirt", "BrandX", category, [])
-    i_var+=1
-    variant1 = Variant(i_var, [AttributeImplementation(i_imp, atribute, "red")])
-    i_var+=1
-    variant2 = Variant(i_var, [AttributeImplementation(i_imp, atribute, "blue")])
-    
-    i_cat+=1
-    category2 = Category(i_cat, "Muebles", [atribute2, atribute3]) # le agregamos ancho, alto y largo, como heredables.
-    i_prod+=1
-    #creamos producto y le implementamos los atributos heredados estaticos, por eso los implementamos en producto.
-    product2 = Product(id=i_prod,code="2asd@", title= "Desk", price= 199.99, description= "A sturdy desk", brand= "BrandY", category=category2, attributes=[atribute4,atribute])
-    product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute4, 75))
-    product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute3, 60))
-    product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute2, 150))
-    
-    #bad request
-    try:
-        product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute, "red")) 
-    except ValueError as e:
-        print(f"Error al agregar atributo: {e}")
-    
-    # i_imp+=1
-    i_imp+=1 
-    try:
-        variant3 = product2.create_variant_by_implementations([AttributeImplementation(i_imp, atribute, "blue")])
-        if variant3 is not None:
-            variant3.id = i_var
-    except ValueError as e:
-        print(f"Error al crear variante: {e}")
-    
-    print(f"Producto: {product2.title}, Categoria: {product2.category.name}")
-    for impl in product2.attributes_implementations:
-        print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
-    product2.add_variant(variant3)
-    print(f"Variante de {product2.title}:")
-    for variant in product2.variants:
-        print(f"Variante ID: {variant.id}")
-        for impl in variant.attribute_implementations:
-            print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
-    
-
-def test2():
-    pass
+# ---------------------- testing
 
 #creo atributos y categorias
 atributo = Attribute(key="Talle",name="talle",data_type="enum")
@@ -222,7 +156,7 @@ product_implementation = AttributeImplementation(attribute=atributoStatic,value=
 producto.add_attribute_implementation(attribute_implementation=product_implementation)
 
 #creamos variant
-necesidades_variante = producto.get_variant_needed_atributes_implementations()
+necesidades_variante = producto.get_needed_atributes_implementations(is_static=False)
 implementaciones = []
 for attr_necesario in necesidades_variante:
     print(attr_necesario.name)
