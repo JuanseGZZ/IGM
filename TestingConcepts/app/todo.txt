@@ -8,3 +8,8 @@ to do:
 - checkear products, que cargue todo bien.
 - plantear todos los casos para prod_repo.
 - implementar las funciones en prod_repo.
+
+
+
+a mejorar en refactor:
+- los atributos al cargar que verifique que la key no exista. Si existe que remplase.

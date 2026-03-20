@@ -1,5 +1,4 @@
 #modelo de jerarquia de atributos
-
 DataTypes = ["text", "number", "boolean", "enum"]
 
 # text y number son simbre de producto
@@ -7,7 +6,7 @@ DataTypes = ["text", "number", "boolean", "enum"]
 # enum puede ser de producto o de variante, si es de producto se muestra como info, si es de variante se muestra como una opcion para elegir.
 
 class Attribute:
-    def __init__(self,id:int, key:str, name:str, data_type:str, is_static=False):
+    def __init__(self, key:str, name:str, data_type:str,id:int=None, is_static:bool=False):
         self.id = id
         self.key = key
         self.name = name
@@ -36,17 +35,28 @@ class Attribute:
             raise ValueError("Tipo de dato no reconocido.")
 
 class Category:
-    def __init__(self, id, name, attributes):
+    def __init__(self, name:str, id:int=None, attributes: list = None):
         self.id = id
         self.name = name
-        self.attributes = attributes # lista de objetos Attribute
+        self.attributes = attributes or [] # lista de objetos Attribute
 
     def add_attribute(self, attribute):
         if attribute not in self.attributes:
             self.attributes.append(attribute)
 
+class AttributeImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
+    def __init__(self, attribute:Attribute, value:str, id:int = None):
+        self.id = id
+        self.attribute = attribute # objeto Attribute referencia.
+        self.value = value
+
+class Variant: # hereda todas las propiedades por asociacion con el producto, y implementa obligatoriamente los atributos del producto y de la categoria.
+    def __init__(self, attribute_implementations, id=None,):
+        self.id = id
+        self.attribute_implementations = attribute_implementations # lista de objetos AttributeImplementation, implementamos atributos no staticos, es decir, los que no se muestran como informacion del producto, sino que son opciones para elegir.
+
 class Product:
-    def __init__(self, id, code, title, price, description,brand, category: Category,attributes_implementations: list = None, attributes: list = None, variants: list = None):
+    def __init__(self, code:str, title:str, price:float, description:str,brand:str, id:int = None, category: Category = None,attributes_implementations: list = None, attributes: list = None, variants: list = None):
         self.id = id
         self.code = code
         self.title = title
@@ -58,15 +68,15 @@ class Product:
         self.attributes = attributes or [] # lista de objetos Attribute
         self.variants = variants or [] # lista de objetos Variant
 
-    def add_attribute(self, attribute): 
+    def add_attribute(self, attribute:Attribute): 
         if attribute not in self.attributes and attribute not in self.category.attributes:
             self.attributes.append(attribute)
 
-    def add_variant(self, variant):
+    def add_variant(self, variant:Variant):
         if variant not in self.variants:
             self.variants.append(variant)
 
-    def add_attribute_implementation(self, attribute_implementation):
+    def add_attribute_implementation(self, attribute_implementation:AttributeImplementation):
         if attribute_implementation.attribute.is_static:
             # verificar si el atributo ya esta implementado
             for impl in self.attributes_implementations:
@@ -80,48 +90,45 @@ class Product:
         else:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' no es estático y no puede ser implementado en el producto.")
 
-class AttributeImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
-    def __init__(self, id, attribute, value):
-        self.id = id
-        self.attribute = attribute # objeto Attribute referencia.
-        self.value = value
+    def get_variant_needed_atributes_implementations(self):
+        attributes = []
+        for attr in self.attributes:
+            if attr.is_static == False:
+                attributes.append(attr)
+        for attr in self.category.attributes:
+            if attr.is_static == False:
+                attributes.append(attr)
+        return attributes
 
-class Variant: # hereda todas las propiedades por asociacion con el producto, y implementa obligatoriamente los atributos del producto y de la categoria.
-    def __init__(self, product, attribute_implementations, id=None,):
-        self.id = id
-        self.product = product
-        self.attribute_implementations = attribute_implementations # lista de objetos AttributeImplementation, implementamos atributos no staticos, es decir, los que no se muestran como informacion del producto, sino que son opciones para elegir.
+    def create_variant_by_implementations(self,implementations:AttributeImplementation):
+        variant = Variant(attribute_implementations=[])
+        try:
+            for impl in implementations:
+                self.add_variant_implementation(variant,impl)
+        except ValueError as e:
+            print(f"Error al crear la variante: {e}")
+            return None
+        self.add_variant(variant=variant)
+        return variant
 
-    def add_attribute_implementation(self, attribute_implementation):
+    def add_variant_implementation(self,variant:Variant,attribute_implementation:AttributeImplementation):
         # verificar que el atributo no sea estatico
         if attribute_implementation.attribute.is_static:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' es estático y no puede ser implementado en una variante.")
         # verificar que el atributo este definido en el producto o en la categoria
-        if attribute_implementation.attribute not in self.product.attributes and attribute_implementation.attribute not in self.product.category.attributes:
+        if attribute_implementation.attribute not in self.attributes and attribute_implementation.attribute not in self.category.attributes:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' no está definido para el producto '{self.product.title}'.")
         # verificar que el valor sea valido segun el tipo de dato
         if not attribute_implementation.attribute.check_value(attribute_implementation.value):
             raise ValueError(f"El valor '{attribute_implementation.value}' no es válido para el atributo '{attribute_implementation.attribute.name}'.")
         #verificar que el atributo no este ya implementado en la variante
-        for impl in self.attribute_implementations:
+        for impl in variant.attribute_implementations:
             if impl.attribute == attribute_implementation.attribute:
                 raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado en esta variante.")
-        self.attribute_implementations.append(attribute_implementation)
-
-def createVariant(product, implementations):
-    variant = Variant(product=product, attribute_implementations=[])
-    try:
-        for impl in implementations:
-            variant.add_attribute_implementation(impl)
-    except ValueError as e:
-        print(f"Error al crear la variante: {e}")
-        return None
-    return variant
-
+        variant.attribute_implementations.append(attribute_implementation)
 
 #como va a viajar la informacion?
 # la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.
-
 
 # ---------------------- thinking
 
@@ -153,15 +160,15 @@ def test():
     i_prod+=1
     product = Product(i_prod, "T-Shirt", 19.99, "A comfortable t-shirt", "BrandX", category, [])
     i_var+=1
-    variant1 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "red")])
+    variant1 = Variant(i_var, [AttributeImplementation(i_imp, atribute, "red")])
     i_var+=1
-    variant2 = Variant(i_var, product, [AttributeImplementation(i_imp, atribute, "blue")])
+    variant2 = Variant(i_var, [AttributeImplementation(i_imp, atribute, "blue")])
     
     i_cat+=1
     category2 = Category(i_cat, "Muebles", [atribute2, atribute3]) # le agregamos ancho, alto y largo, como heredables.
     i_prod+=1
     #creamos producto y le implementamos los atributos heredados estaticos, por eso los implementamos en producto.
-    product2 = Product(i_prod, "Desk", 199.99, "A sturdy desk", "BrandY", category2, [atribute4,atribute])
+    product2 = Product(id=i_prod,code="2asd@", title= "Desk", price= 199.99, description= "A sturdy desk", brand= "BrandY", category=category2, attributes=[atribute4,atribute])
     product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute4, 75))
     product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute3, 60))
     product2.add_attribute_implementation(AttributeImplementation(i_imp, atribute2, 150))
@@ -172,17 +179,14 @@ def test():
     except ValueError as e:
         print(f"Error al agregar atributo: {e}")
     
-    
     # i_imp+=1
     i_imp+=1 
     try:
-        variant3 = createVariant(product2, [AttributeImplementation(i_imp, atribute, "blue")])
+        variant3 = product2.create_variant_by_implementations([AttributeImplementation(i_imp, atribute, "blue")])
         if variant3 is not None:
             variant3.id = i_var
     except ValueError as e:
         print(f"Error al crear variante: {e}")
-    
-    
     
     print(f"Producto: {product2.title}, Categoria: {product2.category.name}")
     for impl in product2.attributes_implementations:
@@ -194,3 +198,39 @@ def test():
         for impl in variant.attribute_implementations:
             print(f"Atributo: {impl.attribute.name}, Valor: {impl.value}")
     
+
+def test2():
+    pass
+
+#creo atributos y categorias
+atributo = Attribute(key="Talle",name="talle",data_type="enum")
+atributo.add_enum_value("41")
+atributo.add_enum_value("42")
+atributo.add_enum_value("43")
+categoria = Category(name="Zapatillas")
+categoria.add_attribute(attribute=atributo)
+
+#creo atributo estatico
+atributoStatic = Attribute(key="peso_g",name="peso (g)",data_type="number",is_static=True)
+
+#creo producto y le agrego su static, ademas va a heredar el dinamic(variant atribute) del category.
+producto = Product(code="asd22f3f",title="shordan",price=1200,description="amazin",brand="nike",category=categoria)
+producto.add_attribute(attribute=atributoStatic)
+
+#implementamos el static
+product_implementation = AttributeImplementation(attribute=atributoStatic,value="350")
+producto.add_attribute_implementation(attribute_implementation=product_implementation)
+
+#creamos variant
+necesidades_variante = producto.get_variant_needed_atributes_implementations()
+implementaciones = []
+for attr_necesario in necesidades_variante:
+    print(attr_necesario.name)
+    valor = input(">:")
+    implementaciones.append(AttributeImplementation(attribute=attr_necesario,value=valor))
+
+for i in implementaciones:
+    print(f"{i.attribute.name} -> {i.value}")
+
+producto.create_variant_by_implementations(implementations=implementaciones)
+
