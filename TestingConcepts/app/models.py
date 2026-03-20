@@ -244,12 +244,18 @@ class Product:
         for impl in self.attributes_implementations:
             if impl.attribute == attribute_implementation.attribute:
                 raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto")
+        
         #verificar que sea un atributo del producto o de la categoria
-        if not attribute_implementation.attribute in self.attributes or not attribute_implementation.attribute in self.category.attributes:
+        attribute_key = attribute_implementation.attribute.key
+
+        in_product_attributes = any(attr.key == attribute_key for attr in self.attributes)
+        in_category_attributes = any(attr.key == attribute_key for attr in self.category.attributes)
+        if not in_product_attributes and not in_category_attributes:
             raise ValueError("El atributo a implementar no esta asociado a la categoria o al producto")
+
         # verificar que el valor sea valido segun el tipo de dato
         if not attribute_implementation.attribute.check_value(attribute_implementation.value):
-            raise ValueError(f"El valor '{attribute_implementation.value}' no es válido para el atributo {attribute_implementationattribute.name}'.")
+            raise ValueError(f"El valor '{attribute_implementation.value}' no es válido para el atributo {attribute_implementation.attribute.name}'.")
         self.attributes_implementations.append(attribute_implementation)
 
 

@@ -55,9 +55,7 @@ def test_creaciones():
 #ProductRepo.delete(producto.id)
 
 # --- notas
-# no crea product atributes implementations.
-# variants y implement de las variants andan.
-# las implementaciones se crean solo las dinamicas
+# duplica implementaciones en variante, no elimina bien.
 
 def testutilizacionCate(): # chequeado anda categorias.
     categorias = CategoryRepo().bring_all()
@@ -93,10 +91,10 @@ producto = ProductRepo().read(16)
 producto.add_attribute_implementation(
     AttributeImplementation(
         attribute=atributo,
-        value="pene"
+        value="oro"
         )
     )
 #producto.attributes.clear()
-#saved = ProductRepo().save(producto)
+saved = ProductRepo().save(producto)
 
-print(json.dumps(producto.to_json(), indent=4, ensure_ascii=False))
+print(json.dumps(saved.to_json(), indent=4, ensure_ascii=False))
