@@ -238,18 +238,20 @@ class Product:
             self.variants.append(variant)
 
     def add_attribute_implementation(self, attribute_implementation:AttributeImplementation):
-        if attribute_implementation.attribute.is_static:
-            # verificar si el atributo ya esta implementado
-            for impl in self.attributes_implementations:
-                if impl.attribute == attribute_implementation.attribute:
-                    raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto.")
-            #verificar que sea un atributo del producto o de la categoria
-            if attribute_implementation.attribute in self.attributes or attribute_implementation.attribute in self.category.attributes:
-                # verificar que el valor sea valido segun el tipo de dato
-                if attribute_implementation.attribute.check_value(attribute_implementation.value):
-                    self.attributes_implementations.append(attribute_implementation)
-        else:
-            raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' no es estático y no puede ser implementado en el producto.")
+        if not attribute_implementation.attribute.is_static:
+            raise ValueError("Estas intentando meter un atributo dinamico como implementacion estatica")
+        # verificar si el atributo ya esta implementado
+        for impl in self.attributes_implementations:
+            if impl.attribute == attribute_implementation.attribute:
+                raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto")
+        #verificar que sea un atributo del producto o de la categoria
+        if not attribute_implementation.attribute in self.attributes or not attribute_implementation.attribute in self.category.attributes:
+            raise ValueError("El atributo a implementar no esta asociado a la categoria o al producto")
+        # verificar que el valor sea valido segun el tipo de dato
+        if not attribute_implementation.attribute.check_value(attribute_implementation.value):
+            raise ValueError(f"El valor '{attribute_implementation.value}' no es válido para el atributo {attribute_implementationattribute.name}'.")
+        self.attributes_implementations.append(attribute_implementation)
+
 
     # da los atributos necesario que requeriria una variante o producto depende del parametro
     def get_needed_atributes_implementations(self, is_static:bool=False): 

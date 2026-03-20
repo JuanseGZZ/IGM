@@ -2,6 +2,7 @@ from psycopg.rows import dict_row
 
 from config import conn
 from crud_base import CrudBase
+from attributes_repo import AttributeRepo
 from models import Product, Category, Variant, Attribute, AttributeImplementation
 
 
@@ -44,6 +45,23 @@ class ProductRepo(CrudBase[Product]):
         )
 
     @classmethod
+    def _resolve_attribute(cls, attribute_id: int, fallback_row: dict | None = None):
+        attribute = AttributeRepo.read(attribute_id)
+        if attribute is not None:
+            return attribute
+
+        if fallback_row is None:
+            return None
+
+        return Attribute(
+            id=fallback_row["attribute_id"],
+            key=fallback_row["key"],
+            name=fallback_row["name"],
+            data_type=fallback_row["data_type"],
+            is_static=fallback_row["is_static"],
+        )
+
+    @classmethod
     def _load_variant_implementations(cls, variant_id: int):
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(
@@ -69,13 +87,7 @@ class ProductRepo(CrudBase[Product]):
         implementations = []
 
         for row in rows:
-            attribute = Attribute(
-                id=row["attribute_id"],
-                key=row["key"],
-                name=row["name"],
-                data_type=row["data_type"],
-                is_static=row["is_static"],
-            )
+            attribute = cls._resolve_attribute(row["attribute_id"], row)
 
             implementation = AttributeImplementation(
                 id=row["implementation_id"],
@@ -84,6 +96,73 @@ class ProductRepo(CrudBase[Product]):
             )
 
             implementations.append(implementation)
+
+        return implementations
+
+    @classmethod
+    def _load_product_attributes(cls, product_id: int):
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT a.id, a.key, a.name, a.data_type, a.is_static
+                FROM products_atributes pa
+                JOIN atribute a ON a.id = pa.atribute_id
+                WHERE pa.product_id = %s
+                ORDER BY pa.id
+                """,
+                (product_id,),
+            )
+            rows = cur.fetchall()
+
+        attributes = []
+        for row in rows:
+            attribute = AttributeRepo.read(row["id"])
+            if attribute is None:
+                attribute = Attribute(
+                    id=row["id"],
+                    key=row["key"],
+                    name=row["name"],
+                    data_type=row["data_type"],
+                    is_static=row["is_static"],
+                )
+            attributes.append(attribute)
+
+        return attributes
+
+    @classmethod
+    def _load_product_implementations(cls, product_id: int):
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT
+                    ai.id AS implementation_id,
+                    ai.value,
+                    a.id AS attribute_id,
+                    a.key,
+                    a.name,
+                    a.data_type,
+                    a.is_static
+                FROM product_implementation pi
+                JOIN atr_implementation ai ON ai.id = pi.atr_imp_id
+                JOIN atribute a ON a.id = ai.atribute_id
+                WHERE pi.product_id = %s
+                ORDER BY pi.id
+                """,
+                (product_id,),
+            )
+            rows = cur.fetchall()
+
+        implementations = []
+        for row in rows:
+            attribute = cls._resolve_attribute(row["attribute_id"], row)
+
+            implementations.append(
+                AttributeImplementation(
+                    id=row["implementation_id"],
+                    attribute=attribute,
+                    value=row["value"],
+                )
+            )
 
         return implementations
 
@@ -158,6 +237,69 @@ class ProductRepo(CrudBase[Product]):
                     )
 
     @classmethod
+    def _save_product_attributes(cls, product: Product):
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM products_atributes WHERE product_id = %s",
+                (product.id,),
+            )
+
+            for attribute in product.attributes:
+                if attribute.id is None:
+                    raise ValueError("No se puede asociar un atributo sin id al producto")
+
+                cur.execute(
+                    """
+                    INSERT INTO products_atributes (product_id, atribute_id)
+                    VALUES (%s, %s)
+                    """,
+                    (product.id, attribute.id),
+                )
+
+    @classmethod
+    def _save_product_implementations(cls, product: Product):
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                "SELECT atr_imp_id FROM product_implementation WHERE product_id = %s",
+                (product.id,),
+            )
+            old_rows = cur.fetchall()
+
+            cur.execute(
+                "DELETE FROM product_implementation WHERE product_id = %s",
+                (product.id,),
+            )
+
+            for row in old_rows:
+                cur.execute(
+                    "DELETE FROM atr_implementation WHERE id = %s",
+                    (row["atr_imp_id"],),
+                )
+
+            for implementation in product.attributes_implementations:
+                if implementation.attribute is None or implementation.attribute.id is None:
+                    raise ValueError("No se puede guardar implementacion sin atributo con id")
+
+                cur.execute(
+                    """
+                    INSERT INTO atr_implementation (atribute_id, value)
+                    VALUES (%s, %s)
+                    RETURNING id
+                    """,
+                    (implementation.attribute.id, str(implementation.value)),
+                )
+                implementation_row = cur.fetchone()
+                implementation.id = implementation_row["id"]
+
+                cur.execute(
+                    """
+                    INSERT INTO product_implementation (product_id, atr_imp_id)
+                    VALUES (%s, %s)
+                    """,
+                    (product.id, implementation.id),
+                )
+
+    @classmethod
     def _row_to_obj(cls, row):
         if row is None:
             return None
@@ -174,8 +316,8 @@ class ProductRepo(CrudBase[Product]):
             description=row["description"],
             brand=row["brand"],
             category=category,
-            attributes_implementations=[],
-            attributes=[],
+            attributes_implementations=cls._load_product_implementations(row["id"]),
+            attributes=cls._load_product_attributes(row["id"]),
             variants=[],
         )
 
@@ -208,6 +350,8 @@ class ProductRepo(CrudBase[Product]):
         for variant in obj.variants:
             variant.product = obj
 
+        cls._save_product_attributes(obj)
+        cls._save_product_implementations(obj)
         cls._save_variants(obj)
         conn.commit()
         return cls.read(saved.id)

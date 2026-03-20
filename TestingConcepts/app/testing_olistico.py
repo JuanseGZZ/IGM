@@ -59,23 +59,44 @@ def test_creaciones():
 # variants y implement de las variants andan.
 # las implementaciones se crean solo las dinamicas
 
-def testutilizacion():
+def testutilizacionCate(): # chequeado anda categorias.
+    categorias = CategoryRepo().bring_all()
+    #for c in categorias:
+    #    print(c.to_json()) 
+
+    categoria = CategoryRepo().read(25)
+    #print(categoria.to_json()) 
+
+
+    #materiales = AttributeRepo().bring_all()
+    #for m in materiales:
+    #    print(m.to_json())
+    #material = AttributeRepo().read(69)
+    #print(material.to_json())
+    #categoria.add_attribute(material)
+    #print(categoria.to_json())
+    #saved = CategoryRepo().save(categoria)
+    #print(saved.to_json())
+
+atributo = AttributeRepo().read(69)
+print(atributo.to_json())
+
+productos = ProductRepo().bring_all()
+import json
+for p in productos:
+    #print(json.dumps(p.to_json(), indent=4, ensure_ascii=False))
     pass
+producto = ProductRepo().read(16)
+#producto.add_attribute(attribute=atributo) // chequeado, anda el atribut asossiation
+#saved = ProductRepo().save(producto)
 
-categorias = CategoryRepo().bring_all()
-#for c in categorias:
-#    print(c.to_json())
+producto.add_attribute_implementation(
+    AttributeImplementation(
+        attribute=atributo,
+        value="pene"
+        )
+    )
+#producto.attributes.clear()
+#saved = ProductRepo().save(producto)
 
-categoria = CategoryRepo().read(25)
-#print(categoria.to_json())
-
-
-materiales = AttributeRepo().bring_all()
-#for m in materiales:
-#    print(m.to_json())
-material = AttributeRepo().read(69)
-#print(material.to_json())
-categoria.add_attribute(material)
-#print(categoria.to_json())
-saved = CategoryRepo().save(categoria)
-print(saved.to_json())
+print(json.dumps(producto.to_json(), indent=4, ensure_ascii=False))
