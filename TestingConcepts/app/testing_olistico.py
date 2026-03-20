@@ -3,16 +3,16 @@ from product_repo import ProductRepo
 from category_repo import CategoryRepo
 from attributes_repo import AttributeRepo
 
-#creaciones
+# --- creaciones
 
 #dinamic attribute
-da_color = Attribute("color","color","enum")
+da_color = Attribute(key="color",name="color",data_type="enum")
 da_color.add_enum_value("rojo")
 da_color.add_enum_value("azul")
 da_color.add_enum_value("amarillo")
 #static attribute
-peso = Attribute("peso_g","peso (g)","number",is_static=True)
-material = Attribute("material","material","enum",is_static=True)
+peso = Attribute(key="peso_g",name="peso (g)",data_type="number",is_static=True)
+material = Attribute(key="material",name="material",data_type="enum",is_static=True)
 material.add_enum_value("acero")
 material.add_enum_value("oro")
 material.add_enum_value("plata")
@@ -27,8 +27,21 @@ casio_x82 = Product(code="x82asdaf",
                     description="blablabla",
                     brand="casio",
                     attributes=[peso,da_color],
+                    category=categoria,
                     attributes_implementations=[AttributeImplementation(attribute=peso,value="237")]
                     )  
-casio_x82.create_variant_by_implementations()
+# creamos variantes
+casio_x82.create_variant_by_implementations(implementations=[AttributeImplementation(da_color,"rojo")])
+casio_x82.create_variant_by_implementations(implementations=[AttributeImplementation(da_color,"azul")])
 
-#eliminaciones 
+# --- persistencia
+AttributeRepo().save(da_color)
+AttributeRepo().save(peso)
+AttributeRepo().save(material)
+CategoryRepo().save(categoria)
+ProductRepo().save(casio_x82)
+
+producto=ProductRepo().read_by_code("x82asdaf")
+
+
+# --- eliminaciones 

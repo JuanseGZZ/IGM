@@ -34,6 +34,36 @@ class Attribute:
         else:
             raise ValueError("Tipo de dato no reconocido.")
 
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "key": self.key,
+            "name": self.name,
+            "data_type": self.data_type,
+            "is_static": self.is_static,
+            "enum_values": [
+                ev.to_json() if hasattr(ev, "to_json") else ev
+                for ev in self.enum_values
+            ]
+        }
+
+    @classmethod
+    def from_json(cls, data: dict):
+        obj = cls(
+            key=data.get("key"),
+            name=data.get("name"),
+            data_type=data.get("data_type"),
+            id=data.get("id"),
+            is_static=data.get("is_static", False)
+        )
+
+        obj.enum_values = [
+            EnumValue.from_json(ev) if isinstance(ev, dict) else ev
+            for ev in data.get("enum_values", [])
+        ]
+
+        return obj
+
 class Category:
     def __init__(self, name:str, id:int=None, attributes: list = None):
         self.id = id
@@ -44,19 +74,90 @@ class Category:
         if attribute not in self.attributes:
             self.attributes.append(attribute)
 
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "name": self.name,
+            "attributes": [
+                attr.to_json() if hasattr(attr, "to_json") else attr
+                for attr in self.attributes
+            ]
+        }
+
+    @classmethod
+    def from_json(cls, data: dict):
+        attributes = [
+            Attribute.from_json(attr) if isinstance(attr, dict) else attr
+            for attr in data.get("attributes", [])
+        ]
+
+        return cls(
+            name=data.get("name"),
+            id=data.get("id"),
+            attributes=attributes
+        )
+
 class AttributeImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
     def __init__(self, attribute:Attribute, value:str, id:int = None):
         self.id = id
         self.attribute = attribute # objeto Attribute referencia.
         self.value = value
 
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "attribute": self.attribute.to_json() if self.attribute else None,
+            "value": self.value
+        }
+
+    @classmethod
+    def from_json(cls, data: dict):
+        attribute_data = data.get("attribute")
+
+        attribute = (
+            Attribute.from_json(attribute_data)
+            if isinstance(attribute_data, dict)
+            else attribute_data
+        )
+
+        return cls(
+            attribute=attribute,
+            value=data.get("value"),
+            id=data.get("id")
+        )
+
 class Variant: # hereda todas las propiedades por asociacion con el producto, y implementa obligatoriamente los atributos del producto y de la categoria.
     def __init__(self, attribute_implementations, id=None,):
         self.id = id
         self.attribute_implementations = attribute_implementations # lista de objetos AttributeImplementation, implementamos atributos no staticos, es decir, los que no se muestran como informacion del producto, sino que son opciones para elegir.
 
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "attribute_implementations": [
+                ai.to_json() if hasattr(ai, "to_json") else ai
+                for ai in self.attribute_implementations
+            ]
+        }
+
+    @classmethod
+    def from_json(cls, data: dict):
+        attribute_implementations = [
+            AttributeImplementation.from_json(ai) if isinstance(ai, dict) else ai
+            for ai in data.get("attribute_implementations", [])
+        ]
+
+        return cls(
+            attribute_implementations=attribute_implementations,
+            id=data.get("id")
+        )
+
 class Product:
     def __init__(self, code:str, title:str, price:float, description:str,brand:str, id:int = None, category: Category = None,attributes_implementations: list = None, attributes: list = None, variants: list = None):
+        #agregar los otros ifs de los obligatorios
+        if category is None:
+            raise ValueError("Product must have a category") 
+        
         self.id = id
         self.code = code
         self.title = title
@@ -67,6 +168,66 @@ class Product:
         self.attributes_implementations = attributes_implementations or [] # implementaciones de atributos estaticos
         self.attributes = attributes or [] # lista de objetos Attribute
         self.variants = variants or [] # lista de objetos Variant
+
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "code": self.code,
+            "title": self.title,
+            "price": self.price,
+            "description": self.description,
+            "brand": self.brand,
+            "category": self.category.to_json() if self.category else None,
+            "attributes_implementations": [
+                ai.to_json() if hasattr(ai, "to_json") else ai
+                for ai in self.attributes_implementations
+            ],
+            "attributes": [
+                attr.to_json() if hasattr(attr, "to_json") else attr
+                for attr in self.attributes
+            ],
+            "variants": [
+                v.to_json() if hasattr(v, "to_json") else v
+                for v in self.variants
+            ]
+        }
+
+    @classmethod
+    def from_json(cls, data: dict):
+        category_data = data.get("category")
+        category = (
+            Category.from_json(category_data)
+            if isinstance(category_data, dict)
+            else category_data
+        )
+
+        attributes_implementations = [
+            AttributeImplementation.from_json(ai) if isinstance(ai, dict) else ai
+            for ai in data.get("attributes_implementations", [])
+        ]
+
+        attributes = [
+            Attribute.from_json(attr) if isinstance(attr, dict) else attr
+            for attr in data.get("attributes", [])
+        ]
+
+        variants = [
+            Variant.from_json(v) if isinstance(v, dict) else v
+            for v in data.get("variants", [])
+        ]
+
+        return cls(
+            code=data.get("code"),
+            title=data.get("title"),
+            price=data.get("price"),
+            description=data.get("description"),
+            brand=data.get("brand"),
+            id=data.get("id"),
+            category=category,
+            attributes_implementations=attributes_implementations,
+            attributes=attributes,
+            variants=variants
+        )
 
     def add_attribute(self, attribute:Attribute): 
         if attribute not in self.attributes and attribute not in self.category.attributes:
@@ -101,7 +262,7 @@ class Product:
                 attributes.append(attr)
         return attributes
 
-    def create_variant_by_implementations(self,implementations:AttributeImplementation): # crea en base a implementaciones
+    def create_variant_by_implementations(self,implementations:list[AttributeImplementation]): # crea en base a implementaciones
         variant = Variant(attribute_implementations=[])
         # chequeamos que las implementaciones sean las necesarias
         if len(implementations) != len(self.get_needed_atributes_implementations()):
@@ -115,7 +276,7 @@ class Product:
         self.add_variant(variant=variant)
         return variant
 
-    def add_variant_implementation(self,variant:Variant,attribute_implementation:list[AttributeImplementation]):
+    def add_variant_implementation(self,variant:Variant,attribute_implementation:AttributeImplementation):
         # verificar que el atributo no sea estatico
         if attribute_implementation.attribute.is_static:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' es estático y no puede ser implementado en una variante.")
@@ -169,4 +330,6 @@ def testing():
 
     producto.create_variant_by_implementations(implementations=implementaciones)
 
-#testing()
+    print(producto.to_json())
+
+testing()

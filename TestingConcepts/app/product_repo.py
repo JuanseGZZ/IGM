@@ -183,6 +183,22 @@ class ProductRepo(CrudBase[Product]):
         product.variants = cls._load_variants(product)
         return product
 
+
+    @classmethod
+    def read_by_code(cls, code: str) -> Product | None:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT id, code, title, price, description, brand, category_id
+                FROM product
+                WHERE code = %s
+                """,
+                (code,),
+            )
+            row = cur.fetchone()
+
+        return cls._row_to_obj(row)
+
     @classmethod
     def save(cls, obj: Product) -> Product:
         saved = super().save(obj)
