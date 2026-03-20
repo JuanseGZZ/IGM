@@ -237,27 +237,51 @@ class Product:
         if variant not in self.variants:
             self.variants.append(variant)
 
-    def add_attribute_implementation(self, attribute_implementation:AttributeImplementation):
-        if not attribute_implementation.attribute.is_static:
-            raise ValueError("Estas intentando meter un atributo dinamico como implementacion estatica")
-        # verificar si el atributo ya esta implementado
-        for impl in self.attributes_implementations:
-            if impl.attribute.key == attribute_implementation.attribute.key:
-                raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto")
-        
-        #verificar que sea un atributo del producto o de la categoria
-        attribute_key = attribute_implementation.attribute.key
-
+    def _check_implementation(self, attr_impl:AttributeImplementation): #mixed
+        # verificar que el valor sea valido segun el tipo de dato
+        if not attr_impl.attribute.check_value(attr_impl.value):
+            raise ValueError(f"El valor '{attr_impl.value}' no es válido para el atributo '{attr_impl.attribute.name}'.")
+        # verificar que el atributo este definido en el producto o en la categoria
+        attribute_key = attr_impl.attribute.key
         in_product_attributes = any(attr.key == attribute_key for attr in self.attributes)
         in_category_attributes = any(attr.key == attribute_key for attr in self.category.attributes)
         if not in_product_attributes and not in_category_attributes:
             raise ValueError("El atributo a implementar no esta asociado a la categoria o al producto")
+        return True
 
-        # verificar que el valor sea valido segun el tipo de dato
-        if not attribute_implementation.attribute.check_value(attribute_implementation.value):
-            raise ValueError(f"El valor '{attribute_implementation.value}' no es válido para el atributo {attribute_implementation.attribute.name}'.")
+    def add_product_implementation(self, attribute_implementation:AttributeImplementation):
+        if not attribute_implementation.attribute.is_static:
+            raise ValueError("Estas intentando meter un atributo dinamico como implementacion estatica")
+
+        # chequeamos tipo de dato y que esta en attributs del producto o categoria
+        try: 
+            self._check_implementation(attr_impl=attribute_implementation)
+        except ValueError as error:
+            print(error)    
+
+        # verificar si el atributo ya esta implementado en el producto
+        for impl in self.attributes_implementations:
+            if impl.attribute.key == attribute_implementation.attribute.key:
+                raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto")
+
         self.attributes_implementations.append(attribute_implementation)
 
+    def add_variant_implementation(self,variant:Variant,attribute_implementation:AttributeImplementation):
+        # verificar que el atributo no sea estatico
+        if attribute_implementation.attribute.is_static:
+            raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' es estático y no puede ser implementado en una variante.")
+
+        # chequeamos tipo de dato y que esta en attributs del producto o categoria
+        try: 
+            self._check_implementation(attr_impl=attribute_implementation)
+        except ValueError as error:
+            print(error) 
+
+        #verificar que el atributo no este ya implementado en la variante
+        for impl in variant.attribute_implementations:
+            if impl.attribute.key == attribute_implementation.attribute.key:
+                raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado en esta variante.")
+        variant.attribute_implementations.append(attribute_implementation)
 
     # da los atributos necesario que requeriria una variante o producto depende del parametro
     def get_needed_atributes_implementations(self, is_static:bool=False): 
@@ -284,21 +308,6 @@ class Product:
         self.add_variant(variant=variant)
         return variant
 
-    def add_variant_implementation(self,variant:Variant,attribute_implementation:AttributeImplementation):
-        # verificar que el atributo no sea estatico
-        if attribute_implementation.attribute.is_static:
-            raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' es estático y no puede ser implementado en una variante.")
-        # verificar que el atributo este definido en el producto o en la categoria
-        if attribute_implementation.attribute not in self.attributes and attribute_implementation.attribute not in self.category.attributes:
-            raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' no está definido para el producto '{self.product.title}'.")
-        # verificar que el valor sea valido segun el tipo de dato
-        if not attribute_implementation.attribute.check_value(attribute_implementation.value):
-            raise ValueError(f"El valor '{attribute_implementation.value}' no es válido para el atributo '{attribute_implementation.attribute.name}'.")
-        #verificar que el atributo no este ya implementado en la variante
-        for impl in variant.attribute_implementations:
-            if impl.attribute == attribute_implementation.attribute:
-                raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado en esta variante.")
-        variant.attribute_implementations.append(attribute_implementation)
 
 #como va a viajar la informacion?
 # la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.

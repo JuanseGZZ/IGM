@@ -90,7 +90,7 @@ producto = ProductRepo().read(16)
 
 #producto.attributes.clear()
 #producto.attributes_implementations.clear()
-producto.add_attribute_implementation(
+producto.add_product_implementation(
     AttributeImplementation(
         attribute=atributo,
         value="oro"
