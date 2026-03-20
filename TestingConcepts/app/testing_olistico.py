@@ -45,10 +45,20 @@ db_categoria=CategoryRepo().save(categoria)
 categoria.id=db_categoria.id
 
 
-#ProductRepo().save(casio_x82)
+ProductRepo().save(casio_x82)
 
 producto=ProductRepo().read_by_code("x82asdaf")
 import json
 print(json.dumps(producto.to_json(), indent=4, ensure_ascii=False))
 
 # --- eliminaciones 
+#ProductRepo.delete(producto.id)
+
+# --- notas
+# esta creando muchas veces los enum values.
+# no crea product atributes
+# no crea product implementations
+# variants y implement de las variants andan.
+# no crea atributos en categoria
+# categoria si las crea
+# las implementaciones se crean solo las dinamicas
