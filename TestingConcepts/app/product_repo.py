@@ -198,6 +198,23 @@ class ProductRepo(CrudBase[Product]):
     def _save_variants(cls, product: Product):
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(
+                """
+                SELECT DISTINCT vi.atr_imp_id
+                FROM variant v
+                JOIN variant_implementation vi ON vi.variant_id = v.id
+                WHERE v.product_id = %s
+                """,
+                (product.id,),
+            )
+            old_implementation_rows = cur.fetchall()
+
+            for row in old_implementation_rows:
+                cur.execute(
+                    "DELETE FROM atr_implementation WHERE id = %s",
+                    (row["atr_imp_id"],),
+                )
+
+            cur.execute(
                 "DELETE FROM variant WHERE product_id = %s",
                 (product.id,),
             )

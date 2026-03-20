@@ -55,7 +55,7 @@ def test_creaciones():
 #ProductRepo.delete(producto.id)
 
 # --- notas
-# duplica implementaciones en variante, no elimina bien.
+# models no tiene en cuenta que ya existe una implementacion igual.
 
 def testutilizacionCate(): # chequeado anda categorias.
     categorias = CategoryRepo().bring_all()
@@ -88,13 +88,15 @@ producto = ProductRepo().read(16)
 #producto.add_attribute(attribute=atributo) // chequeado, anda el atribut asossiation
 #saved = ProductRepo().save(producto)
 
+#producto.attributes.clear()
+#producto.attributes_implementations.clear()
 producto.add_attribute_implementation(
     AttributeImplementation(
         attribute=atributo,
         value="oro"
         )
     )
-#producto.attributes.clear()
+
 saved = ProductRepo().save(producto)
 
 print(json.dumps(saved.to_json(), indent=4, ensure_ascii=False))

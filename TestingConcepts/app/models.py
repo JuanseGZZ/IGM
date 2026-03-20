@@ -242,7 +242,7 @@ class Product:
             raise ValueError("Estas intentando meter un atributo dinamico como implementacion estatica")
         # verificar si el atributo ya esta implementado
         for impl in self.attributes_implementations:
-            if impl.attribute == attribute_implementation.attribute:
+            if impl.attribute.key == attribute_implementation.attribute.key:
                 raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto")
         
         #verificar que sea un atributo del producto o de la categoria
