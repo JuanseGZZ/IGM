@@ -127,3 +127,18 @@ class CrudBase(Generic[T]):
     @classmethod
     def query(cls, *args, **kwargs):
         raise NotImplementedError("Aca despues podes agregar queries dinamicas")
+
+    @classmethod
+    def bring_all(cls) -> list[T]:
+        if not cls.TABLE:
+            raise ValueError("TABLE no definido")
+    
+        q = sql.SQL("SELECT * FROM {table}").format(
+            table=sql.Identifier(cls.TABLE)
+        )
+    
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(q)
+            rows = cur.fetchall()
+    
+        return [cls._row_to_obj(row) for row in rows]
