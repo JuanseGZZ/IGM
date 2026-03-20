@@ -57,8 +57,6 @@ def test_creaciones():
 # --- notas
 # no crea product atributes implementations.
 # variants y implement de las variants andan.
-# no crea atributos en categoria
-# categoria si las crea
 # las implementaciones se crean solo las dinamicas
 
 def testutilizacion():
