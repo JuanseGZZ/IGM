@@ -3,3 +3,4 @@
 * stock
 * multi category o category non functional (solo de nombre)
 - agregar diferencial de precio por variante contra su producto o otras variantes.
+- agregar marcas como objeto

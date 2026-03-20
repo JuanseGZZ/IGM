@@ -104,7 +104,7 @@ class Product:
     def create_variant_by_implementations(self,implementations:AttributeImplementation): # crea en base a implementaciones
         variant = Variant(attribute_implementations=[])
         # chequeamos que las implementaciones sean las necesarias
-        if len(implementaciones) != len(self.get_needed_atributes_implementations()):
+        if len(implementations) != len(self.get_needed_atributes_implementations()):
             return None
         try:
             for impl in implementations:
@@ -115,7 +115,7 @@ class Product:
         self.add_variant(variant=variant)
         return variant
 
-    def add_variant_implementation(self,variant:Variant,attribute_implementation:AttributeImplementation):
+    def add_variant_implementation(self,variant:Variant,attribute_implementation:list[AttributeImplementation]):
         # verificar que el atributo no sea estatico
         if attribute_implementation.attribute.is_static:
             raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' es estático y no puede ser implementado en una variante.")
@@ -143,19 +143,19 @@ def testing():
     atributo.add_enum_value("43")
     categoria = Category(name="Zapatillas")
     categoria.add_attribute(attribute=atributo)
-    
+
     #creo atributo estatico
     atributoStatic = Attribute(key="peso_g",name="peso (g)",data_type="number",is_static=True)
-    
+
     #creo producto y le agrego su static, ademas va a heredar el dinamic(variant atribute) del category.
     producto = Product(code="asd22f3f",title="shordan",price=1200,description="amazin",brand="nike",category=categoria)
     producto.add_attribute(attribute=atributoStatic)
-    
+
     #implementamos el static
     product_implementation = AttributeImplementation(attribute=atributoStatic,value="350")
     producto.add_attribute_implementation(attribute_implementation=product_implementation)
     #aca deberiamos poner el mismo add dinamico que tengo en variant
-    
+
     #creamos variant
     necesidades_variante = producto.get_needed_atributes_implementations(is_static=False)
     implementaciones = []
@@ -163,9 +163,10 @@ def testing():
         print(attr_necesario.name)
         valor = input(">:")
         implementaciones.append(AttributeImplementation(attribute=attr_necesario,value=valor))
-    
+
     for i in implementaciones:
         print(f"{i.attribute.name} -> {i.value}")
-    
+
     producto.create_variant_by_implementations(implementations=implementaciones)
 
+#testing()
