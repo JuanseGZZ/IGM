@@ -13,3 +13,8 @@ to do:
 
 a mejorar en refactor:
 - los atributos al cargar que verifique que la key no exista. Si existe que remplase.
+- si quita o pone atributos en category o products tiene que avisar o gestionar dinamicamente los cambios
+{
+    Si saca o pone en category -> avisar de eliminar de las variantes de los productos o agregarselo a todos los products que heredaban antes, o cancelar la accion, y si pone va a tener que agregarselo a todas las variants de todos los products.
+    Si saca o pone en product -> avisar que va a tener que ponerselo a cada variant del product o se eliminara de todas las variants ese atributo, o cancelar.
+} Basicamente el diseño de categories y atributs es CRITICO.
