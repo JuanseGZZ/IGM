@@ -3,5 +3,8 @@ from product_repo import ProductRepo
 from category_repo import CategoryRepo
 from attributes_repo import AttributeRepo
 
+#creaciones
 
 
+
+#eliminaciones 

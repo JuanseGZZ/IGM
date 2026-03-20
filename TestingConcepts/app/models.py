@@ -135,36 +135,37 @@ class Product:
 # la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.
 
 # ---------------------- testing
-
-#creo atributos y categorias
-atributo = Attribute(key="Talle",name="talle",data_type="enum")
-atributo.add_enum_value("41")
-atributo.add_enum_value("42")
-atributo.add_enum_value("43")
-categoria = Category(name="Zapatillas")
-categoria.add_attribute(attribute=atributo)
-
-#creo atributo estatico
-atributoStatic = Attribute(key="peso_g",name="peso (g)",data_type="number",is_static=True)
-
-#creo producto y le agrego su static, ademas va a heredar el dinamic(variant atribute) del category.
-producto = Product(code="asd22f3f",title="shordan",price=1200,description="amazin",brand="nike",category=categoria)
-producto.add_attribute(attribute=atributoStatic)
-
-#implementamos el static
-product_implementation = AttributeImplementation(attribute=atributoStatic,value="350")
-producto.add_attribute_implementation(attribute_implementation=product_implementation)
-
-#creamos variant
-necesidades_variante = producto.get_needed_atributes_implementations(is_static=False)
-implementaciones = []
-for attr_necesario in necesidades_variante:
-    print(attr_necesario.name)
-    valor = input(">:")
-    implementaciones.append(AttributeImplementation(attribute=attr_necesario,value=valor))
-
-for i in implementaciones:
-    print(f"{i.attribute.name} -> {i.value}")
-
-producto.create_variant_by_implementations(implementations=implementaciones)
+def testing():
+    #creo atributos y categorias
+    atributo = Attribute(key="Talle",name="talle",data_type="enum")
+    atributo.add_enum_value("41")
+    atributo.add_enum_value("42")
+    atributo.add_enum_value("43")
+    categoria = Category(name="Zapatillas")
+    categoria.add_attribute(attribute=atributo)
+    
+    #creo atributo estatico
+    atributoStatic = Attribute(key="peso_g",name="peso (g)",data_type="number",is_static=True)
+    
+    #creo producto y le agrego su static, ademas va a heredar el dinamic(variant atribute) del category.
+    producto = Product(code="asd22f3f",title="shordan",price=1200,description="amazin",brand="nike",category=categoria)
+    producto.add_attribute(attribute=atributoStatic)
+    
+    #implementamos el static
+    product_implementation = AttributeImplementation(attribute=atributoStatic,value="350")
+    producto.add_attribute_implementation(attribute_implementation=product_implementation)
+    #aca deberiamos poner el mismo add dinamico que tengo en variant
+    
+    #creamos variant
+    necesidades_variante = producto.get_needed_atributes_implementations(is_static=False)
+    implementaciones = []
+    for attr_necesario in necesidades_variante:
+        print(attr_necesario.name)
+        valor = input(">:")
+        implementaciones.append(AttributeImplementation(attribute=attr_necesario,value=valor))
+    
+    for i in implementaciones:
+        print(f"{i.attribute.name} -> {i.value}")
+    
+    producto.create_variant_by_implementations(implementations=implementaciones)
 

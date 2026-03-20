@@ -18,3 +18,4 @@ a mejorar en refactor:
     Si saca o pone en category -> avisar de eliminar de las variantes de los productos o agregarselo a todos los products que heredaban antes, o cancelar la accion, y si pone va a tener que agregarselo a todas las variants de todos los products.
     Si saca o pone en product -> avisar que va a tener que ponerselo a cada variant del product o se eliminara de todas las variants ese atributo, o cancelar.
 } Basicamente el diseño de categories y atributs es CRITICO.
+- modificar los repositorios, meterles cache, por ejemplo si salvo un objeto que salven solo lo que tenga cambios.
