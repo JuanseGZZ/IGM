@@ -9,6 +9,8 @@ to do:
 - plantear todos los casos para prod_repo.
 - implementar las funciones en prod_repo.
 
+>: creeria que esta bien, ahora si iria a hacer front y luego ir agregando mas cosas.
+- faltaria modificar variantes. y me imagino que mas cosas pero mientras vaya haciendo front ire viendo.
 
 
 a mejorar en refactor:

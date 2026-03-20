@@ -1,6 +1,7 @@
 #modelo de jerarquia de atributos
 DataTypes = ["text", "number", "boolean", "enum"]
 
+# Buenas parcticas locales
 # text y number son simbre de producto
 # boolean es siempre de variante
 # enum puede ser de producto o de variante, si es de producto se muestra como info, si es de variante se muestra como una opcion para elegir.
