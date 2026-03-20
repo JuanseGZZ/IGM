@@ -19,3 +19,5 @@ a mejorar en refactor:
     Si saca o pone en product -> avisar que va a tener que ponerselo a cada variant del product o se eliminara de todas las variants ese atributo, o cancelar.
 } Basicamente el diseño de categories y atributs es CRITICO.
 - modificar los repositorios, meterles cache, por ejemplo si salvo un objeto que salven solo lo que tenga cambios.
+
+- implementar dtos

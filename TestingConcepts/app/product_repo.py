@@ -108,7 +108,6 @@ class ProductRepo(CrudBase[Product]):
 
             variant = Variant(
                 id=row["id"],
-                product=product,
                 attribute_implementations=implementations,
             )
 

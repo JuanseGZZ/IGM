@@ -35,13 +35,20 @@ casio_x82.create_variant_by_implementations(implementations=[AttributeImplementa
 casio_x82.create_variant_by_implementations(implementations=[AttributeImplementation(da_color,"azul")])
 
 # --- persistencia
-AttributeRepo().save(da_color)
-AttributeRepo().save(peso)
-AttributeRepo().save(material)
-CategoryRepo().save(categoria)
-ProductRepo().save(casio_x82)
+db_color = AttributeRepo().save(da_color)
+da_color.id = db_color.id
+db_peso=AttributeRepo().save(peso)
+peso.id = db_peso.id
+db_material=AttributeRepo().save(material)
+material.id = db_material.id
+db_categoria=CategoryRepo().save(categoria)
+categoria.id=db_categoria.id
+
+
+#ProductRepo().save(casio_x82)
 
 producto=ProductRepo().read_by_code("x82asdaf")
-
+import json
+print(json.dumps(producto.to_json(), indent=4, ensure_ascii=False))
 
 # --- eliminaciones 

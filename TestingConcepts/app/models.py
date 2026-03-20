@@ -330,6 +330,8 @@ def testing():
 
     producto.create_variant_by_implementations(implementations=implementaciones)
 
-    print(producto.to_json())
+    import json
 
-testing()
+    print(json.dumps(producto.to_json(), indent=4, ensure_ascii=False))
+
+#testing()
