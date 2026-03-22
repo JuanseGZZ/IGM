@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IGM Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    #sidebar {
+      width: 220px;
+      min-height: 100vh;
+      position: fixed;
+      top: 0; left: 0;
+      background: #212529;
+      z-index: 100;
+    }
+    #main-content {
+      margin-left: 220px;
+      padding: 28px 32px;
+    }
+    .nav-link { color: #adb5bd; border-radius: 6px; }
+    .nav-link.active, .nav-link:hover { color: #fff; background: #343a40; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #e9ecef; border-radius: 20px;
+      padding: 2px 10px; font-size: 0.82rem; margin: 2px;
+    }
+  </style>
+</head>
+<body class="bg-light">
+
+<!-- Sidebar -->
+<div id="sidebar" class="d-flex flex-column p-3">
+  <div class="text-white fw-bold fs-5 mb-4 px-1">
+    <i class="bi bi-boxes me-2 text-primary"></i>IGM
+  </div>
+  <nav class="nav flex-column gap-1">
+    <a class="nav-link px-3 py-2" href="#" id="nav-attributes" data-section="attributes">
+      <i class="bi bi-tag me-2"></i>Atributos
+    </a>
+    <a class="nav-link px-3 py-2" href="#" id="nav-categories" data-section="categories">
+      <i class="bi bi-folder me-2"></i>Categorías
+    </a>
+    <a class="nav-link px-3 py-2" href="#" id="nav-products" data-section="products">
+      <i class="bi bi-box-seam me-2"></i>Productos
+    </a>
+  </nav>
+  <div class="mt-auto text-muted small px-1" style="font-size:.75rem">
+    <i class="bi bi-arrow-right-circle me-1"></i>Atributos → Categorías → Productos
+  </div>
+</div>
+
+<!-- Main content -->
+<div id="main-content">
+
+  <!-- Attributes section -->
+  <div id="section-attributes" class="section">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="mb-0">Atributos</h4>
+        <small class="text-muted">Propiedades que se asignan a categorías y productos.</small>
+      </div>
+      <button class="btn btn-primary" id="btn-new-attribute">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo Atributo
+      </button>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div id="attributes-list" class="p-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Categories section -->
+  <div id="section-categories" class="section d-none">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="mb-0">Categorías</h4>
+        <small class="text-muted">Agrupan productos y definen sus atributos base.</small>
+      </div>
+      <button class="btn btn-primary" id="btn-new-category">
+        <i class="bi bi-plus-lg me-1"></i>Nueva Categoría
+      </button>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div id="categories-list" class="p-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Products section -->
+  <div id="section-products" class="section d-none">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h4 class="mb-0">Productos</h4>
+        <small class="text-muted">Catálogo completo con variantes y atributos.</small>
+      </div>
+      <button class="btn btn-primary" id="btn-new-product">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo Producto
+      </button>
+    </div>
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div id="products-list" class="p-3"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Generic form modal -->
+<div class="modal fade" id="formModal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="formModalTitle">Formulario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="formModalBody"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btn-form-submit">
+          <i class="bi bi-check-lg me-1"></i>Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Product detail modal -->
+<div class="modal fade" id="productDetailModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="productDetailTitle">Producto</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="productDetailBody"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast notifications -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="appToast" class="toast align-items-center border-0" role="alert" aria-live="assertive">
+    <div class="d-flex">
+      <div class="toast-body fw-semibold" id="toastMessage"></div>
+      <button type="button" class="btn-close me-2 m-auto btn-close-white" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="models.js"></script>
+<script src="dtos.js"></script>
+<script src="apis.js"></script>
+<script src="renders.js"></script>
+<script src="events.js"></script>
+</body>
+</html>

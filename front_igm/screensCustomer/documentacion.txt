@@ -1,0 +1,500 @@
+================================================================================
+                    DOCUMENTACION DEL PROYECTO - TuEcom SaaS
+                    screensCustomer - Frontend Customer Interface
+                    Fecha: 2026-03-22
+================================================================================
+
+DESCRIPCION GENERAL
+-------------------
+Interfaz frontend de la plataforma SaaS "TuEcom", orientada al cliente final.
+Permite crear y gestionar tiendas online por suscripcion.
+Stack: HTML5 + Bootstrap 5 + JavaScript Vanilla
+Persistencia: localStorage (sin backend conectado, datos de prueba)
+Autenticacion: guard client-side via auth.js
+
+
+================================================================================
+ESTRUCTURA DE ARCHIVOS
+================================================================================
+
+screensCustomer/
+├── auth.js                         Modulo de autenticacion y guards
+├── index.html                      Landing page + modal de auth
+├── account.html                    Hub de cuenta de usuario
+├── dshb.shops.html                 Listado y gestion de tiendas
+├── dshb.manage.html                Dashboard principal de tienda (4 tabs)
+├── subcription.html                Seleccion de plan y creacion de tienda
+├── payments.html                   Historial de pagos y transacciones
+├── dshb.payment.success.html       Pantalla de pago exitoso
+├── dshb.payment.failure.html       Pantalla de pago fallido
+└── documentacion.txt               Este archivo
+
+
+================================================================================
+FLUJO DE NAVEGACION
+================================================================================
+
+index.html (landing + auth)
+  ├─> account.html              (usuario logueado)
+  └─> subcription.html          (crear tienda desde landing)
+
+account.html (hub de usuario)
+  ├─> dshb.shops.html           (gestionar tiendas)
+  └─> payments.html             (ver historial de pagos)
+
+dshb.shops.html (listado de tiendas)
+  ├─> subcription.html          (agregar nueva tienda)
+  └─> dshb.manage.html          (gestionar tienda individual)
+
+dshb.manage.html (dashboard de tienda)
+  └─ 4 tabs: Productos, Pedidos, Estadisticas, Campanas
+
+subcription.html (seleccion de plan)
+  ├─> dshb.payment.success.html (pago exitoso)
+  └─> dshb.payment.failure.html (pago fallido)
+
+dshb.payment.success.html / dshb.payment.failure.html
+  └─> index.html                (redireccion automatica en 10 segundos)
+
+
+================================================================================
+DETALLE DE CADA ARCHIVO
+================================================================================
+
+--------------------------------------------------------------------------------
+1. auth.js
+--------------------------------------------------------------------------------
+Tipo:       JavaScript utilitario
+Tamano:     ~2 KB
+
+Descripcion:
+  Modulo de autenticacion client-side. Protege paginas privadas y gestiona
+  el estado de sesion mediante localStorage.
+
+Funciones exportadas:
+  isLogged()
+    Devuelve true/false segun si existe la clave "logged" en localStorage.
+
+  redirectToIndex()
+    Redirige el navegador a index.html.
+
+  ensureLogoutInNav()
+    Inserta o muestra el item "Cerrar sesion" en el navbar si el usuario
+    esta logueado. Si no esta logueado, lo oculta.
+
+  guardPrivatePages()
+    Verifica autenticacion al cargar la pagina. Si el usuario no esta
+    logueado y la pagina actual no es index.html, redirige a index.html.
+
+Evento:
+  Se ejecuta completo en DOMContentLoaded.
+
+Notas:
+  - La autenticacion es exclusivamente client-side (sin validacion backend).
+  - La clave "logged" en localStorage se establece en index.html al hacer login.
+  - No hay tokens JWT ni sesiones seguras; es un prototipo UI.
+
+
+--------------------------------------------------------------------------------
+2. index.html
+--------------------------------------------------------------------------------
+Tipo:       HTML - Landing Page principal
+Tamano:     ~40 KB
+
+Descripcion:
+  Pagina de entrada de la plataforma. Incluye marketing, precios, formulario
+  de alta y el modal de autenticacion (login/registro).
+
+Secciones (por id):
+  #home     Hero con headline y CTA buttons + preview de tienda demo
+  #how      "Como funciona" - 3 pasos: Crear cuenta / Cargar productos / Publicar
+  #benefits Beneficios con iconos y tabla comparativa de planes
+  #costs    Tarjetas de precios: Free / Standard / Shop / Enterprise
+  #who      Descripcion del equipo y contacto
+  #make     Formulario de alta de cuenta de ecommerce
+
+Modal de autenticacion (authModal):
+  Tab Login:    Campos email + contrasena, boton "Ingresar"
+  Tab Register: Campos nombre + email + contrasena, boton "Registrarse"
+  Logica:       Guarda usuario en localStorage["user"] y localStorage["logged"]
+
+Scripts inline:
+  - Auto-inserta el ano actual en el footer
+  - Colapsa el navbar en mobile al hacer click en un link
+  - Maneja login/registro con localStorage
+
+Planes de precios mostrados:
+  Free:       $0      | hasta 9 productos
+  Standard:   $X/mes  | hasta 100 productos, estadisticas, emails (100/sem)
+  Shop:       $Y/mes  | hasta 500 productos, campanas avanzadas, emails (1000/sem)
+  Enterprise: Custom  | 600+ productos, emails ilimitados, analitica con IA
+
+Dependencias:
+  Bootstrap 5.3.3 CSS + JS
+  Bootstrap Icons 1.11.3
+  auth.js
+
+
+--------------------------------------------------------------------------------
+3. account.html
+--------------------------------------------------------------------------------
+Tipo:       HTML - Hub de cuenta de usuario
+Tamano:     ~4 KB
+
+Descripcion:
+  Pantalla principal del usuario autenticado. Muestra datos de perfil y
+  sirve como hub de navegacion hacia las demas secciones del dashboard.
+
+Contenido:
+  - Nombre: Juan Perez (datos hardcodeados de prueba)
+  - Cuenta de cobro: Mercado Pago ID shop_123456
+  - Boton "Mis Tiendas"  -> dshb.shops.html
+  - Boton "Mis Pagos"    -> payments.html
+
+Dependencias:
+  Bootstrap 5.3.3
+  Bootstrap Icons 1.11.3
+  auth.js (guard de pagina privada)
+
+Notas:
+  Los datos del usuario son estaticos. Requiere conexion a backend para
+  mostrar datos reales del usuario logueado.
+
+
+--------------------------------------------------------------------------------
+4. dshb.shops.html
+--------------------------------------------------------------------------------
+Tipo:       HTML - Listado de tiendas
+Tamano:     ~5 KB
+
+Descripcion:
+  Muestra las tiendas del usuario en tarjetas. Permite agregar nuevas tiendas
+  o acceder a la gestion de cada una.
+
+Tarjetas de tienda (datos de prueba):
+  - Urban Sneakers    | Plan: Standard
+  - Minimal Home Store | Plan: Free
+
+Acciones por tarjeta (dropdown):
+  Cambiar nombre    (sin implementar)
+  Eliminar          (sin implementar)
+  Suscripcion       (sin implementar)
+  Gestionar         -> dshb.manage.html?shop_id=XXX
+
+Boton principal:
+  "+ Agregar tienda" -> subcription.html
+
+Dependencias:
+  Bootstrap 5.3.2
+  auth.js (guard de pagina privada)
+
+Notas:
+  - El dropdown tiene z-index ajustado para correcta superposicion.
+  - Los datos de tiendas son estaticos (mock).
+
+
+--------------------------------------------------------------------------------
+5. dshb.manage.html
+--------------------------------------------------------------------------------
+Tipo:       HTML - Dashboard principal de tienda
+Tamano:     ~53 KB (archivo mas grande del proyecto)
+
+Descripcion:
+  Panel de administracion completo de una tienda. Organizado en 4 tabs
+  con toda la funcionalidad de gestion.
+
+Parametro URL:
+  ?shop_id=XXX   El ID de la tienda se muestra como badge en el navbar.
+
+--- TAB 1: PRODUCTOS ---
+  Formulario de producto:
+    Campos: ID, Titulo, Precio, Descripcion, Foto (upload)
+    Boton "Guardar producto" (disabled, sin implementar)
+
+  Tabla de productos (mock):
+    Columnas: ID | Titulo | Precio | Descripcion | Foto | Acciones
+    Productos de prueba: Coca Cola, Hamburguesa, Papas fritas
+    Botones Editar/Eliminar: disabled
+
+--- TAB 2: PEDIDOS ---
+  Filtros:
+    - Estado: Todos / Pendiente / Confirmado / Enviado / Entregado / Cancelado
+    - Email del cliente (campo de texto)
+    - Boton "Filtrar" (disabled)
+
+  Lista de pedidos (accordion - mock):
+    Pedido #001 | Pendiente   | $12,500  | Ana Lopez
+    Pedido #002 | Confirmado  | $8,750   | Carlos Ruiz
+    Pedido #003 | Enviado     | $23,000  | Marta Gonzalez
+    Cada pedido expandible muestra tabla de items con subtotales.
+
+  Acciones por pedido (disabled):
+    Marcar como pagado, Cancelar, Ver, Reembolsar
+
+--- TAB 3: ESTADISTICAS ---
+  KPIs principales:
+    Total facturado: $185,400
+    Total pedidos:   342
+    Tasa conversion: 3.8%
+    Unidades vendidas: 1,247
+
+  Visualizaciones:
+    - Grafico de ventas: barras de altura variable (CSS inline, 12 meses)
+    - Estado de pedidos: progress bars (Entregados 68%, Enviados 18%,
+                         Pendientes 9%, Cancelados 5%)
+    - Top productos: tabla con unidades, ingresos y porcentaje
+    - Segmento de clientes: Nuevos 42% / Recurrentes 58% (progress bars)
+
+--- TAB 4: CAMPANAS ---
+  Formulario de campana:
+    Campos: ID, Nombre, Tipo (% descuento), Codigo, Objetivo,
+            Fecha inicio/fin, Max usos
+    Boton "Crear campana" (disabled)
+
+  Tabla de campanas (mock):
+    VERANO2026 | 15% desc. | Activa  | 847 usos | $234,500 ingresos
+    BIENVENIDO | 20% desc. | Activa  | 234 usos | $89,200  ingresos
+    NAVIDAD25  | 25% desc. | Expirada| 1,203 usos | $567,800 ingresos
+
+  Simulador de impacto:
+    Selector de campana + campo precio original -> calcula precio con descuento
+
+  Tarjeta de rendimiento:
+    Ingresos generados, Pedidos atribuidos, Ticket promedio, Tasa de uso
+
+Dependencias:
+  Bootstrap 5.3.3
+  auth.js (guard de pagina privada)
+
+Notas:
+  La mayoria de botones estan disabled. Todos los datos son mock.
+  Es la pantalla mas compleja del proyecto.
+
+
+--------------------------------------------------------------------------------
+6. subcription.html
+--------------------------------------------------------------------------------
+Tipo:       HTML - Seleccion de plan y creacion de tienda
+Tamano:     ~6 KB
+
+Descripcion:
+  Formulario de dos columnas para crear una nueva tienda y seleccionar
+  el plan de suscripcion.
+
+Columna izquierda (formulario):
+  - Campo: Nombre de la tienda
+  - Select: Plan (Free / Standard / Shop / Enterprise)
+  - Range slider: Solo visible para Enterprise (601 a 100,000 productos)
+  - Display precio calculado
+  - Boton "Atras" -> dshb.shops.html
+  - Boton "Ir a pagar" -> (link en el boton, no en form action)
+
+Columna derecha (resumen):
+  - Nombre de tienda seleccionado
+  - Plan seleccionado (badge)
+  - Cantidad de productos (para Enterprise)
+  - Precio calculado
+
+Script inline:
+  Muestra/oculta el range slider segun el plan seleccionado.
+  Actualiza el display de precio y el resumen en tiempo real.
+
+Dependencias:
+  Bootstrap 5.3.2
+
+Notas:
+  El boton de pago contiene links embebidos (patron poco recomendado).
+  Requiere integracion con pasarela de pago real.
+
+
+--------------------------------------------------------------------------------
+7. payments.html
+--------------------------------------------------------------------------------
+Tipo:       HTML - Historial de pagos
+Tamano:     ~10 KB
+
+Descripcion:
+  Muestra el historial de transacciones del usuario con resumen y tabla
+  detallada.
+
+Tarjetas de resumen:
+  Total compras:         12
+  Total gastado:         $185,400
+  Ultima compra:         2026-03-01
+
+Tabla de transacciones (mock):
+  Columnas: Fecha | ID Pedido | Tienda | Items | Total | Estado | Accion
+  Estados posibles:
+    Pagado     -> badge success (verde)
+    Pendiente  -> badge warning (amarillo)
+    Rechazado  -> badge danger  (rojo)
+  Boton "Ver detalle": disabled en todos los registros
+
+Datos de prueba (5 transacciones):
+  2026-03-01 | PED-2024-001 | Urban Sneakers    | 3 items | $12,500  | Pagado
+  2026-02-15 | PED-2024-002 | Minimal Home Store| 1 item  | $8,750   | Pagado
+  2026-02-01 | PED-2024-003 | Urban Sneakers    | 2 items | $23,000  | Pendiente
+  2026-01-20 | PED-2024-004 | Minimal Home Store| 4 items | $45,200  | Pagado
+  2026-01-05 | PED-2024-005 | Urban Sneakers    | 1 item  | $6,800   | Rechazado
+
+Dependencias:
+  Bootstrap 5.3.3
+  Bootstrap Icons 1.11.3
+
+Notas:
+  Todos los datos son estaticos (mock). Requiere API de backend.
+
+
+--------------------------------------------------------------------------------
+8. dshb.payment.success.html
+--------------------------------------------------------------------------------
+Tipo:       HTML - Confirmacion de pago exitoso
+Tamano:     ~2 KB
+
+Descripcion:
+  Pantalla de feedback positivo post-pago. Redirige automaticamente al home.
+
+Contenido:
+  - Icono de exito (check verde)
+  - Titulo: "Pago realizado correctamente"
+  - Subtitulo: "Tu suscripcion fue activada con exito"
+  - Contador regresivo: "Seras redirigido en X segundos"
+  - Boton manual: "Volver al inicio" -> index.html
+
+Script inline:
+  setInterval de 1000ms que decrementa un contador desde 10.
+  Al llegar a 0 ejecuta window.location.href = "index.html"
+
+Dependencias:
+  Bootstrap 5.3.2
+
+
+--------------------------------------------------------------------------------
+9. dshb.payment.failure.html
+--------------------------------------------------------------------------------
+Tipo:       HTML - Pantalla de pago fallido
+Tamano:     ~2 KB
+
+Descripcion:
+  Pantalla de feedback negativo post-pago. Identico en estructura al de exito.
+
+Contenido:
+  - Icono de error (X roja)
+  - Titulo: "El pago no pudo procesarse"
+  - Subtitulo: "Ocurrio un error durante la transaccion"
+  - Contador regresivo: identico al de exito (10 segundos)
+  - Boton manual: "Volver al inicio" -> index.html
+
+Script inline:
+  Identico al de dshb.payment.success.html
+
+Dependencias:
+  Bootstrap 5.3.2
+
+
+================================================================================
+DEPENDENCIAS EXTERNAS
+================================================================================
+
+Bootstrap 5.3.3
+  CSS:  https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css
+  JS:   https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js
+  Uso:  index.html, account.html, dshb.manage.html, payments.html
+
+Bootstrap 5.3.2
+  CSS:  https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css
+  JS:   https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js
+  Uso:  dshb.shops.html, subcription.html, dshb.payment.success.html,
+        dshb.payment.failure.html
+
+Bootstrap Icons 1.11.3
+  CSS:  https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css
+  Uso:  index.html, account.html, dshb.manage.html, payments.html
+
+Nota: Hay inconsistencia de versiones entre Bootstrap 5.3.2 y 5.3.3 en el proyecto.
+
+
+================================================================================
+ESTADO ACTUAL DEL PROYECTO
+================================================================================
+
+IMPLEMENTADO (funcional):
+  [x] Estructura de navegacion entre pantallas
+  [x] Guard de autenticacion client-side (auth.js)
+  [x] Modal de login/registro con localStorage
+  [x] UI completa de todas las pantallas
+  [x] Redireccion automatica en pantallas de pago
+  [x] Range slider dinamico en subcription.html
+  [x] Tabs del dashboard (dshb.manage.html)
+
+PENDIENTE / SIN IMPLEMENTAR:
+  [ ] Conexion a backend / API REST
+  [ ] Login/registro real con base de datos
+  [ ] Carga y gestion real de productos
+  [ ] Sistema de pedidos funcional
+  [ ] Graficos y estadisticas reales
+  [ ] Campanas con logica real
+  [ ] Integracion con pasarela de pago (ej: Mercado Pago)
+  [ ] Subida real de imagenes de productos
+  [ ] Filtros funcionales en pedidos
+  [ ] Botones habilitados en tablas (editar, eliminar, ver detalle)
+  [ ] Datos de usuario dinamicos (actualmente hardcodeados)
+
+
+================================================================================
+CONSIDERACIONES DE SEGURIDAD
+================================================================================
+
+ADVERTENCIAS IMPORTANTES (para cuando se implemente backend):
+
+1. AUTENTICACION CLIENT-SIDE INSEGURA
+   Actualmente el estado de sesion se guarda en localStorage["logged"].
+   Cualquier usuario puede modificar este valor desde la consola del navegador
+   y saltear el guard. Implementar autenticacion con JWT o sesiones de servidor.
+
+2. CONTRASENAS EN TEXTO PLANO
+   El formulario de registro guarda el objeto usuario (incluyendo contrasena)
+   directamente en localStorage. Nunca almacenar contrasenas en texto plano.
+   Usar hashing en el servidor (bcrypt, argon2, etc).
+
+3. VALIDACION SOLO EN CLIENTE
+   Todos los formularios solo tienen validacion de UI. Siempre validar y
+   sanitizar los datos en el servidor.
+
+4. CREDENCIALES EXPUESTAS
+   Los datos del usuario pueden leerse facilmente desde DevTools > Application
+   > localStorage. No almacenar datos sensibles en localStorage en produccion.
+
+
+================================================================================
+PATRONES DE DISENO UTILIZADOS
+================================================================================
+
+Modal Pattern:
+  Modal de Bootstrap para login/registro en index.html.
+  Evita redireccion a pagina separada de auth.
+
+Tab Pattern:
+  Bootstrap nav-tabs en dshb.manage.html para separar
+  Productos / Pedidos / Estadisticas / Campanas.
+
+Accordion Pattern:
+  Bootstrap accordion en la lista de pedidos para
+  mostrar/ocultar el detalle de cada orden.
+
+Guard Pattern:
+  auth.js actua como middleware de ruta: si no hay sesion
+  y la pagina no es index.html, redirige al landing.
+
+Card Pattern:
+  Uso consistente de Bootstrap cards para mostrar
+  tiendas, KPIs, transacciones y planes de precios.
+
+Countdown Redirect Pattern:
+  dshb.payment.success.html y failure.html usan setInterval
+  para redirigir con contador visible al usuario.
+
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
