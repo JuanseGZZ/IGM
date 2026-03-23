@@ -84,6 +84,35 @@ class Attribute_factory:
     def clear(cls):
         cls._instances.clear()
 
+class AttributeImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
+    def __init__(self, attribute:Attribute, value:str, id:int = None):
+        self.id = id
+        self.attribute = attribute # objeto Attribute referencia.
+        self.value = value
+
+    def to_json(self) -> dict:
+        return {
+            "id": self.id,
+            "attribute": self.attribute.to_json() if self.attribute else None,
+            "value": self.value
+        }
+
+    @classmethod
+    def from_json(cls, data: dict):
+        attribute_data = data.get("attribute")
+
+        attribute = (
+            Attribute.from_json(attribute_data)
+            if isinstance(attribute_data, dict)
+            else attribute_data
+        )
+
+        return cls(
+            attribute=attribute,
+            value=data.get("value"),
+            id=data.get("id")
+        )
+
 class Category:
     def __init__(self, 
         name:str, 
@@ -106,17 +135,63 @@ class Category:
             attributes += self.father_categorie.get_attributes()
         return attributes
 
+    # busca recursivamente para arriba si esta un attibut espesifico
+    def attribute_look_up(self,attribute:Attribute):
+        #si lo tengo retorno true
+        for i in self.attributes:
+            if i.key == attribute.key:
+                return True
+        #si no tengo padre y no lo tengo retorno false
+        if self.father_categorie == None:
+            return False
+        #si no lo tengo pero tengo padre se lo piedo a mi padre y retorno lo que me diga
+        return self.father_categorie.attribute_look_up(attribute=attribute)
+            
+
+    def add_attribute_check_family_impact(self,
+        attribute:Attribute,
+        is_static:bool=False
+        ):
+        #miramos si aca o arriba esta el attributo
+        if self.attribute_look_up(attribute=attribute):
+            # si esta le respondemos que no necesita nada.
+            return None
+        pass
+    
+    def del_attribute_check_family_impact(self,
+        attribute:Attribute,
+        is_static:bool=False
+        ):
+        pass
+
     def add_categorie(self,categorie:Category):
         # no puede tener productos si quiere tener categorias
+        # tiene que revisar que
         pass
 
     def del_categorie(self,categorie:Category):
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
         pass
 
-    def add_attribute(self, attribute:Attribute):
+    def add_dinamic_attribute(self, 
+        attribute:Attribute,
+        product_variant_implementations):
+        #[{"producto_id":[{"variant_id":"implementation_value"}]}]
         # debe verificar que no este, y ademas pedir data de variantes para aplicar los cambios.
-        self.attributes.append(attribute)
+        # si algun ancestro lo tiene 
+        if not self.add_attribute_check_family_impact(attribute=attribute):
+            # y no lo tengo yo
+            if not self.attributes.index(attribute):
+                # lo agrego
+                self.attributes.append(attribute)
+            # retorno que no es necesario nada que se incorporo.
+            return {}
+
+        pass
+
+    def add_static_attribute(self, attribute:Attribute, implementations):
+        pass
+            
 
     def del_attribute(self, attibute:Attribute):
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
@@ -152,35 +227,6 @@ class Category:
             name=data.get("name"),
             id=data.get("id"),
             attributes=attributes
-        )
-
-class AttributeImplementation: # esta clase representa la implementacion de un atributo, lo va a contener toda variant que le competa
-    def __init__(self, attribute:Attribute, value:str, id:int = None):
-        self.id = id
-        self.attribute = attribute # objeto Attribute referencia.
-        self.value = value
-
-    def to_json(self) -> dict:
-        return {
-            "id": self.id,
-            "attribute": self.attribute.to_json() if self.attribute else None,
-            "value": self.value
-        }
-
-    @classmethod
-    def from_json(cls, data: dict):
-        attribute_data = data.get("attribute")
-
-        attribute = (
-            Attribute.from_json(attribute_data)
-            if isinstance(attribute_data, dict)
-            else attribute_data
-        )
-
-        return cls(
-            attribute=attribute,
-            value=data.get("value"),
-            id=data.get("id")
         )
 
 class Variant: # hereda todas las propiedades por asociacion con el producto, y implementa obligatoriamente los atributos del producto y de la categoria.
@@ -242,7 +288,10 @@ class Product:
         attributes += self.category.get_attributes()
         return attributes
 
-    def add_attribute(self,attribute:Attribute,variant_options:list = None):
+    def add_dinamic_attribute(self,
+        attribute:Attribute,
+        variant_options:list = None,
+        ):
         # variant_options[{ "variant_id": "value" },...] struct que llega.
         #debe verificar que no este, y ademas pedir data de variantes para aplicar los cambios.
         # pedimos atributos purgados
@@ -289,7 +338,30 @@ class Product:
         self.attributes.append(attribute)
         return True
 
-    
+    def add_static_attribute(self,
+        attribute:Attribute,
+        implementation:AttributeImplementation
+        ):
+        # verifica que el value sea correcto.
+        attribute.check_value(implementation.value)
+        # verifica que exista la subscripcion.
+        thereis = False
+        for a in self.get_needed_atributes_implementations(is_static=True):
+            if a.key == attribute.key:
+                thereis = True
+                break
+        if thereis:
+            #verifica que la implementacion no sea repetida, redundante pero por las dudas
+            for i in self.attributes_implementations:
+                if i.attribute.key == implementation.attribute.key:
+                    raise ValueError("La implementacion ya esta hecha")
+
+            # agrega la implementacion
+            self.attributes_implementations.append(implementation)
+            return True
+
+        return False
+
     def del_attribute():
         #verificar que no joda porque la ancestros contienen ese attribute.
         pass
