@@ -157,7 +157,7 @@ class Category:
             # si esta le respondemos que no necesita nada.
             return None
         pass
-    
+
     def del_attribute_check_family_impact(self,
         attribute:Attribute,
         is_static:bool=False
@@ -501,6 +501,16 @@ class Product:
         # por ultimo agregamos la variante
         varian = Variant(attribute_implementations=implementations)
         self._add_variant(variant=varian)
+
+    # helpers para category add and del attributes
+
+    def get_add_attribute_impact(self, attribute: Attribute) -> dict | None:
+        # si ya lo tiene, no impacta
+        for a in self.get_attributes():
+            if a.key == attribute.key:
+                return None
+    # si no lo tiene, devuelve sus variant ids listos para appendear
+    return { self.id: [v.id for v in self.variants] }
 
 
 #como va a viajar la informacion?
