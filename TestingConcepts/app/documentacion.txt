@@ -1,0 +1,25 @@
+Este es un modulo de gestion de productos y atributos dinamicos, para un saas donde uno arma la seccion de atributos y se cargan los filtros y los selectores dinamicamente, para ello implementaremos el sistema de variantes y la herencia de responsabilidades.
+
+responsabilidades: 
+Las categorias suscriben atributos, los productos suscriben categorias o/y a atributos, pero, los atributos que tiene la categoria que suscribio un producto son responsabilidad heredada, es decir, las variantes que implementen estos productos van a tener la responsabilidad de implementar los atributos del producto y de la categoria que implemento el dicho producto. 
+El sistema tiene que gestionar, y lo hace, que no hayan colisiones de atributos, es decir un producto no puede implementar un atributo que implementa su categoria, y si lo hace, la variante lo tiene que reflejar como un solo atributo a implementar, en la practica no deja implementar atributos que ya tiene la clase. (hay un problema que es que si el producto suscribe a un atributo y luego a una categoria puede colisionar dado que no esta pensado para eso). en la practica ese error no pasa porque al crear un producto se le debe asignar una categoria antes que nada.
+
+Como antes mencione una variante, habria que definirla, la misma es una seleccion de valor posible para cada atributo implementados por el producto y heredados de la clase, es decir si en total un producto tiene 3 atributos dianamicos,quizas 1 por la categoria y 2 por el producto, entonces 3 valores seran seleccionados de todos los posibles, y ese estado se le va a llamar variante de producto.
+
+Tambien como acabo de mencionar hay atributos estaticos y atributos dinamicos, los dinamicos son todos aquellos que implementan las variables, son selecciones posibles de un producto, como por ejemplo el color de una remera si hay de 3 tipos tistintos, eso quiere decir que hay 3 variantes distintas, y ese atributo es dinamico para el producto, ahora tambien tenemos atributos estaticos, es decir un atributo que va a ser igual para todas las variantes, como puede ser la tela de esa remera, para todas a va ser algodor, entonces no es un atributo selectivo, es un atributo informativo, y se va a renderizar de otra manera.
+
+Resumiendo, tenemos atributos dinamicos y estaticos, los cuales los pueden suscribir las categorias o los productos y los mismos son implementado por el producto si es estatico y por las variantes si son dinamicas.
+
+Tipos de datos para los atributos: Vamos atener los siguientes tipos de datos ["text", "number", "boolean", "enum"], lo cuales van a agregar practicas como patron local que nos aporta combencion y estructura funcional, los atributos text y number van a ser atributos siempre de producto, siempre estaticos, los atributos booleanos van a ser siempre dinamicos o de variante, y los enum, que son listas de opciones, pueden ser estaticos o dinamicos, obviamente a considerar por el administrador del sistema, pero por comvencion va a ser asi, dado a que es mas estructurado y sirve para cualquier caso de la mejor manera.
+Por otro lado estan los renderizados por tipo de tipo de dato, estos se ve mejor en una tabla
+- type                  - filter                                    - render product 
+-bool                   -> toggle                                   - toggle
+-text                   -> serch                                    - data info
+-number                 -> range or between                         - data info
+- enum(m)(static)       -> data info                                - data info
+- enum(1)(static)       -> data info                                - data info
+- enum(m)(dinamic)      -> select list                              - select
+- enum(1)(dinamic)      -> select list                              - select unico en verde el resto en gris
+
+Select list es el nombre del atributo y un list debajo de las opciones que queres que aparezcan(en filter).
+Select en render es una lista pero solo podes seleccionar uno, al ser una variante. 
