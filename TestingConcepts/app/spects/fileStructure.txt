@@ -1,0 +1,12 @@
+En el back:
+la de toda la vida pero un poco resumida.
+api <-> dtos <-> service <-> repository 
+
+En el front:
+
+Events -> service
+service <-> dtos <-> apis
+service -> models
+service -> renders
+Donde service es llamado por events cuando ocurre algo, si es necesario llama a apis pasando le data y recibiendo data por medio de dtos, luego pasa esa data a models, luego hace logica de negocio o simplemente renderiza en renders.
+Sino es necesario llamar a apis simplemente hace logica de negocio o renderiza.
