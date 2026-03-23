@@ -1,9 +1,10 @@
 En el back:
 la de toda la vida pero un poco resumida.
-api <-> dtos <-> service <-> repository 
+api <-> dtos <-> service <-> repository <-> models
+service <-> models
+Donde service recive dtos, los pasa a models y se los pasa a repository, o pide directamente a repository transforma a dtos y pasa respuesta a api, o simplemente aplica logica de negocio. 
 
 En el front:
-
 Events -> service
 service <-> dtos <-> apis
 service -> models
