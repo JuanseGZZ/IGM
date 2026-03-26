@@ -54,22 +54,7 @@ class Attribute:
             ]
         }
 
-    @classmethod
-    def from_json(cls, data: dict):
-        obj = cls(
-            key=data.get("key"),
-            name=data.get("name"),
-            data_type=data.get("data_type"),
-            id=data.get("id"),
-            is_static=data.get("is_static", False)
-        )
 
-        obj.enum_values = [
-            EnumValue.from_json(ev) if isinstance(ev, dict) else ev
-            for ev in data.get("enum_values", [])
-        ]
-
-        return obj
 
 class Attribute_factory:
     _instances: dict = {}
@@ -309,6 +294,7 @@ class Product:
         #hago un set con las id de las variantes y con los id pasado en variant options
         #agregando los id en variant variant_options_id verifico que no haya id duplicados, si los hay retorno false
         # ids de las variantes que tiene el producto
+        variant_options_id = set()
         variants_id = {v.id for v in self.variants}
         # ids que llegan en variant_options, chequeando duplicados
         for opt in variant_options:
@@ -323,7 +309,7 @@ class Product:
         # verificamos valores y tipado
         try:
             for vo in variant_options:
-                attribute.check_value(va["value"])
+                attribute.check_value(vo["value"])
         except ValueError as error:
             print(error)
             return False
@@ -509,8 +495,8 @@ class Product:
         for a in self.get_attributes():
             if a.key == attribute.key:
                 return None
-    # si no lo tiene, devuelve sus variant ids listos para appendear
-    return { self.id: [v.id for v in self.variants] }
+        # si no lo tiene, devuelve sus variant ids listos para appendear
+        return { self.id: [v.id for v in self.variants] }
 
 
 #como va a viajar la informacion?
