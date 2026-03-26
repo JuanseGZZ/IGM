@@ -110,6 +110,7 @@ class Category:
         self.id = id
         self.name = name
         self.attributes = attributes or [] # lista de objetos Attribute
+        self._attribute_keys = {a.key for a in self.attributes}
         self.subcategories = subcategories or [] # lista de subcategorias
         self.father_categorie = father_categorie or None # categoria padre
         self.products = products = products or [] # lista de productos que estan con esta categoria
@@ -123,16 +124,31 @@ class Category:
     # busca recursivamente para arriba si esta un attibut espesifico
     def attribute_look_up(self,attribute:Attribute):
         #si lo tengo retorno true
-        for i in self.attributes:
-            if i.key == attribute.key:
-                return True
+        if attribute.key in self._attribute_keys:
+            return True
         #si no tengo padre y no lo tengo retorno false
         if self.father_categorie == None:
             return False
         #si no lo tengo pero tengo padre se lo piedo a mi padre y retorno lo que me diga
         return self.father_categorie.attribute_look_up(attribute=attribute)
-            
 
+    def attribute_look_down(self, attribute:Attribute):
+        #miro que soy, si una categoria padre de categorias o de productos
+        # lo hago recursivo en padre de categoria, y lo hago retornate en padre de productos
+        # chequeo que tenga el attributo y corto busqueda
+        if attribute.key in self._attribute_keys:
+            return []
+        # si no tengo el attributo busco hijos
+        products = []
+        if len(self.subcategories) > 0:
+            for c in self.subcategories: #recorremos todas las categorias hijo llamando recursivamente a sus busquedas
+                products.extend(c.attribute_look_down(attribute=attribute))
+            return products
+        if len(self.products) > 0:
+            return list(self.products)
+        # si no hay nada retornamos nada
+        return []
+            
     def add_attribute_check_family_impact(self,
         attribute:Attribute,
         is_static:bool=False
@@ -141,22 +157,10 @@ class Category:
         if self.attribute_look_up(attribute=attribute):
             # si esta le respondemos que no necesita nada.
             return None
-        pass
-
-    def del_attribute_check_family_impact(self,
-        attribute:Attribute,
-        is_static:bool=False
-        ):
-        pass
-
-    def add_categorie(self,categorie:Category):
-        # no puede tener productos si quiere tener categorias
-        # tiene que revisar que
-        pass
-
-    def del_categorie(self,categorie:Category):
-        # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
-        pass
+        # si no hay nadie que lo cubra miramos para abajo a quien perjudicamos
+        products = self.attribute_look_down(attribute=attribute)
+        for p in products:
+            p.is_attribute_in(attribute=attribute)
 
     def add_dinamic_attribute(self, 
         attribute:Attribute,
@@ -171,14 +175,28 @@ class Category:
                 self.attributes.append(attribute)
             # retorno que no es necesario nada que se incorporo.
             return {}
-
-        pass
+        else: # hay impacto y algo tienen que agregar
+            pass
 
     def add_static_attribute(self, attribute:Attribute, implementations):
         pass
-            
+
+    def del_attribute_check_family_impact(self,
+        attribute:Attribute,
+        is_static:bool=False
+        ):
+        pass
 
     def del_attribute(self, attibute:Attribute):
+        # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
+        pass
+
+    def add_categorie(self,categorie:Category):
+        # no puede tener productos si quiere tener categorias
+        # tiene que revisar que
+        pass
+
+    def del_categorie(self,categorie:Category):
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
         pass
 
@@ -266,7 +284,11 @@ class Product:
         self.category = category
         self.attributes_implementations = attributes_implementations or [] # implementaciones de atributos estaticos
         self.attributes = attributes or [] # lista de objetos Attribute
+        self._attribute_keys = {a.key for a in self.attributes}
         self.variants = variants or [] # lista de objetos Variant
+
+    def is_attribute_in(self, attribute: Attribute):
+        return attribute.key in self._attribute_keys
 
     def get_attributes(self):
         attributes = self.attributes.copy()
@@ -289,6 +311,7 @@ class Product:
                 break
         if thereis:
             self.attributes.append(attribute)
+            self._attribute_keys.add(attribute.key)
             return True
         # si no esta debemos checkear que datos necesito y efectuar si es valido
         #hago un set con las id de las variantes y con los id pasado en variant options
@@ -322,6 +345,7 @@ class Product:
             variant.attribute_implementations.append(impl)
 
         self.attributes.append(attribute)
+        self._attribute_keys.add(attribute.key)
         return True
 
     def add_static_attribute(self,
