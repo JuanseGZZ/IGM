@@ -122,7 +122,7 @@ class Category:
         return attributes
 
     # busca recursivamente para arriba si esta un attibut espesifico
-    def attribute_look_up(self,attribute:Attribute):
+    def add_attribute_look_up(self,attribute:Attribute):
         #si lo tengo retorno true
         if attribute.key in self._attribute_keys:
             return True
@@ -132,7 +132,7 @@ class Category:
         #si no lo tengo pero tengo padre se lo piedo a mi padre y retorno lo que me diga
         return self.father_categorie.attribute_look_up(attribute=attribute)
 
-    def attribute_look_down(self, attribute:Attribute):
+    def add_attribute_look_down(self, attribute:Attribute):
         #miro que soy, si una categoria padre de categorias o de productos
         # lo hago recursivo en padre de categoria, y lo hago retornate en padre de productos
         # chequeo que tenga el attributo y corto busqueda
@@ -151,16 +151,18 @@ class Category:
             
     def add_attribute_check_family_impact(self,
         attribute:Attribute,
-        is_static:bool=False
         ):
         #miramos si aca o arriba esta el attributo
-        if self.attribute_look_up(attribute=attribute):
+        if self.add_attribute_look_up(attribute=attribute):
             # si esta le respondemos que no necesita nada.
             return None
         # si no hay nadie que lo cubra miramos para abajo a quien perjudicamos
-        products = self.attribute_look_down(attribute=attribute)
+        products = self.add_attribute_look_down(attribute=attribute)
+        products_in_risk = []
         for p in products:
-            p.is_attribute_in(attribute=attribute)
+            if not p.is_attribute_in(attribute=attribute):
+                products_in_risk.append(p)
+        return products_in_risk
 
     def add_dinamic_attribute(self, 
         attribute:Attribute,
@@ -283,6 +285,7 @@ class Product:
         self.brand = brand
         self.category = category
         self.attributes_implementations = attributes_implementations or [] # implementaciones de atributos estaticos
+        self._impl_keys = {i.attribute.key for i in self.attributes_implementations}
         self.attributes = attributes or [] # lista de objetos Attribute
         self._attribute_keys = {a.key for a in self.attributes}
         self.variants = variants or [] # lista de objetos Variant
@@ -303,13 +306,8 @@ class Product:
         #debe verificar que no este, y ademas pedir data de variantes para aplicar los cambios.
         # pedimos atributos purgados
         needed_attributes = self.get_needed_atributes_implementations()
-        # recocrremos en busca del que queremos integrar
-        thereis = False
-        for a in needed_attributes:
-            if a.key == attribute.key:
-                thereis = True
-                break
-        if thereis:
+        needed_keys = {a.key for a in needed_attributes}
+        if attribute.key in needed_keys:
             self.attributes.append(attribute)
             self._attribute_keys.add(attribute.key)
             return True
@@ -355,19 +353,15 @@ class Product:
         # verifica que el value sea correcto.
         attribute.check_value(implementation.value)
         # verifica que exista la subscripcion.
-        thereis = False
-        for a in self.get_needed_atributes_implementations(is_static=True):
-            if a.key == attribute.key:
-                thereis = True
-                break
-        if thereis:
+        needed_keys = {a.key for a in self.get_needed_atributes_implementations(is_static=True)}
+        if attribute.key in needed_keys:
             #verifica que la implementacion no sea repetida, redundante pero por las dudas
-            for i in self.attributes_implementations:
-                if i.attribute.key == implementation.attribute.key:
-                    raise ValueError("La implementacion ya esta hecha")
+            if implementation.attribute.key in self._impl_keys:
+                raise ValueError("La implementacion ya esta hecha")
 
             # agrega la implementacion
             self.attributes_implementations.append(implementation)
+            self._impl_keys.add(implementation.attribute.key)
             return True
 
         return False
@@ -450,27 +444,23 @@ class Product:
         try: 
             self._check_implementation(attr_impl=attribute_implementation)
         except ValueError as error:
-            return False
             print(error)    
+            return False
 
         # verificar si el atributo ya esta implementado en el producto
-        for impl in self.attributes_implementations:
-            if impl.attribute.key == attribute_implementation.attribute.key:
-                raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto")
+        if attribute_implementation.attribute.key in self._impl_keys:
+            raise ValueError(f"El atributo '{attribute_implementation.attribute.name}' ya está implementado para este producto")
 
         self.attributes_implementations.append(attribute_implementation)
+        self._impl_keys.add(attribute_implementation.attribute.key)
 
     def _check_implementation(self, attr_impl:AttributeImplementation): #mixed
         # verificar que el valor sea valido segun el tipo de dato
         if not attr_impl.attribute.check_value(attr_impl.value):
             raise ValueError(f"El valor '{attr_impl.value}' no es válido para el atributo '{attr_impl.attribute.name}'.")
         # verificar que el atributo este definido en el producto o en la categoria
-        needed_attibutes = self.get_needed_atributes_implementations(is_static=True)
-        thereis = False
-        for a in needed_attibutes:
-            if attr_impl.attribute.key == a.key:
-                thereis = True
-        if not thereis:
+        needed_keys = {a.key for a in self.get_needed_atributes_implementations(is_static=True)}
+        if attr_impl.attribute.key not in needed_keys:
             raise ValueError(f"La implimentacion es de un attributo que no se encuentra subscripto.")
         return True
         
@@ -516,9 +506,8 @@ class Product:
 
     def get_add_attribute_impact(self, attribute: Attribute) -> dict | None:
         # si ya lo tiene, no impacta
-        for a in self.get_attributes():
-            if a.key == attribute.key:
-                return None
+        if self.is_attribute_in(attribute):
+            return None
         # si no lo tiene, devuelve sus variant ids listos para appendear
         return { self.id: [v.id for v in self.variants] }
 
