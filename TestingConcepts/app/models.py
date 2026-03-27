@@ -162,6 +162,7 @@ class Category:
                 products_in_risk.append(p)
         return products_in_risk
 
+    # dividir esto en add_dinamic_attribute_check y add_dinamic_attribute para poder reutilizar el check en add_categorie
     def add_dinamic_attribute(self, 
         attribute:Attribute,
         product_variant_implementations):
