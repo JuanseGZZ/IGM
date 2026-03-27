@@ -1,6 +1,5 @@
 #modelo de jerarquia de atributos
 DataTypes = ["text", "number", "boolean", "enum"]
-
 # Buenas parcticas locales
 # text y number son simbre de producto
 # boolean es siempre de variante
@@ -119,7 +118,7 @@ class Category:
             attributes += self.father_categorie.get_attributes()
         return attributes
 
-    # busca recursivamente para arriba si esta un attibut espesifico
+    # busca recursivamente para arriba si esta un attibute espesifico
     def _add_attribute_look_up(self,attribute:Attribute):
         #si lo tengo retorno true
         if attribute.key in self._attribute_keys:
@@ -130,6 +129,7 @@ class Category:
         #si no lo tengo pero tengo padre se lo piedo a mi padre y retorno lo que me diga
         return self.father_categorie._add_attribute_look_up(attribute=attribute)
 
+    # busca para a bajo el attr
     def _add_attribute_look_down(self, attribute:Attribute):
         #miro que soy, si una categoria padre de categorias o de productos
         # lo hago recursivo en padre de categoria, y lo hago retornate en padre de productos
@@ -250,8 +250,67 @@ class Category:
         self._attribute_keys.add(attribute.key)
         return {}
 
+    def _add_static_impact_check(self, attribute:Attribute, implementations):
+        #[{"product_id": id, "value": value}]
+        impact = self._add_attribute_product_check_family_impact(attribute=attribute)
+
+        if impact is None:
+            return None
+
+        if not impact:
+            if attribute.key not in self._attribute_keys:
+                self.attributes.append(attribute)
+                self._attribute_keys.add(attribute.key)
+            return {}
+
+        # verificamos cobertura exacta de productos, sin duplicados
+        impact_product_ids = {p.id for p in impact}
+        impl_product_ids = set()
+        for entry in implementations:
+            pid = entry["product_id"]
+            if pid in impl_product_ids:
+                return impact  # product_id duplicado
+            impl_product_ids.add(pid)
+
+        if impact_product_ids != impl_product_ids:
+            return impact
+
+        impact_map = {p.id: p for p in impact}
+        pending = []  # (product, AttributeImplementation)
+
+        for entry in implementations:
+            product = impact_map[entry["product_id"]]
+            try:
+                if not attribute.check_value(entry["value"]):
+                    return impact
+            except ValueError:
+                return impact
+            impl = AttributeImplementation(attribute=attribute, value=entry["value"])
+            pending.append((product, impl))
+
+        return pending
+
+    # pide productos
     def add_static_attribute(self, attribute:Attribute, implementations):
-        pass
+        #[{"product_id": id, "value": value}]
+        if not attribute.is_static:
+            raise ValueError("El atributo que se quiere insertar no es estatico")
+
+        pending = self._add_static_impact_check(attribute=attribute, implementations=implementations)
+
+        if pending is None or isinstance(pending, dict):
+            return {}
+
+        if pending and isinstance(pending[0], Product):
+            return pending
+
+        for product, impl in pending:
+            product.attributes_implementations.append(impl)
+            product._impl_keys.add(impl.attribute.key)
+
+        self.attributes.append(attribute)
+        self._attribute_keys.add(attribute.key)
+        return {}
 
     def del_attribute_check_family_impact(self,
         attribute:Attribute,
@@ -702,3 +761,53 @@ def test():
     )
     print("resultado (esperado lista con prod4):", result4)
     print("attr_material en cat4 (esperado False):", attr_material.key in cat4. _attribute_keys)
+
+    print()
+    print("=== TEST 5 (static): caso feliz ===")
+    attr_descripcion = Attribute(key="descripcion", name="Descripcion", data_type="text", id=5, is_static=True)
+    cat5 = Category(name="Accesorios", id=14, attributes=[])
+    prod5 = Product(code="P005", title="Cinturon", price=50.0, description="desc", brand="Zara",
+                    id=5, category=cat5, variants=[])
+    prod6 = Product(code="P006", title="Cartera", price=80.0, description="desc", brand="Zara",
+                    id=6, category=cat5, variants=[])
+    cat5.products = [prod5, prod6]
+
+    result5 = cat5.add_static_attribute(
+        attribute=attr_descripcion,
+        implementations=[
+            {"product_id": 5, "value": "Cinturon de cuero"},
+            {"product_id": 6, "value": "Cartera de lona"},
+        ]
+    )
+    print("resultado (esperado {}):", result5)
+    print("attr_descripcion en cat5:", attr_descripcion.key in cat5._attribute_keys)
+    print("impl prod5:", [(i.attribute.key, i.value) for i in prod5.attributes_implementations])
+    print("impl prod6:", [(i.attribute.key, i.value) for i in prod6.attributes_implementations])
+
+    print()
+    print("=== TEST 6 (static): valor invalido ===")
+    attr_peso = Attribute(key="peso", name="Peso", data_type="number", id=6, is_static=True)
+    cat6 = Category(name="Herramientas", id=15, attributes=[])
+    prod7 = Product(code="P007", title="Martillo", price=30.0, description="desc", brand="Stanley",
+                    id=7, category=cat6, variants=[])
+    cat6.products = [prod7]
+
+    result6 = cat6.add_static_attribute(
+        attribute=attr_peso,
+        implementations=[
+            {"product_id": 7, "value": "no es un numero"},  # tipo incorrecto
+        ]
+    )
+    print("resultado (esperado lista con prod7):", result6)
+    print("attr_peso en cat6 (esperado False):", attr_peso.key in cat6._attribute_keys)
+
+    print()
+    print("=== TEST 7 (static): atributo no estatico ===")
+    attr_dinamico = Attribute(key="dinamico", name="Dinamico", data_type="text", id=7, is_static=False)
+    try:
+        cat5.add_static_attribute(attribute=attr_dinamico, implementations=[])
+        print("ERROR: deberia haber lanzado excepcion")
+    except ValueError as e:
+        print("excepcion correcta:", e)
+
+test()
