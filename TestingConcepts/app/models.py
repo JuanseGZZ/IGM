@@ -128,7 +128,7 @@ class Category:
         if self.father_categorie == None:
             return False
         #si no lo tengo pero tengo padre se lo piedo a mi padre y retorno lo que me diga
-        return self.father_categorie.attribute_look_up(attribute=attribute)
+        return self.father_categorie.add_attribute_look_up(attribute=attribute)
 
     def add_attribute_look_down(self, attribute:Attribute):
         #miro que soy, si una categoria padre de categorias o de productos
@@ -140,7 +140,7 @@ class Category:
         products = []
         if len(self.subcategories) > 0:
             for c in self.subcategories: #recorremos todas las categorias hijo llamando recursivamente a sus busquedas
-                products.extend(c.attribute_look_down(attribute=attribute))
+                products.extend(c.add_attribute_look_down(attribute=attribute))
             return products
         if len(self.products) > 0:
             return list(self.products)
