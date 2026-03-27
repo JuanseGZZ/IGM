@@ -147,7 +147,8 @@ class Category:
         # si no hay nada retornamos nada
         return []
             
-    def _add_attribute_check_family_impact(self,
+    #retorna productos impactados pendiendes de implementacion
+    def _add_attribute_product_check_family_impact(self,
         attribute:Attribute,
         ):
         #miramos si aca o arriba esta el attributo
@@ -162,9 +163,10 @@ class Category:
                 products_in_risk.append(p)
         return products_in_risk
 
-    def _add_impact_check(self,attribute:Attribute,product_variant_implementations):
+    #retorna variantes impactadas pendientes de implementacion
+    def _add_attribute_variant_impact_check(self,attribute:Attribute,product_variant_implementations):
         #[{"product_id": id, "variants": [{"variant_id": id, "value": value}]}]
-        impact = self._add_attribute_check_family_impact(attribute=attribute)
+        impact = self._add_attribute_product_check_family_impact(attribute=attribute)
         # algun ancestro ya lo cubre, nada que hacer
         if impact is None:
             return None
@@ -222,12 +224,15 @@ class Category:
 
         return pending
 
-    # dividir esto en add_impact_check y add_dinamic_attribute para poder reutilizar el check en add_categorie
+    # pide variantes
     def add_dinamic_attribute(self,
         attribute:Attribute,
         product_variant_implementations):
 
-        pending = self._add_impact_check(attribute=attribute, product_variant_implementations=product_variant_implementations)
+        if attribute.is_static:
+            raise ValueError("El attributo que se quiere incertar es estatico")
+
+        pending = self._add_attribute_variant_impact_check(attribute=attribute, product_variant_implementations=product_variant_implementations)
 
         # ancestro cubre o sin impacto (atributo ya agregado dentro de add_impact_check)
         if pending is None or isinstance(pending, dict):
@@ -629,7 +634,7 @@ cat.products = [prod1, prod2]
 
 print("=== TEST 1: caso feliz - todo matchea ===")
 import json
-print(f"Productos que retornaria: {json.dumps([p.to_json() for p in cat._add_impact_check(attribute=attr_color, product_variant_implementations=[])], indent=2)}")
+print(f"Productos que retornaria: {json.dumps([p.to_json() for p in cat._add_attribute_variant_impact_check(attribute=attr_color, product_variant_implementations=[])], indent=2)}")
 
 result = cat.add_dinamic_attribute(
     attribute=attr_color,
