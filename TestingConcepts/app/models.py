@@ -584,7 +584,6 @@ class Product:
         self._add_variant(variant=varian)
 
     # helpers para category add and del attributes
-
     def get_add_attribute_impact(self, attribute: Attribute) -> dict | None:
         # si ya lo tiene, no impacta
         if self.is_attribute_in(attribute):
@@ -599,106 +598,107 @@ class Product:
 
 #testing area
 
-# ── atributos ──────────────────────────────────────────────────────────────
-attr_color = Attribute(key="color", name="Color", data_type="enum", id=1)
-attr_color.add_enum_value("rojo")
-attr_color.add_enum_value("azul")
-attr_color.add_enum_value("verde")
+def test():
+    # ── atributos ──────────────────────────────────────────────────────────────
+    attr_color = Attribute(key="color", name="Color", data_type="enum", id=1)
+    attr_color.add_enum_value("rojo")
+    attr_color.add_enum_value("azul")
+    attr_color.add_enum_value("verde")
 
-attr_talle = Attribute(key="talle", name="Talle", data_type="text", id=2)
+    attr_talle = Attribute(key="talle", name="Talle", data_type="text", id=2)
 
-# ── categoria con attr_talle ya definido ───────────────────────────────────
-cat = Category(name="Ropa", id=10, attributes=[attr_talle])
+    # ── categoria con attr_talle ya definido ───────────────────────────────────
+    cat = Category(name="Ropa", id=10, attributes=[attr_talle])
 
-# ── variantes ──────────────────────────────────────────────────────────────
-var1 = Variant(id=1, attribute_implementations=[
-    AttributeImplementation(attribute=attr_talle, value="M")
-])
-var2 = Variant(id=2, attribute_implementations=[
-    AttributeImplementation(attribute=attr_talle, value="L")
-])
-var3 = Variant(id=3, attribute_implementations=[
-    AttributeImplementation(attribute=attr_talle, value="S")
-])
-var4 = Variant(id=4, attribute_implementations=[
-    AttributeImplementation(attribute=attr_talle, value="XL")
-])
+    # ── variantes ──────────────────────────────────────────────────────────────
+    var1 = Variant(id=1, attribute_implementations=[
+        AttributeImplementation(attribute=attr_talle, value="M")
+    ])
+    var2 = Variant(id=2, attribute_implementations=[
+        AttributeImplementation(attribute=attr_talle, value="L")
+    ])
+    var3 = Variant(id=3, attribute_implementations=[
+        AttributeImplementation(attribute=attr_talle, value="S")
+    ])
+    var4 = Variant(id=4, attribute_implementations=[
+        AttributeImplementation(attribute=attr_talle, value="XL")
+    ])
 
-# ── productos ──────────────────────────────────────────────────────────────
-prod1 = Product(code="P001", title="Remera A", price=100.0, description="desc", brand="Nike",
-                id=1, category=cat, attributes=[attr_talle], variants=[var1, var2])
-prod2 = Product(code="P002", title="Remera B", price=120.0, description="desc", brand="Adidas",
-                id=2, category=cat, attributes=[attr_talle], variants=[var3, var4])
+    # ── productos ──────────────────────────────────────────────────────────────
+    prod1 = Product(code="P001", title="Remera A", price=100.0, description="desc",     brand="Nike",
+                    id=1, category=cat, attributes=[attr_talle], variants=[var1, var2])
+    prod2 = Product(code="P002", title="Remera B", price=120.0, description="desc",     brand="Adidas",
+                    id=2, category=cat, attributes=[attr_talle], variants=[var3, var4])
 
-cat.products = [prod1, prod2]
+    cat.products = [prod1, prod2]
 
-print("=== TEST 1: caso feliz - todo matchea ===")
-import json
-print(f"Productos que retornaria: {json.dumps([p.to_json() for p in cat._add_attribute_variant_impact_check(attribute=attr_color, product_variant_implementations=[])], indent=2)}")
+    print("=== TEST 1: caso feliz - todo matchea ===")
+    import json
+    print(f"Productos que retornaria: {json.dumps([p.to_json() for p in cat.    _add_attribute_variant_impact_check(attribute=attr_color,   product_variant_implementations=[])], indent=2)}")
 
-result = cat.add_dinamic_attribute(
-    attribute=attr_color,
-    product_variant_implementations=[
-        {"product_id": 1, "variants": [
-            {"variant_id": 1, "value": "rojo"},
-            {"variant_id": 2, "value": "azul"},
-        ]},
-        {"product_id": 2, "variants": [
-            {"variant_id": 3, "value": "verde"},
-            {"variant_id": 4, "value": "rojo"},
-        ]},
-    ]
-)
-print("resultado (esperado {}):", result)
-print("attr_color en cat:", attr_color.key in cat._attribute_keys)
-print("var1 impls:", [(i.attribute.key, i.value) for i in var1.attribute_implementations])
-print("var3 impls:", [(i.attribute.key, i.value) for i in var3.attribute_implementations])
+    result = cat.add_dinamic_attribute(
+        attribute=attr_color,
+        product_variant_implementations=[
+            {"product_id": 1, "variants": [
+                {"variant_id": 1, "value": "rojo"},
+                {"variant_id": 2, "value": "azul"},
+            ]},
+            {"product_id": 2, "variants": [
+                {"variant_id": 3, "value": "verde"},
+                {"variant_id": 4, "value": "rojo"},
+            ]},
+        ]
+    )
+    print("resultado (esperado {}):", result)
+    print("attr_color en cat:", attr_color.key in cat._attribute_keys)
+    print("var1 impls:", [(i.attribute.key, i.value) for i in var1. attribute_implementations])
+    print("var3 impls:", [(i.attribute.key, i.value) for i in var3. attribute_implementations])
 
-print()
-print("=== TEST 2: ancestro ya cubre - no hace nada ===")
-cat2 = Category(name="Ropa Deportiva", id=11, attributes=[], father_categorie=cat)
-result2 = cat2.add_dinamic_attribute(attribute=attr_color, product_variant_implementations=[])
-print("resultado (esperado {}):", result2)
+    print()
+    print("=== TEST 2: ancestro ya cubre - no hace nada ===")
+    cat2 = Category(name="Ropa Deportiva", id=11, attributes=[], father_categorie=cat)
+    result2 = cat2.add_dinamic_attribute(attribute=attr_color,  product_variant_implementations=[])
+    print("resultado (esperado {}):", result2)
 
-print()
-print("=== TEST 3: valor invalido para enum ===")
-attr_color2 = Attribute(key="color2", name="Color2", data_type="enum", id=3)
-attr_color2.add_enum_value("negro")
+    print()
+    print("=== TEST 3: valor invalido para enum ===")
+    attr_color2 = Attribute(key="color2", name="Color2", data_type="enum", id=3)
+    attr_color2.add_enum_value("negro")
 
-cat3 = Category(name="Pantalones", id=12, attributes=[attr_talle])
-var5 = Variant(id=5, attribute_implementations=[AttributeImplementation(attribute=attr_talle, value="M")])
-prod3 = Product(code="P003", title="Pantalon", price=200.0, description="desc", brand="Puma",
-                id=3, category=cat3, attributes=[attr_talle], variants=[var5])
-cat3.products = [prod3]
+    cat3 = Category(name="Pantalones", id=12, attributes=[attr_talle])
+    var5 = Variant(id=5, attribute_implementations=[AttributeImplementation (attribute=attr_talle, value="M")])
+    prod3 = Product(code="P003", title="Pantalon", price=200.0, description="desc",     brand="Puma",
+                    id=3, category=cat3, attributes=[attr_talle], variants=[var5])
+    cat3.products = [prod3]
 
-result3 = cat3.add_dinamic_attribute(
-    attribute=attr_color2,
-    product_variant_implementations=[
-        {"product_id": 3, "variants": [
-            {"variant_id": 5, "value": "amarillo"},  # no esta en enum_values
-        ]},
-    ]
-)
-print("resultado (esperado lista con prod3):", result3)
-print("attr_color2 en cat3 (esperado False):", attr_color2.key in cat3._attribute_keys)
+    result3 = cat3.add_dinamic_attribute(
+        attribute=attr_color2,
+        product_variant_implementations=[
+            {"product_id": 3, "variants": [
+                {"variant_id": 5, "value": "amarillo"},  # no esta en enum_values
+            ]},
+        ]
+    )
+    print("resultado (esperado lista con prod3):", result3)
+    print("attr_color2 en cat3 (esperado False):", attr_color2.key in cat3. _attribute_keys)
 
-print()
-print("=== TEST 4: faltan variantes en la implementacion ===")
-attr_material = Attribute(key="material", name="Material", data_type="text", id=4)
-cat4 = Category(name="Buzos", id=13, attributes=[attr_talle])
-var6 = Variant(id=6, attribute_implementations=[AttributeImplementation(attribute=attr_talle, value="S")])
-var7 = Variant(id=7, attribute_implementations=[AttributeImplementation(attribute=attr_talle, value="XL")])
-prod4 = Product(code="P004", title="Buzo", price=300.0, description="desc", brand="Under",
-                id=4, category=cat4, attributes=[attr_talle], variants=[var6, var7])
-cat4.products = [prod4]
+    print()
+    print("=== TEST 4: faltan variantes en la implementacion ===")
+    attr_material = Attribute(key="material", name="Material", data_type="text", id=4)
+    cat4 = Category(name="Buzos", id=13, attributes=[attr_talle])
+    var6 = Variant(id=6, attribute_implementations=[AttributeImplementation (attribute=attr_talle, value="S")])
+    var7 = Variant(id=7, attribute_implementations=[AttributeImplementation (attribute=attr_talle, value="XL")])
+    prod4 = Product(code="P004", title="Buzo", price=300.0, description="desc",     brand="Under",
+                    id=4, category=cat4, attributes=[attr_talle], variants=[var6,   var7])
+    cat4.products = [prod4]
 
-result4 = cat4.add_dinamic_attribute(
-    attribute=attr_material,
-    product_variant_implementations=[
-        {"product_id": 4, "variants": [
-            {"variant_id": 6, "value": "algodon"},  # falta var7
-        ]},
-    ]
-)
-print("resultado (esperado lista con prod4):", result4)
-print("attr_material en cat4 (esperado False):", attr_material.key in cat4._attribute_keys)
+    result4 = cat4.add_dinamic_attribute(
+        attribute=attr_material,
+        product_variant_implementations=[
+            {"product_id": 4, "variants": [
+                {"variant_id": 6, "value": "algodon"},  # falta var7
+            ]},
+        ]
+    )
+    print("resultado (esperado lista con prod4):", result4)
+    print("attr_material en cat4 (esperado False):", attr_material.key in cat4. _attribute_keys)
