@@ -54,8 +54,6 @@ class Attribute:
             ]
         }
 
-
-
 class Attribute_factory:
     _instances: dict = {}
 
@@ -164,21 +162,74 @@ class Category:
                 products_in_risk.append(p)
         return products_in_risk
 
-    def add_dinamic_attribute(self, 
+    def add_dinamic_attribute(self,
         attribute:Attribute,
         product_variant_implementations):
-        #[{"producto_id":[{"variant_id":"implementation_value"}]}]
-        # debe verificar que no este, y ademas pedir data de variantes para aplicar los cambios.
-        # si algun ancestro lo tiene 
-        if not self.add_attribute_check_family_impact(attribute=attribute):
-            # y no lo tengo yo
-            if not self.attributes.index(attribute):
-                # lo agrego
-                self.attributes.append(attribute)
-            # retorno que no es necesario nada que se incorporo.
+        #[{"product_id": id, "variants": [{"variant_id": id, "value": value}]}]
+        impact = self.add_attribute_check_family_impact(attribute=attribute)
+
+        # algun ancestro ya lo cubre, nada que hacer
+        if impact is None:
             return {}
-        else: # hay impacto y algo tienen que agregar
-            pass
+
+        # no hay productos perjudicados, agregamos libre
+        if not impact:
+            if attribute.key not in self._attribute_keys:
+                self.attributes.append(attribute)
+                self._attribute_keys.add(attribute.key)
+            return {}
+
+        # hay impacto - validar que lo que llega machea con el impacto
+        impact_map = {p.id: p for p in impact}
+        queue = []  # (variant, value) a aplicar si todo pasa
+
+        for item in product_variant_implementations:
+            product_id = item["product_id"]
+            variant_data = item["variants"]
+
+            if product_id not in impact_map:
+                continue  # producto no perjudicado, ignorar
+
+            product = impact_map[product_id]
+            variants_map = {v.id: v for v in product.variants}
+            expected_ids = set(variants_map.keys())
+
+            # chequear duplicados y armar set de los que llegan
+            incoming_ids = set()
+            for vd in variant_data:
+                vid = vd["variant_id"]
+                if vid in incoming_ids:
+                    return {"error": f"variant_id duplicado: {vid} en producto {product_id}"}
+                incoming_ids.add(vid)
+
+            # chequear que sean exactamente los mismos variant ids
+            if expected_ids != incoming_ids:
+                return {
+                    "faltantes": list(expected_ids - incoming_ids),
+                    "sobrantes": list(incoming_ids - expected_ids),
+                    "product_id": product_id
+                }
+
+            # chequear tipos
+            for vd in variant_data:
+                if not attribute.check_value(vd["value"]):
+                    return {"type_error": f"valor invalido '{vd['value']}' para variant {vd['variant_id']}"}
+                queue.append((variants_map[vd["variant_id"]], vd["value"]))
+
+            del impact_map[product_id]
+
+        # productos perjudicados que no llegaron en los datos
+        if impact_map:
+            return {"productos_sin_datos": list(impact_map.keys())}
+
+        # todo ok, aplicamos la cola
+        for variant, value in queue:
+            impl = AttributeImplementation(attribute=attribute, value=value)
+            variant.attribute_implementations.append(impl)
+
+        self.attributes.append(attribute)
+        self._attribute_keys.add(attribute.key)
+        return {}
 
     def add_static_attribute(self, attribute:Attribute, implementations):
         pass
@@ -514,3 +565,7 @@ class Product:
 
 #como va a viajar la informacion?
 # la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.
+
+
+
+#areas de testeo

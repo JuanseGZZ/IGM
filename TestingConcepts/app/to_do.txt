@@ -1,1 +1,39 @@
 Estoy trabajando en los add y del attributes en categoria y producto.
+
+
+testear
+en categoria:
+- add_dinamic_attribute y sus dependencias.
+- armar add_static_attribute
+- armar depenendiac como las de add_dinamic_attribute para del
+- armar las add categoria, que deberia ver si los hijos o dependiendo de como lo piense, si add category padre, si los atributos del padre impactan con los 
+productos.
+- el del deberia ver si elimina las implementaciones de las variantes o si se las agrega a el producto de cada variante.
+
+en producto:
+- testear add_dinamic_attribute
+- testear add_static_attribute
+- armar del_attribute
+
+
+
+
+La lista de adds y dels va a ser: 
+el cambio impactaria en:
+-       categoria Z:
+-    categoria X
+- categoria 1:
+- productos:
+- categoria 2:
+- productos:
+-    categoria Y
+- categoria 1:
+- productos:
+- categoria 2:
+- productos:
+y asi recursivamente.
+que quiere ahcer:
+opciones:
+- A 
+- B
+- CANCELAr
