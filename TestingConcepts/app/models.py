@@ -162,12 +162,12 @@ class Category:
                 products_in_risk.append(p)
         return products_in_risk
 
-    def add_dinamic_attribute(self,
+    def add_dinamic_attribute(self, 
         attribute:Attribute,
         product_variant_implementations):
         #[{"product_id": id, "variants": [{"variant_id": id, "value": value}]}]
         impact = self.add_attribute_check_family_impact(attribute=attribute)
-
+        
         # algun ancestro ya lo cubre, nada que hacer
         if impact is None:
             return {}
@@ -179,57 +179,13 @@ class Category:
                 self._attribute_keys.add(attribute.key)
             return {}
 
-        # hay impacto - validar que lo que llega machea con el impacto
-        impact_map = {p.id: p for p in impact}
-        queue = []  # (variant, value) a aplicar si todo pasa
+        #si hay impacto 
+        # leemos las implementaciones que llegaron y verificamos si machean.
+        # si algo no machea responde el impacto necesario para aplicar.
+        # si machea mientras que vamos macheando vamos llenando una lista de cosas a implementar, asi cuando verificamos que todo machea y que no hay repetidos, impactamos los cambios.
+        # no pueden haber implementaciones de mas ni de menos y todo tiene que machear
+        # ademas mientras vamos viendo si todo machea vamos verificando con attribute.check_value que esten bien.
 
-        for item in product_variant_implementations:
-            product_id = item["product_id"]
-            variant_data = item["variants"]
-
-            if product_id not in impact_map:
-                continue  # producto no perjudicado, ignorar
-
-            product = impact_map[product_id]
-            variants_map = {v.id: v for v in product.variants}
-            expected_ids = set(variants_map.keys())
-
-            # chequear duplicados y armar set de los que llegan
-            incoming_ids = set()
-            for vd in variant_data:
-                vid = vd["variant_id"]
-                if vid in incoming_ids:
-                    return {"error": f"variant_id duplicado: {vid} en producto {product_id}"}
-                incoming_ids.add(vid)
-
-            # chequear que sean exactamente los mismos variant ids
-            if expected_ids != incoming_ids:
-                return {
-                    "faltantes": list(expected_ids - incoming_ids),
-                    "sobrantes": list(incoming_ids - expected_ids),
-                    "product_id": product_id
-                }
-
-            # chequear tipos
-            for vd in variant_data:
-                if not attribute.check_value(vd["value"]):
-                    return {"type_error": f"valor invalido '{vd['value']}' para variant {vd['variant_id']}"}
-                queue.append((variants_map[vd["variant_id"]], vd["value"]))
-
-            del impact_map[product_id]
-
-        # productos perjudicados que no llegaron en los datos
-        if impact_map:
-            return {"productos_sin_datos": list(impact_map.keys())}
-
-        # todo ok, aplicamos la cola
-        for variant, value in queue:
-            impl = AttributeImplementation(attribute=attribute, value=value)
-            variant.attribute_implementations.append(impl)
-
-        self.attributes.append(attribute)
-        self._attribute_keys.add(attribute.key)
-        return {}
 
     def add_static_attribute(self, attribute:Attribute, implementations):
         pass
@@ -244,7 +200,7 @@ class Category:
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
         pass
 
-    def add_categorie(self,categorie:Category,implementations):
+    def add_categorie(self,categorie:Category,):
         # no puede tener productos si quiere tener categorias
         # cosas que pueden pasar si estan habilitados los attributes y add categoria
 
@@ -272,7 +228,6 @@ class Category:
     def del_product(self, product):
         # se elimina el producto, todo en el.
         pass
-
 
     def to_json(self) -> dict:
         return {
@@ -577,7 +532,3 @@ class Product:
 
 #como va a viajar la informacion?
 # la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.
-
-
-
-#areas de testeo
