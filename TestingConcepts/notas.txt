@@ -9,3 +9,4 @@
 
 - mostrar como nodos y arbol impresion.
 que muestre las categorias, los atributos de una categoria, las herencias de los attributos con colores, los productos, las variantes, sus implementaciones.
+y que si hago click en un nodo se muestre un popup rectanguar vertical mostrando como en celular se veria ese producto.
