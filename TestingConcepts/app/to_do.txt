@@ -39,22 +39,15 @@ opciones:
 - CANCELAr
 
 
-    def add_categorie(self,categorie:Category,):
-        # no puede tener productos si quiere tener categorias
-        # cosas que pueden pasar si estan habilitados los attributes y add categoria
+        #si hay impacto 
+        # leemos las implementaciones que llegaron y verificamos si machean.
+        # si algo no machea responde el impacto necesario para aplicar.
+        # si machea mientras que vamos macheando vamos llenando una lista de cosas a implementar, asi cuando verificamos que todo machea y que no hay repetidos, impactamos los cambios.
+        # no pueden haber implementaciones de mas ni de menos y todo tiene que machear
+        # ademas mientras vamos viendo si todo machea vamos verificando con attribute.check_value que esten bien.
+        # una vez que macheo y cheque esta hecho nos queda una lista de cambios a impactar asi que impactamos y agregamos ese atributo nuevo.
+        # si algo falla en los chequeso solo retorna impact y no impacta nada.
 
-        # si el hijo a agregar tiene padre responder el error. 
-
-        # que tengamos padre con atributos y o rescursivamente abuelos y asi.
-        # vamos a recolectar todos los attributos sin replica que hay para arriba.
-        # y agregarles sin replica tampoco lo que ya tenemos.
-        # vamos a iterarlos para abajo viendo que impacta y agregandolo a la lista.
-
-        # se verifica que todas las implementaciones necesarias respondidas macheen con las que llegaron por parametro y sino vamos a responder las impl necesarias
-        # si machean implementan.
-        # se agrega al padre.
-
-        pass
 
 
 

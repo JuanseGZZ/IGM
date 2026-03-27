@@ -179,12 +179,57 @@ class Category:
                 self._attribute_keys.add(attribute.key)
             return {}
 
-        #si hay impacto 
-        # leemos las implementaciones que llegaron y verificamos si machean.
-        # si algo no machea responde el impacto necesario para aplicar.
-        # si machea mientras que vamos macheando vamos llenando una lista de cosas a implementar, asi cuando verificamos que todo machea y que no hay repetidos, impactamos los cambios.
-        # no pueden haber implementaciones de mas ni de menos y todo tiene que machear
-        # ademas mientras vamos viendo si todo machea vamos verificando con attribute.check_value que esten bien.
+        #si hay impacto
+        # construimos set de product_ids en riesgo y de los que llegan, chequeando duplicados
+        impact_product_ids = {p.id for p in impact}
+        impl_product_ids = set()
+        for entry in product_variant_implementations:
+            pid = entry["product_id"]
+            if pid in impl_product_ids:
+                return impact  # product_id duplicado
+            impl_product_ids.add(pid)
+
+        # deben cubrir exactamente los mismos productos
+        if impact_product_ids != impl_product_ids:
+            return impact
+
+        impact_map = {p.id: p for p in impact}
+        pending = []  # (variant, AttributeImplementation) a aplicar si todo matchea
+
+        for entry in product_variant_implementations:
+            product = impact_map[entry["product_id"]]
+            product_variant_ids = {v.id for v in product.variants}
+            variants_map = {v.id: v for v in product.variants}
+
+            # chequeamos duplicados de variant_id y construimos set de los que llegan
+            entry_variant_ids = set()
+            for v_entry in entry["variants"]:
+                vid = v_entry["variant_id"]
+                if vid in entry_variant_ids:
+                    return impact  # variant_id duplicado
+                entry_variant_ids.add(vid)
+
+            # deben cubrir exactamente las variantes del producto
+            if product_variant_ids != entry_variant_ids:
+                return impact
+
+            # chequeamos valores y acumulamos cambios pendientes
+            for v_entry in entry["variants"]:
+                try:
+                    if not attribute.check_value(v_entry["value"]):
+                        return impact
+                except ValueError:
+                    return impact
+                impl = AttributeImplementation(attribute=attribute, value=v_entry["value"])
+                pending.append((variants_map[v_entry["variant_id"]], impl))
+
+        # todo matcheó, aplicamos
+        for variant, impl in pending:
+            variant.attribute_implementations.append(impl)
+
+        self.attributes.append(attribute)
+        self._attribute_keys.add(attribute.key)
+        return {}
 
 
     def add_static_attribute(self, attribute:Attribute, implementations):
@@ -532,3 +577,107 @@ class Product:
 
 #como va a viajar la informacion?
 # la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.
+
+
+#testing area
+
+# ── atributos ──────────────────────────────────────────────────────────────
+attr_color = Attribute(key="color", name="Color", data_type="enum", id=1)
+attr_color.add_enum_value("rojo")
+attr_color.add_enum_value("azul")
+attr_color.add_enum_value("verde")
+
+attr_talle = Attribute(key="talle", name="Talle", data_type="text", id=2)
+
+# ── categoria con attr_talle ya definido ───────────────────────────────────
+cat = Category(name="Ropa", id=10, attributes=[attr_talle])
+
+# ── variantes ──────────────────────────────────────────────────────────────
+var1 = Variant(id=1, attribute_implementations=[
+    AttributeImplementation(attribute=attr_talle, value="M")
+])
+var2 = Variant(id=2, attribute_implementations=[
+    AttributeImplementation(attribute=attr_talle, value="L")
+])
+var3 = Variant(id=3, attribute_implementations=[
+    AttributeImplementation(attribute=attr_talle, value="S")
+])
+var4 = Variant(id=4, attribute_implementations=[
+    AttributeImplementation(attribute=attr_talle, value="XL")
+])
+
+# ── productos ──────────────────────────────────────────────────────────────
+prod1 = Product(code="P001", title="Remera A", price=100.0, description="desc", brand="Nike",
+                id=1, category=cat, attributes=[attr_talle], variants=[var1, var2])
+prod2 = Product(code="P002", title="Remera B", price=120.0, description="desc", brand="Adidas",
+                id=2, category=cat, attributes=[attr_talle], variants=[var3, var4])
+
+cat.products = [prod1, prod2]
+
+print("=== TEST 1: caso feliz - todo matchea ===")
+result = cat.add_dinamic_attribute(
+    attribute=attr_color,
+    product_variant_implementations=[
+        {"product_id": 1, "variants": [
+            {"variant_id": 1, "value": "rojo"},
+            {"variant_id": 2, "value": "azul"},
+        ]},
+        {"product_id": 2, "variants": [
+            {"variant_id": 3, "value": "verde"},
+            {"variant_id": 4, "value": "rojo"},
+        ]},
+    ]
+)
+print("resultado (esperado {}):", result)
+print("attr_color en cat:", attr_color.key in cat._attribute_keys)
+print("var1 impls:", [(i.attribute.key, i.value) for i in var1.attribute_implementations])
+print("var3 impls:", [(i.attribute.key, i.value) for i in var3.attribute_implementations])
+
+print()
+print("=== TEST 2: ancestro ya cubre - no hace nada ===")
+cat2 = Category(name="Ropa Deportiva", id=11, attributes=[], father_categorie=cat)
+result2 = cat2.add_dinamic_attribute(attribute=attr_color, product_variant_implementations=[])
+print("resultado (esperado {}):", result2)
+
+print()
+print("=== TEST 3: valor invalido para enum ===")
+attr_color2 = Attribute(key="color2", name="Color2", data_type="enum", id=3)
+attr_color2.add_enum_value("negro")
+
+cat3 = Category(name="Pantalones", id=12, attributes=[attr_talle])
+var5 = Variant(id=5, attribute_implementations=[AttributeImplementation(attribute=attr_talle, value="M")])
+prod3 = Product(code="P003", title="Pantalon", price=200.0, description="desc", brand="Puma",
+                id=3, category=cat3, attributes=[attr_talle], variants=[var5])
+cat3.products = [prod3]
+
+result3 = cat3.add_dinamic_attribute(
+    attribute=attr_color2,
+    product_variant_implementations=[
+        {"product_id": 3, "variants": [
+            {"variant_id": 5, "value": "amarillo"},  # no esta en enum_values
+        ]},
+    ]
+)
+print("resultado (esperado lista con prod3):", result3)
+print("attr_color2 en cat3 (esperado False):", attr_color2.key in cat3._attribute_keys)
+
+print()
+print("=== TEST 4: faltan variantes en la implementacion ===")
+attr_material = Attribute(key="material", name="Material", data_type="text", id=4)
+cat4 = Category(name="Buzos", id=13, attributes=[attr_talle])
+var6 = Variant(id=6, attribute_implementations=[AttributeImplementation(attribute=attr_talle, value="S")])
+var7 = Variant(id=7, attribute_implementations=[AttributeImplementation(attribute=attr_talle, value="XL")])
+prod4 = Product(code="P004", title="Buzo", price=300.0, description="desc", brand="Under",
+                id=4, category=cat4, attributes=[attr_talle], variants=[var6, var7])
+cat4.products = [prod4]
+
+result4 = cat4.add_dinamic_attribute(
+    attribute=attr_material,
+    product_variant_implementations=[
+        {"product_id": 4, "variants": [
+            {"variant_id": 6, "value": "algodon"},  # falta var7
+        ]},
+    ]
+)
+print("resultado (esperado lista con prod4):", result4)
+print("attr_material en cat4 (esperado False):", attr_material.key in cat4._attribute_keys)
