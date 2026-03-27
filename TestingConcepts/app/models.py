@@ -164,6 +164,7 @@ class Category:
         return products_in_risk
 
     #retorna variantes impactadas pendientes de implementacion
+    # helper para "add_dinamic_attribute"
     def _add_attribute_variant_impact_check(self,attribute:Attribute,product_variant_implementations):
         #[{"product_id": id, "variants": [{"variant_id": id, "value": value}]}]
         impact = self._add_attribute_product_check_family_impact(attribute=attribute)
@@ -250,6 +251,7 @@ class Category:
         self._attribute_keys.add(attribute.key)
         return {}
 
+    # helper para "add_static_attribute"
     def _add_static_impact_check(self, attribute:Attribute, implementations):
         #[{"product_id": id, "value": value}]
         impact = self._add_attribute_product_check_family_impact(attribute=attribute)
@@ -289,7 +291,7 @@ class Category:
             pending.append((product, impl))
 
         return pending
-
+    
     # pide productos
     def add_static_attribute(self, attribute:Attribute, implementations):
         #[{"product_id": id, "value": value}]

@@ -4,3 +4,7 @@
 * multi category o category non functional (solo de nombre)
 - agregar diferencial de precio por variante contra su producto o otras variantes.
 - agregar marcas como objeto
+
+
+- mostrar como nodos y arbol impresion.
+que muestre las categorias, los atributos de una categoria, las herencias de los attributos con colores, los productos, las variantes, sus implementaciones.
