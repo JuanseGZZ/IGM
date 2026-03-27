@@ -244,9 +244,21 @@ class Category:
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
         pass
 
-    def add_categorie(self,categorie:Category):
+    def add_categorie(self,categorie:Category,implementations):
         # no puede tener productos si quiere tener categorias
-        # tiene que revisar que
+        # cosas que pueden pasar si estan habilitados los attributes y add categoria
+
+        # si el hijo a agregar tiene padre responder el error. 
+
+        # que tengamos padre con atributos y o rescursivamente abuelos y asi.
+        # vamos a recolectar todos los attributos sin replica que hay para arriba.
+        # y agregarles sin replica tampoco lo que ya tenemos.
+        # vamos a iterarlos para abajo viendo que impacta y agregandolo a la lista.
+
+        # se verifica que todas las implementaciones necesarias respondidas macheen con las que llegaron por parametro y sino vamos a responder las impl necesarias
+        # si machean implementan.
+        # se agrega al padre.
+
         pass
 
     def del_categorie(self,categorie:Category):
