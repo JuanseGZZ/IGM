@@ -120,7 +120,7 @@ class Category:
         return attributes
 
     # busca recursivamente para arriba si esta un attibut espesifico
-    def add_attribute_look_up(self,attribute:Attribute):
+    def _add_attribute_look_up(self,attribute:Attribute):
         #si lo tengo retorno true
         if attribute.key in self._attribute_keys:
             return True
@@ -128,9 +128,9 @@ class Category:
         if self.father_categorie == None:
             return False
         #si no lo tengo pero tengo padre se lo piedo a mi padre y retorno lo que me diga
-        return self.father_categorie.add_attribute_look_up(attribute=attribute)
+        return self.father_categorie._add_attribute_look_up(attribute=attribute)
 
-    def add_attribute_look_down(self, attribute:Attribute):
+    def _add_attribute_look_down(self, attribute:Attribute):
         #miro que soy, si una categoria padre de categorias o de productos
         # lo hago recursivo en padre de categoria, y lo hago retornate en padre de productos
         # chequeo que tenga el attributo y corto busqueda
@@ -147,31 +147,27 @@ class Category:
         # si no hay nada retornamos nada
         return []
             
-    def add_attribute_check_family_impact(self,
+    def _add_attribute_check_family_impact(self,
         attribute:Attribute,
         ):
         #miramos si aca o arriba esta el attributo
-        if self.add_attribute_look_up(attribute=attribute):
+        if self._add_attribute_look_up(attribute=attribute):
             # si esta le respondemos que no necesita nada.
             return None
         # si no hay nadie que lo cubra miramos para abajo a quien perjudicamos
-        products = self.add_attribute_look_down(attribute=attribute)
+        products = self._add_attribute_look_down(attribute=attribute)
         products_in_risk = []
         for p in products:
             if not p.is_attribute_in(attribute=attribute):
                 products_in_risk.append(p)
         return products_in_risk
 
-    # dividir esto en add_dinamic_attribute_check y add_dinamic_attribute para poder reutilizar el check en add_categorie
-    def add_dinamic_attribute(self, 
-        attribute:Attribute,
-        product_variant_implementations):
+    def _add_impact_check(self,attribute:Attribute,product_variant_implementations):
         #[{"product_id": id, "variants": [{"variant_id": id, "value": value}]}]
-        impact = self.add_attribute_check_family_impact(attribute=attribute)
-        
+        impact = self._add_attribute_check_family_impact(attribute=attribute)
         # algun ancestro ya lo cubre, nada que hacer
         if impact is None:
-            return {}
+            return None
 
         # no hay productos perjudicados, agregamos libre
         if not impact:
@@ -224,6 +220,23 @@ class Category:
                 impl = AttributeImplementation(attribute=attribute, value=v_entry["value"])
                 pending.append((variants_map[v_entry["variant_id"]], impl))
 
+        return pending
+
+    # dividir esto en add_impact_check y add_dinamic_attribute para poder reutilizar el check en add_categorie
+    def add_dinamic_attribute(self,
+        attribute:Attribute,
+        product_variant_implementations):
+
+        pending = self._add_impact_check(attribute=attribute, product_variant_implementations=product_variant_implementations)
+
+        # ancestro cubre o sin impacto (atributo ya agregado dentro de add_impact_check)
+        if pending is None or isinstance(pending, dict):
+            return {}
+
+        # validacion fallo: pending es la lista de productos en riesgo
+        if pending and isinstance(pending[0], Product):
+            return pending
+
         # todo matcheó, aplicamos
         for variant, impl in pending:
             variant.attribute_implementations.append(impl)
@@ -231,7 +244,6 @@ class Category:
         self.attributes.append(attribute)
         self._attribute_keys.add(attribute.key)
         return {}
-
 
     def add_static_attribute(self, attribute:Attribute, implementations):
         pass
@@ -616,6 +628,9 @@ prod2 = Product(code="P002", title="Remera B", price=120.0, description="desc", 
 cat.products = [prod1, prod2]
 
 print("=== TEST 1: caso feliz - todo matchea ===")
+import json
+print(f"Productos que retornaria: {json.dumps([p.to_json() for p in cat._add_impact_check(attribute=attr_color, product_variant_implementations=[])], indent=2)}")
+
 result = cat.add_dinamic_attribute(
     attribute=attr_color,
     product_variant_implementations=[
