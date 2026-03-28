@@ -324,22 +324,89 @@ class Category:
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
         pass
 
-    def add_categorie(self,categorie:Category,):
+    @staticmethod
+    def change_lookup_for_attributes(init_categorie: "Category") -> set:
+        # buscamos desde el que estamos todas las categorias para arriba y devolvemos set asi no hay replica
+        attributes = set(init_categorie.attributes)
+        if init_categorie.father_categorie:
+            attributes |= Category.change_lookup_for_attributes(init_categorie.father_categorie)
+        return attributes
+
+    # vamos a cambiar de en vez de add_categorie, a change categorie father
+    # resuelve menjor y cumple lo mismo
+    def change_categorie_father(self,father_categorie:Category,implementations):
         # no puede tener productos si quiere tener categorias
-        # cosas que pueden pasar si estan habilitados los attributes y add categoria
+        if len(father_categorie.products) >0 :
+            raise ValueError("No puede tener productos si quiere poner categorias")
 
-        # si el hijo a agregar tiene padre responder el error. 
+        # traemos todos los atributos del nuevo padre para arriba sin replica
+        father_attributes = Category.change_lookup_for_attributes(father_categorie)
 
-        # que tengamos padre con atributos y o rescursivamente abuelos y asi.
-        # vamos a recolectar todos los attributos sin replica que hay para arriba.
-        # y agregarles sin replica tampoco lo que ya tenemos.
-        # vamos a iterarlos para abajo viendo que impacta y agregandolo a la lista.
+        # por cada atributo miramos para abajo desde self que productos impacta
+        # {attr: [(product, [{"variant_id": id, "value": None}, ...]), ...]}
+        impact_map = {}
+        for attr in father_attributes:
+            impacted = self._add_attribute_look_down(attribute=attr)
+            if impacted:
+                impact_map[attr] = [
+                    (product, [{"variant_id": v.id, "value": None} for v in product.variants])
+                    for product in impacted
+                ]
 
-        # se verifica que todas las implementaciones necesarias respondidas macheen con las que llegaron por parametro y sino vamos a responder las impl necesarias
-        # si machean implementan.
-        # se agrega al padre.
+        # si no hay impacto aplicamos directo
+        if not impact_map:
+            self.father_categorie = father_categorie
+            father_categorie.subcategories.append(self)
+            return {}
 
-        pass
+        # validamos que implementations tenga la misma estructura que impact_map pero con values
+        # implementations: {attr_key: [(product_id, [{"variant_id": id, "value": value}, ...]), ...]}
+        for attr, product_entries in impact_map.items():
+            impl_entries = implementations.get(attr.key)
+            if not impl_entries:
+                return impact_map  # falta el atributo entero
+
+            # construimos map de product_id -> variants_map para lo que llega
+            impl_product_map = {pid: variants for pid, variants in impl_entries}
+
+            for product, variant_slots in product_entries:
+                impl_variants = impl_product_map.get(product.id)
+                if impl_variants is None:
+                    return impact_map  # falta el producto
+
+                impl_variant_map = {v["variant_id"]: v["value"] for v in impl_variants}
+
+                for slot in variant_slots:
+                    value = impl_variant_map.get(slot["variant_id"])
+                    if value is None:
+                        return impact_map  # falta la variante
+                    # validamos el valor contra el atributo
+                    try:
+                        if not attr.check_value(value):
+                            return impact_map
+                    except ValueError:
+                        return impact_map
+
+        # todo matcheó, aplicamos
+        pending = []
+        for attr, product_entries in impact_map.items():
+            impl_entries = implementations.get(attr.key)
+            impl_product_map = {pid: variants for pid, variants in impl_entries}
+            for product, variant_slots in product_entries:
+                impl_variants = impl_product_map[product.id]
+                impl_variant_map = {v["variant_id"]: v["value"] for v in impl_variants}
+                variants_map = {v.id: v for v in product.variants}
+                for slot in variant_slots:
+                    variant = variants_map[slot["variant_id"]]
+                    impl = AttributeImplementation(attribute=attr, value=impl_variant_map[slot["variant_id"]])
+                    pending.append((variant, impl))
+
+        for variant, impl in pending:
+            variant.attribute_implementations.append(impl)
+
+        self.father_categorie = father_categorie
+        father_categorie.subcategories.append(self)
+        return {}
 
     def del_categorie(self,categorie:Category):
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
@@ -362,6 +429,11 @@ class Category:
                 for attr in self.attributes
             ]
         }
+
+    def add_product(self,product):
+        if len(self.subcategories) > 0:
+            raise ValueError("No puede tener categorias si quiere agregar productos")
+        # chequeamos que no este y sino lo agregamos
 
     @classmethod
     def from_json(cls, data: dict):
@@ -812,4 +884,124 @@ def test():
     except ValueError as e:
         print("excepcion correcta:", e)
 
-test()
+#test()
+
+def test2():
+    # ── atributos ──────────────────────────────────────────────────────────
+    # el hijo ya tiene "material" — el padre trae "color" y "talle" nuevos + "material" que ya esta
+    attr_color = Attribute(key="color", name="Color", data_type="enum", id=1)
+    attr_color.add_enum_value("rojo")
+    attr_color.add_enum_value("azul")
+    attr_color.add_enum_value("negro")
+    attr_talle = Attribute(key="talle", name="Talle", data_type="text", id=2)
+    attr_material = Attribute(key="material", name="Material", data_type="text", id=3)
+
+    # ── nuevo padre: color + talle + material ─────────────────────────────
+    nuevo_padre = Category(name="Ropa", id=10, attributes=[attr_color, attr_talle, attr_material])
+
+    # ── categoria hija: ya tiene material, le faltan color y talle ────────
+    cat_hija = Category(name="Remeras", id=11, attributes=[attr_material])
+
+    # ── prod1: 2 variantes ────────────────────────────────────────────────
+    var1 = Variant(id=1, attribute_implementations=[
+        AttributeImplementation(attribute=attr_material, value="algodon")
+    ])
+    var2 = Variant(id=2, attribute_implementations=[
+        AttributeImplementation(attribute=attr_material, value="poliester")
+    ])
+    prod1 = Product(code="P001", title="Remera A", price=100.0, description="desc", brand="Nike",
+                    id=1, category=cat_hija, attributes=[attr_material], variants=[var1, var2])
+
+    # ── prod2: 2 variantes ────────────────────────────────────────────────
+    var3 = Variant(id=3, attribute_implementations=[
+        AttributeImplementation(attribute=attr_material, value="algodon")
+    ])
+    var4 = Variant(id=4, attribute_implementations=[
+        AttributeImplementation(attribute=attr_material, value="lino")
+    ])
+    prod2 = Product(code="P002", title="Remera B", price=120.0, description="desc", brand="Adidas",
+                    id=2, category=cat_hija, attributes=[attr_material], variants=[var3, var4])
+
+    cat_hija.products = [prod1, prod2]
+
+    print("=== TEST2-1: caso feliz - 2 productos, 3 attrs en padre (1 ya cubierto) ===")
+    # solo color y talle deben generar impacto, material ya lo tiene la hija
+    result = cat_hija.change_categorie_father(
+        father_categorie=nuevo_padre,
+        implementations={
+            "color": [
+                (1, [{"variant_id": 1, "value": "rojo"}, {"variant_id": 2, "value": "negro"}]),
+                (2, [{"variant_id": 3, "value": "azul"}, {"variant_id": 4, "value": "rojo"}]),
+            ],
+            "talle": [
+                (1, [{"variant_id": 1, "value": "M"}, {"variant_id": 2, "value": "L"}]),
+                (2, [{"variant_id": 3, "value": "S"}, {"variant_id": 4, "value": "XL"}]),
+            ],
+        }
+    )
+    print("resultado (esperado {}):", result)
+    print("padre asignado:", cat_hija.father_categorie.name)
+    print("hija en subcategories:", cat_hija in nuevo_padre.subcategories)
+    print("var1 impls:", [(i.attribute.key, i.value) for i in var1.attribute_implementations])
+    print("var2 impls:", [(i.attribute.key, i.value) for i in var2.attribute_implementations])
+    print("var3 impls:", [(i.attribute.key, i.value) for i in var3.attribute_implementations])
+    print("var4 impls:", [(i.attribute.key, i.value) for i in var4.attribute_implementations])
+
+    print()
+    print("=== TEST2-2: falta un atributo en implementations ===")
+    cat_hija2 = Category(name="Pantalones", id=12, attributes=[])
+    var3 = Variant(id=3, attribute_implementations=[])
+    prod2 = Product(code="P002", title="Pantalon", price=80.0, description="desc", brand="Zara",
+                    id=2, category=cat_hija2, variants=[var3])
+    cat_hija2.products = [prod2]
+
+    result2 = cat_hija2.change_categorie_father(
+        father_categorie=nuevo_padre,
+        implementations={
+            "color": [(2, [{"variant_id": 3, "value": "rojo"}])],
+            # falta talle
+        }
+    )
+    print("resultado (esperado impact_map):", type(result2))
+    print("padre NO asignado (esperado None):", cat_hija2.father_categorie)
+
+    print()
+    print("=== TEST2-3: valor invalido para enum ===")
+    cat_hija3 = Category(name="Buzos", id=13, attributes=[])
+    var4 = Variant(id=4, attribute_implementations=[])
+    prod3 = Product(code="P003", title="Buzo", price=120.0, description="desc", brand="Adidas",
+                    id=3, category=cat_hija3, variants=[var4])
+    cat_hija3.products = [prod3]
+
+    result3 = cat_hija3.change_categorie_father(
+        father_categorie=nuevo_padre,
+        implementations={
+            "color": [(3, [{"variant_id": 4, "value": "verde"}])],  # verde no esta en enum
+            "talle": [(3, [{"variant_id": 4, "value": "XL"}])],
+        }
+    )
+    print("resultado (esperado impact_map):", type(result3))
+    print("padre NO asignado (esperado None):", cat_hija3.father_categorie)
+
+    print()
+    print("=== TEST2-4: padre tiene productos - debe lanzar excepcion ===")
+    padre_con_productos = Category(name="ConProductos", id=20, attributes=[])
+    var5 = Variant(id=5, attribute_implementations=[])
+    prod_en_padre = Product(code="P099", title="X", price=1.0, description="x", brand="x",
+                            id=99, category=padre_con_productos, variants=[var5])
+    padre_con_productos.products = [prod_en_padre]
+    try:
+        cat_hija3.change_categorie_father(father_categorie=padre_con_productos, implementations={})
+        print("ERROR: deberia haber lanzado excepcion")
+    except ValueError as e:
+        print("excepcion correcta:", e)
+
+    print()
+    print("=== TEST2-5: sin impacto - asigna directo ===")
+    padre_sin_attrs = Category(name="SinAtributos", id=21, attributes=[])
+    cat_hija4 = Category(name="Gorros", id=14, attributes=[])
+    result5 = cat_hija4.change_categorie_father(father_categorie=padre_sin_attrs, implementations={})
+    print("resultado (esperado {}):", result5)
+    print("padre asignado:", cat_hija4.father_categorie.name)
+
+#test2()
