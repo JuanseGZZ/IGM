@@ -37,3 +37,7 @@ opciones:
 - A 
 - B
 - CANCELAr
+
+
+#como va a viajar la informacion?
+# la informacion va a viajar como producto json y sus attr de producto y adentro variants json cada una con sus espesificaciones de attr.
