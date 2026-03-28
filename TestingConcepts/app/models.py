@@ -314,16 +314,36 @@ class Category:
         self._attribute_keys.add(attribute.key)
         return {}
 
-    def del_attribute_check_family_impact(self,
-        attribute:Attribute,
-        is_static:bool=False
-        ):
+    # retorna true si un ancestro lo tiene.
+    @staticmethod
+    def _del_attribute_look_up(category:Category,attribute:Attribute):
+        if attribute.key in category._attribute_keys:
+            return True
+        if category.father_categorie is None:
+            return False
+        Category._del_attribute_look_up(category=category.father_categorie,attribute=attribute)
+
+    def _del_attribute_look_down(self):
         pass
 
-    def del_attribute(self, attibute:Attribute):
-        # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
+    def del_attribute_check_family_impact(self,attribute:Attribute):
+        # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. productos retorna perjudicados si los hay.
+        #si algun ancestro lo tiene 
+        if Category._del_attribute_look_up(category=self,attribute=attribute):
+            return {}
+        
+            
+        
+    
+    #delete_all significa que elimina todos las implementaciones de ese attributo en los afectados.
+    #si esta en 0 no hace nada
+    #si esta en 1 elimina implementaciones
+    #si esta en 2 injecta ese attributo en los productos afectados
+    def del_attribute(self, attibute:Attribute,delete_all:int=0):
+        
         pass
 
+    # handler para change_categorie_father
     @staticmethod
     def change_lookup_for_attributes(init_categorie: "Category") -> set:
         # buscamos desde el que estamos todas las categorias para arriba y devolvemos set asi no hay replica
@@ -420,6 +440,11 @@ class Category:
         # se elimina el producto, todo en el.
         pass
 
+    def add_product(self,product):
+        if len(self.subcategories) > 0:
+            raise ValueError("No puede tener categorias si quiere agregar productos")
+        # chequeamos que no este y sino lo agregamos
+
     def to_json(self) -> dict:
         return {
             "id": self.id,
@@ -429,11 +454,6 @@ class Category:
                 for attr in self.attributes
             ]
         }
-
-    def add_product(self,product):
-        if len(self.subcategories) > 0:
-            raise ValueError("No puede tener categorias si quiere agregar productos")
-        # chequeamos que no este y sino lo agregamos
 
     @classmethod
     def from_json(cls, data: dict):
