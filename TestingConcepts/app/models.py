@@ -576,7 +576,7 @@ class Product:
         attributes = self.attributes.copy()
         attributes += self.category.get_attributes()
         return attributes
-
+    # agrega attributo de variante
     def add_dinamic_attribute(self,
         attribute:Attribute,
         variant_options:list = None,
@@ -624,7 +624,7 @@ class Product:
         self.attributes.append(attribute)
         self._attribute_keys.add(attribute.key)
         return True
-
+    #agrega attributo de producto
     def add_static_attribute(self,
         attribute:Attribute,
         implementation:AttributeImplementation
@@ -714,7 +714,7 @@ class Product:
 
     def del_variant(self,variant_id:int):
         pass
-
+    #agrega implementaciones de producto
     def add_product_implementation(self, attribute_implementation:AttributeImplementation):
         if not attribute_implementation.attribute.is_static:
             raise ValueError("Estas intentando meter un atributo dinamico como implementacion estatica")
@@ -732,7 +732,7 @@ class Product:
 
         self.attributes_implementations.append(attribute_implementation)
         self._impl_keys.add(attribute_implementation.attribute.key)
-
+    #verifica type y subscripcion del attributo
     def _check_implementation(self, attr_impl:AttributeImplementation): #mixed
         # verificar que el valor sea valido segun el tipo de dato
         if not attr_impl.attribute.check_value(attr_impl.value):
@@ -751,7 +751,7 @@ class Product:
             if attr.is_static == is_static:
                 result.add(attr)
         return result
-
+    # crea la variante a travez de una lista de implementaciones que machean con las necesarias
     def create_variant_by_implementations(self, implementations:list[AttributeImplementation]):
         needed_attributes = self.get_needed_atributes_implementations()
 
