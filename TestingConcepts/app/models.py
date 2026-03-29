@@ -100,10 +100,10 @@ class Category:
     def __init__(self, 
         name:str, 
         id:int=None, 
-        attributes: list = None, 
-        subcategories: list = None, 
+        attributes: list[Attribute] = None, 
+        subcategories: list[Category] = None, 
         father_categorie: Category = None,
-        products: list = None
+        products: list[Product] = None
         ):
         self.id = id
         self.name = name
@@ -111,7 +111,8 @@ class Category:
         self._attribute_keys = {a.key for a in self.attributes}
         self.subcategories = subcategories or [] # lista de subcategorias
         self.father_categorie = father_categorie or None # categoria padre
-        self.products = products = products or [] # lista de productos que estan con esta categoria
+        self.products = products or [] # lista de productos que estan con esta categoria
+        self._product_codes = {p.code for p in self.products}
 
     def get_attributes(self) -> list: # get recursivo, va a traer toda la rama genialogica y devolver atributos.
         attributes = self.attributes.copy()
@@ -477,18 +478,25 @@ class Category:
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
         pass
 
-    def create_product(self, product):
+    def create_product(self, product:Product):
         # el producto vive en la categoria
         pass
-
-    def del_product(self, product):
-        # se elimina el producto, todo en el.
-        pass
-
-    def add_product(self,product):
+    # elimina prod si existe
+    def del_product(self, product:Product):
+        if product.code not in self._product_codes:
+            return False
+        self.products = [p for p in self.products if p.code != product.code]
+        self._product_codes.discard(product.code)
+        return True
+    # agrega prod si existe
+    def add_product(self, product:Product):
         if len(self.subcategories) > 0:
             raise ValueError("No puede tener categorias si quiere agregar productos")
-        # chequeamos que no este y sino lo agregamos
+        if product.code in self._product_codes:
+            return False
+        self.products.append(product)
+        self._product_codes.add(product.code)
+        return True
 
     def to_json(self) -> dict:
         return {
