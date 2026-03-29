@@ -476,6 +476,14 @@ class Category:
 
     def del_categorie(self,categorie:Category):
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
+
+        # verificar si tengo esa categoria.
+        # recolectar mis attributos y de mis ancestros.
+        # recolectar todos los de la categoria y hacer la diferencia de attributos.
+        # los que queden tienen impacto de eliminacion para esa categoria.
+        # hay tres opciones, integrarle los attrb sobrantes, eliminarl las integraciones, no hacer nada.
+        pass
+    def add_category(self, category:Category):
         pass
 
     def create_product(self, product:Product):
@@ -576,7 +584,7 @@ class Product:
         self.attributes = attributes or [] # lista de objetos Attribute
         self._attribute_keys = {a.key for a in self.attributes}
         self.variants = variants or [] # lista de objetos Variant
-
+    #tiene este attributo ?
     def is_attribute_in(self, attribute: Attribute):
         return attribute.key in self._attribute_keys
 
@@ -716,7 +724,7 @@ class Product:
             attributes=attributes,
             variants=variants
         )
-
+    #agrega variante
     def _add_variant(self, variant:Variant):
         self.variants.append(variant)
 
