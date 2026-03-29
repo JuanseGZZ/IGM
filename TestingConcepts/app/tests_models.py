@@ -383,3 +383,137 @@ def test3():
     print("color eliminado de cat_remeras_2 (esperado False):", attr_color.key in cat_remeras_2._attribute_keys)
 
 #test3()
+
+def test4():
+    # ── jerarquia ──────────────────────────────────────────────────────────────
+    # Moda [attr_marca]
+    #   └── Ropa [attr_color]
+    #         ├── Remeras [attr_talle, attr_material]
+    #         │     prod1 (talle:impl, material:impl)   perjudicado en talle y material
+    #         │     prod2 (talle:impl, material:own)    perjudicado en talle, no en material
+    #         │     prod3 (talle:own,  material:impl)   no perjudicado en talle, si en material
+    #         │     prod4 (talle:own,  material:own)    no perjudicado en ninguno
+    #         ├── Deportiva [attr_talle]                talle ya esta en Ropa? no, en Remeras si
+    #         │     prod5 (talle:impl)                  perjudicado
+    #         └── Vacia []                              sin productos ni atributos sobrantes
+
+    attr_marca    = Attribute(key="marca",    name="Marca",    data_type="text", id=1)
+    attr_color    = Attribute(key="color",    name="Color",    data_type="enum", id=2)
+    attr_color.add_enum_value("rojo"); attr_color.add_enum_value("azul")
+    attr_talle    = Attribute(key="talle",    name="Talle",    data_type="text", id=3)
+    attr_material = Attribute(key="material", name="Material", data_type="text", id=4)
+
+    def build():
+        cat_moda     = Category(name="Moda",      id=1, attributes=[attr_marca])
+        cat_ropa     = Category(name="Ropa",      id=2, attributes=[attr_color],              father_categorie=cat_moda)
+        cat_remeras  = Category(name="Remeras",   id=3, attributes=[attr_talle, attr_material],father_categorie=cat_ropa)
+        cat_deportiva= Category(name="Deportiva", id=4, attributes=[attr_talle],              father_categorie=cat_ropa)
+        cat_vacia    = Category(name="Vacia",     id=5, attributes=[],                        father_categorie=cat_ropa)
+        cat_moda.subcategories  = [cat_ropa]
+        cat_ropa.subcategories  = [cat_remeras, cat_deportiva, cat_vacia]
+
+        prod1 = Product(code="P001", title="Remera Lisa",    price=100.0, description="d", brand="Nike",   id=1, category=cat_remeras,
+                        attributes_implementations=[AttributeImplementation(attribute=attr_talle, value="M"),
+                                                    AttributeImplementation(attribute=attr_material, value="algodon")])
+        prod2 = Product(code="P002", title="Remera Rayada",  price=120.0, description="d", brand="Adidas", id=2, category=cat_remeras,
+                        attributes=[attr_material],
+                        attributes_implementations=[AttributeImplementation(attribute=attr_talle, value="L")])
+        prod3 = Product(code="P003", title="Remera Polo",    price=140.0, description="d", brand="Puma",   id=3, category=cat_remeras,
+                        attributes=[attr_talle],
+                        attributes_implementations=[AttributeImplementation(attribute=attr_material, value="poliester")])
+        prod4 = Product(code="P004", title="Remera Premium", price=160.0, description="d", brand="Lacoste",id=4, category=cat_remeras,
+                        attributes=[attr_talle, attr_material])
+        cat_remeras.products = [prod1, prod2, prod3, prod4]
+
+        prod5 = Product(code="P005", title="Camiseta",       price=90.0,  description="d", brand="Under",  id=5, category=cat_deportiva,
+                        attributes_implementations=[AttributeImplementation(attribute=attr_talle, value="S")])
+        cat_deportiva.products = [prod5]
+
+        return cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, prod1, prod2, prod3, prod4, prod5
+
+    # ── TEST4-1: categoria no existe en subcategories → False ─────────────────
+    print("=== TEST4-1: categoria no existe → False ===")
+    cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, prod1, prod2, prod3, prod4, prod5 = build()
+    cat_ajena = Category(name="Ajena", id=99, attributes=[])
+    result = cat_ropa.del_categorie(cat_ajena, del_option=2)
+    print("resultado (esperado False):", result)
+
+    # ── TEST4-2: sin atributos sobrantes (Vacia) → elimina directo ────────────
+    print()
+    print("=== TEST4-2: categoria sin atributos sobrantes → elimina sin impacto ===")
+    cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, *_ = build()
+    result = cat_ropa.del_categorie(cat_vacia, del_option=2)
+    print("resultado (esperado []):", result)
+    print("Vacia en subcategories de Ropa (esperado False):", cat_vacia in cat_ropa.subcategories)
+    print("father_categorie de Vacia (esperado None):", cat_vacia.father_categorie)
+
+    # ── TEST4-3: atributos cubiertos por ancestro (color en cat_ropa) ─────────
+    # si cat_ropa tiene attr_color y queremos borrar una sub que solo tiene color → sin sobrantes
+    print()
+    print("=== TEST4-3: todos los atributos de la categoria cubiertos por padre → elimina sin impacto ===")
+    cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, *_ = build()
+    cat_solo_color = Category(name="SoloColor", id=6, attributes=[attr_color], father_categorie=cat_ropa)
+    cat_ropa.subcategories.append(cat_solo_color)
+    result = cat_ropa.del_categorie(cat_solo_color, del_option=2)
+    print("resultado (esperado []):", result)
+    print("SoloColor en subcategories de Ropa (esperado False):", cat_solo_color in cat_ropa.subcategories)
+
+    # ── TEST4-4: del_option=2 → retorna perjudicados sin modificar ────────────
+    # Remeras tiene talle y material, Ropa solo tiene color → ambos sobrantes
+    # perjudicados: prod1 (talle:impl, material:impl), prod2 (talle:impl), prod3 (material:impl)
+    print()
+    print("=== TEST4-4: del_option=2 - retorna perjudicados sin modificar ===")
+    cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, prod1, prod2, prod3, prod4, prod5 = build()
+    result = cat_ropa.del_categorie(cat_remeras, del_option=2)
+    print("perjudicados (esperado [Remera Lisa, Remera Rayada, Remera Polo]):", sorted([p.title for p in result]))
+    print("Remeras sigue en Ropa (esperado True):", cat_remeras in cat_ropa.subcategories)
+    print("impl prod1 intactas (esperado 2):", len(prod1.attributes_implementations))
+
+    # ── TEST4-5: del_option=1 → elimina impls de perjudicados y borra categoria
+    print()
+    print("=== TEST4-5: del_option=1 - elimina implementaciones y elimina categoria ===")
+    cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, prod1, prod2, prod3, prod4, prod5 = build()
+    result = cat_ropa.del_categorie(cat_remeras, del_option=1)
+    print("resultado (esperado []):", result)
+    print("Remeras en Ropa (esperado False):", cat_remeras in cat_ropa.subcategories)
+    print("father_categorie Remeras (esperado None):", cat_remeras.father_categorie)
+    print("impl prod1 (esperado []):", prod1.attributes_implementations)
+    print("impl talle prod2 (esperado []):", [i.attribute.key for i in prod2.attributes_implementations if i.attribute.key == "talle"])
+    print("impl material prod3 (esperado []):", [i.attribute.key for i in prod3.attributes_implementations if i.attribute.key == "material"])
+    print("_attribute_keys prod4 intacto (esperado {talle, material}):", prod4._attribute_keys)
+
+    # ── TEST4-6: del_option=0 → inyecta attrs sobrantes en perjudicados ───────
+    print()
+    print("=== TEST4-6: del_option=0 - inyecta atributos sobrantes en perjudicados ===")
+    cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, prod1, prod2, prod3, prod4, prod5 = build()
+    result = cat_ropa.del_categorie(cat_remeras, del_option=0)
+    print("resultado (esperado []):", result)
+    print("Remeras en Ropa (esperado False):", cat_remeras in cat_ropa.subcategories)
+    print("talle en prod1._attribute_keys (esperado True):", attr_talle.key in prod1._attribute_keys)
+    print("material en prod1._attribute_keys (esperado True):", attr_material.key in prod1._attribute_keys)
+    print("talle en prod2._attribute_keys (esperado True):", attr_talle.key in prod2._attribute_keys)
+    print("material en prod2._attribute_keys intacto (esperado True):", attr_material.key in prod2._attribute_keys)
+    print("talle en prod3._attribute_keys intacto (esperado True):", attr_talle.key in prod3._attribute_keys)
+    print("material en prod3._attribute_keys (esperado True):", attr_material.key in prod3._attribute_keys)
+    print("prod4 sin duplicados (esperado {talle, material}):", prod4._attribute_keys)
+
+    # ── TEST4-7: del_option=1 con un solo atributo sobrante (Deportiva/talle) ─
+    print()
+    print("=== TEST4-7: del_option=1 Deportiva/talle - un solo attr sobrante ===")
+    cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, prod1, prod2, prod3, prod4, prod5 = build()
+    result = cat_ropa.del_categorie(cat_deportiva, del_option=1)
+    print("resultado (esperado []):", result)
+    print("Deportiva en Ropa (esperado False):", cat_deportiva in cat_ropa.subcategories)
+    print("impl talle prod5 (esperado []):", prod5.attributes_implementations)
+    print("_impl_keys prod5 (esperado set()):", prod5._impl_keys)
+
+    # ── TEST4-8: del_option=0 con Deportiva → inyecta talle en prod5 ──────────
+    print()
+    print("=== TEST4-8: del_option=0 Deportiva - inyecta talle en prod5 ===")
+    cat_moda, cat_ropa, cat_remeras, cat_deportiva, cat_vacia, prod1, prod2, prod3, prod4, prod5 = build()
+    result = cat_ropa.del_categorie(cat_deportiva, del_option=0)
+    print("resultado (esperado []):", result)
+    print("talle en prod5._attribute_keys (esperado True):", attr_talle.key in prod5._attribute_keys)
+    print("Deportiva en Ropa (esperado False):", cat_deportiva in cat_ropa.subcategories)
+
+test4()

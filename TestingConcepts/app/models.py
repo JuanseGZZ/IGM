@@ -474,17 +474,63 @@ class Category:
         father_categorie.subcategories.append(self)
         return {}
 
-    def del_categorie(self,categorie:Category):
+    # lo hizo claude a tener cuidado
+    def del_categorie(self, categorie:Category, del_option:int):
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. retorna perjudicados si los hay, sino efectua.
 
         # verificar si tengo esa categoria.
         # recolectar mis attributos y de mis ancestros.
         # recolectar todos los de la categoria y hacer la diferencia de attributos.
         # los que queden tienen impacto de eliminacion para esa categoria.
-        # hay tres opciones, integrarle los attrb sobrantes, eliminarl las integraciones, no hacer nada.
-        pass
-    def add_category(self, category:Category):
-        pass
+        # hay tres opciones, integrarle los attrb sobrantes a los productos 0, eliminarl las integraciones 1, no hacer nada 2.
+        if categorie not in self.subcategories:
+            return False
+
+        # atributos disponibles desde self para arriba
+        parent_attr_keys = {a.key for a in self.get_attributes()}
+        # atributos que solo aporta categorie y no estarán cubiertos al eliminarla
+        leftover_attrs = [a for a in categorie.attributes if a.key not in parent_attr_keys]
+
+        if not leftover_attrs:
+            self.subcategories = [c for c in self.subcategories if c is not categorie]
+            categorie.father_categorie = None
+            return []
+
+        # para cada atributo sobrante, obtenemos los productos impactados
+        # no podemos pasar categorie directamente a _del_attribute_look_down porque
+        # categorie tiene el attr y retornaria [] — salteamos ese check mirando directo
+        impact_map = {}
+        for attr in leftover_attrs:
+            impacted = [p for p in categorie.products if attr.key not in p._attribute_keys and attr.key in p._impl_keys]
+            for c in categorie.subcategories:
+                impacted.extend(Category._del_attribute_look_down(c, attr))
+            impact_map[attr] = impacted
+        all_impacted = {p.code: p for products in impact_map.values() for p in products}
+
+        if not all_impacted:
+            self.subcategories = [c for c in self.subcategories if c is not categorie]
+            categorie.father_categorie = None
+            return []
+
+        if del_option == 2:
+            return list(all_impacted.values())
+
+        if del_option == 1:
+            for attr, products in impact_map.items():
+                for p in products:
+                    p.attributes_implementations = [i for i in p.attributes_implementations if i.attribute.key != attr.key]
+                    p._impl_keys.discard(attr.key)
+
+        if del_option == 0:
+            for attr, products in impact_map.items():
+                for p in products:
+                    if attr.key not in p._attribute_keys:
+                        p.attributes.append(attr)
+                        p._attribute_keys.add(attr.key)
+
+        self.subcategories = [c for c in self.subcategories if c is not categorie]
+        categorie.father_categorie = None
+        return []
 
     def create_product(self, product:Product):
         # el producto vive en la categoria
