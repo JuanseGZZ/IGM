@@ -278,53 +278,108 @@ def test2():
 #test2()
 
 def test3():
-    # ── delete_all=0: hay perjudicados, retorna lista sin modificar nada ──────
-    print("=== TEST3-1: delete_all=0 - retorna perjudicados sin hacer nada ===")
-    attr_color = Attribute(key="color", name="Color", data_type="enum", id=1)
-    attr_color.add_enum_value("rojo")
+    # ── jerarquia ──────────────────────────────────────────────────────────────
+    # Moda [attr_marca]
+    #   └── Ropa [attr_color]
+    #         ├── Remeras [attr_talle, attr_material]
+    #         │     prod1 (talle:impl, material:impl)  -- perjudicado en ambos
+    #         │     prod2 (talle:impl, material:own)   -- perjudicado en talle, no en material
+    #         │     prod3 (talle:own,  material:impl)  -- no perjudicado en talle, si en material
+    #         └── Pantalones [attr_largo]
+    #               prod4 (largo:impl)  -- perjudicado
+    #               prod5 (largo:impl)  -- perjudicado
+    #               prod6 (largo:own)   -- no perjudicado
 
-    cat1 = Category(name="Ropa", id=10, attributes=[attr_color])
-    # prod1: no tiene color propio (perjudicado)
-    prod1 = Product(code="P001", title="Remera A", price=100.0, description="desc", brand="Nike",
-                    id=1, category=cat1,
+    attr_marca    = Attribute(key="marca",    name="Marca",    data_type="text", id=1)
+    attr_color    = Attribute(key="color",    name="Color",    data_type="enum", id=2)
+    attr_color.add_enum_value("rojo"); attr_color.add_enum_value("azul")
+    attr_talle    = Attribute(key="talle",    name="Talle",    data_type="text", id=3)
+    attr_material = Attribute(key="material", name="Material", data_type="text", id=4)
+    attr_largo    = Attribute(key="largo",    name="Largo",    data_type="number", id=5)
+
+    cat_moda     = Category(name="Moda",      id=1, attributes=[attr_marca])
+    cat_ropa     = Category(name="Ropa",      id=2, attributes=[attr_color],             father_categorie=cat_moda)
+    cat_remeras  = Category(name="Remeras",   id=3, attributes=[attr_talle, attr_material], father_categorie=cat_ropa)
+    cat_pantalon = Category(name="Pantalones",id=4, attributes=[attr_largo],             father_categorie=cat_ropa)
+    cat_moda.subcategories     = [cat_ropa]
+    cat_ropa.subcategories     = [cat_remeras, cat_pantalon]
+
+    prod1 = Product(code="P001", title="Remera Lisa",   price=100.0, description="d", brand="Nike",   id=1, category=cat_remeras,
+                    attributes_implementations=[AttributeImplementation(attribute=attr_talle, value="M"),
+                                                AttributeImplementation(attribute=attr_material, value="algodon")])
+    prod2 = Product(code="P002", title="Remera Rayada", price=120.0, description="d", brand="Adidas", id=2, category=cat_remeras,
+                    attributes=[attr_material],
+                    attributes_implementations=[AttributeImplementation(attribute=attr_talle, value="L")])
+    prod3 = Product(code="P003", title="Remera Polo",   price=140.0, description="d", brand="Puma",   id=3, category=cat_remeras,
+                    attributes=[attr_talle],
+                    attributes_implementations=[AttributeImplementation(attribute=attr_material, value="poliester")])
+    cat_remeras.products = [prod1, prod2, prod3]
+
+    prod4 = Product(code="P004", title="Jean Slim",     price=200.0, description="d", brand="Levis",  id=4, category=cat_pantalon,
+                    attributes_implementations=[AttributeImplementation(attribute=attr_largo, value="32")])
+    prod5 = Product(code="P005", title="Jean Wide",     price=220.0, description="d", brand="Levis",  id=5, category=cat_pantalon,
+                    attributes_implementations=[AttributeImplementation(attribute=attr_largo, value="34")])
+    prod6 = Product(code="P006", title="Chino",         price=180.0, description="d", brand="Zara",   id=6, category=cat_pantalon,
+                    attributes=[attr_largo])
+    cat_pantalon.products = [prod4, prod5, prod6]
+
+    # ── TEST3-1: delete_all=0 sobre attr_talle en cat_remeras ─────────────────
+    # ningún ancestro tiene talle → perjudicados: prod1, prod2 (no tienen talle propio)
+    print("=== TEST3-1: delete_all=0 en Remeras/talle ===")
+    result1 = cat_remeras.del_attribute(attribute=attr_talle, delete_all=0)
+    print("perjudicados (esperado [Remera Lisa, Remera Rayada]):", [p.title for p in result1])
+    print("talle sigue en cat_remeras (esperado True):", attr_talle.key in cat_remeras._attribute_keys)
+
+    # ── TEST3-2: delete_all=0 sobre attr_material en cat_remeras ──────────────
+    # perjudicados: prod1, prod3 (no tienen material propio)
+    print()
+    print("=== TEST3-2: delete_all=0 en Remeras/material ===")
+    result2 = cat_remeras.del_attribute(attribute=attr_material, delete_all=0)
+    print("perjudicados (esperado [Remera Lisa, Remera Polo]):", [p.title for p in result2])
+    print("material sigue en cat_remeras (esperado True):", attr_material.key in cat_remeras._attribute_keys)
+
+    # ── TEST3-3: delete_all=1 sobre attr_talle en cat_remeras ─────────────────
+    # elimina impls de talle en prod1 y prod2, no toca prod3 (tiene talle propio)
+    print()
+    print("=== TEST3-3: delete_all=1 en Remeras/talle ===")
+    cat_remeras.del_attribute(attribute=attr_talle, delete_all=1)
+    print("talle en cat_remeras (esperado False):", attr_talle.key in cat_remeras._attribute_keys)
+    print("impl talle prod1 (esperado []):", [i.attribute.key for i in prod1.attributes_implementations if i.attribute.key == "talle"])
+    print("impl talle prod2 (esperado []):", [i.attribute.key for i in prod2.attributes_implementations if i.attribute.key == "talle"])
+    print("talle en prod3._attribute_keys intacto (esperado True):", attr_talle.key in prod3._attribute_keys)
+
+    # ── TEST3-4: delete_all=2 sobre attr_material en cat_remeras ──────────────
+    # inyecta material en prod1 y prod3 (perjudicados), no toca prod2 (tiene material propio)
+    print()
+    print("=== TEST3-4: delete_all=2 en Remeras/material ===")
+    cat_remeras.del_attribute(attribute=attr_material, delete_all=2)
+    print("material en cat_remeras (esperado False):", attr_material.key in cat_remeras._attribute_keys)
+    print("material en prod1._attribute_keys (esperado True):", attr_material.key in prod1._attribute_keys)
+    print("material en prod3._attribute_keys (esperado True):", attr_material.key in prod3._attribute_keys)
+    print("material en prod2._attribute_keys intacto (esperado True):", attr_material.key in prod2._attribute_keys)
+
+    # ── TEST3-5: delete_all=1 sobre attr_largo en cat_pantalon ────────────────
+    # perjudicados: prod4, prod5. prod6 tiene largo propio.
+    print()
+    print("=== TEST3-5: delete_all=1 en Pantalones/largo ===")
+    cat_pantalon.del_attribute(attribute=attr_largo, delete_all=1)
+    print("largo en cat_pantalon (esperado False):", attr_largo.key in cat_pantalon._attribute_keys)
+    print("impl largo prod4 (esperado []):", [i.attribute.key for i in prod4.attributes_implementations])
+    print("impl largo prod5 (esperado []):", [i.attribute.key for i in prod5.attributes_implementations])
+    print("largo en prod6._attribute_keys intacto (esperado True):", attr_largo.key in prod6._attribute_keys)
+
+    # ── TEST3-6: ancestro cubre el atributo → sin perjudicados ────────────────
+    # cat_remeras_2 es hija de cat_ropa que tiene attr_color
+    # al borrar attr_color de cat_remeras_2, cat_ropa lo cubre → retorna []
+    print()
+    print("=== TEST3-6: ancestro cubre - sin perjudicados ===")
+    cat_remeras_2 = Category(name="Remeras2", id=5, attributes=[attr_color], father_categorie=cat_ropa)
+    prod7 = Product(code="P007", title="Remera Sin Color", price=90.0, description="d", brand="HyM", id=7,
+                    category=cat_remeras_2,
                     attributes_implementations=[AttributeImplementation(attribute=attr_color, value="rojo")])
-    # prod2: tiene color propio (no perjudicado)
-    prod2 = Product(code="P002", title="Remera B", price=120.0, description="desc", brand="Adidas",
-                    id=2, category=cat1, attributes=[attr_color])
-    cat1.products = [prod1, prod2]
+    cat_remeras_2.products = [prod7]
+    result6 = cat_remeras_2.del_attribute(attribute=attr_color, delete_all=0)
+    print("perjudicados (esperado []):", [p.title for p in result6])
+    print("color eliminado de cat_remeras_2 (esperado False):", attr_color.key in cat_remeras_2._attribute_keys)
 
-    result1 = cat1.del_attribute(attribute=attr_color, delete_all=0)
-    print("perjudicados (esperado [Remera A]):", [p.title for p in result1])
-    print("color sigue en cat1 (esperado True):", attr_color.key in cat1._attribute_keys)
-
-    # ── delete_all=1: elimina implementaciones de perjudicados y el attr de la cat
-    print()
-    print("=== TEST3-2: delete_all=1 - elimina implementaciones y attr de categoria ===")
-    attr_talle = Attribute(key="talle", name="Talle", data_type="text", id=2)
-    cat2 = Category(name="Pantalones", id=11, attributes=[attr_talle])
-    prod3 = Product(code="P003", title="Pantalon A", price=80.0, description="desc", brand="Zara",
-                    id=3, category=cat2,
-                    attributes_implementations=[AttributeImplementation(attribute=attr_talle, value="M")])
-    cat2.products = [prod3]
-
-    cat2.del_attribute(attribute=attr_talle, delete_all=1)
-    print("talle en cat2 (esperado False):", attr_talle.key in cat2._attribute_keys)
-    print("attributes_implementations prod3 (esperado []):", prod3.attributes_implementations)
-    print("_impl_keys prod3 (esperado set()):", prod3._impl_keys)
-
-    # ── delete_all=2: inyecta attr en perjudicados y lo elimina de la cat ─────
-    print()
-    print("=== TEST3-3: delete_all=2 - inyecta attr en perjudicados y lo elimina de la categoria ===")
-    attr_material = Attribute(key="material", name="Material", data_type="text", id=3)
-    cat3 = Category(name="Buzos", id=12, attributes=[attr_material])
-    prod4 = Product(code="P004", title="Buzo A", price=150.0, description="desc", brand="Puma",
-                    id=4, category=cat3,
-                    attributes_implementations=[AttributeImplementation(attribute=attr_material, value="algodon")])
-    cat3.products = [prod4]
-
-    cat3.del_attribute(attribute=attr_material, delete_all=2)
-    print("material en cat3 (esperado False):", attr_material.key in cat3._attribute_keys)
-    print("material en prod4._attribute_keys (esperado True):", attr_material.key in prod4._attribute_keys)
-    print("material en prod4.attributes (esperado True):", any(a.key == attr_material.key for a in prod4.attributes))
-
-test3()
+#test3()
