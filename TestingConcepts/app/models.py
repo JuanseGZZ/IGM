@@ -1,3 +1,4 @@
+from typing import List
 #modelo de jerarquia de atributos
 DataTypes = ["text", "number", "boolean", "enum"]
 # Buenas parcticas locales
@@ -321,27 +322,71 @@ class Category:
             return True
         if category.father_categorie is None:
             return False
-        Category._del_attribute_look_up(category=category.father_categorie,attribute=attribute)
+        return Category._del_attribute_look_up(category=category.father_categorie,attribute=attribute)
 
-    def _del_attribute_look_down(self):
-        pass
+    #retorna productos perjudicados
+    @staticmethod
+    def _del_attribute_look_down(category:Category,attribute:Attribute):
+        products = []
+        # verifica si el que esta lo tiene retorna [] si lo tiene
+        if attribute.key in category._attribute_keys:
+            return []
+        # verifica que si tene hijos categorias y entra en un for sumador recursivo
+        if len(category.subcategories) > 0:
+            for c in category.subcategories:
+                products.extend(Category._del_attribute_look_down(c,attribute=attribute))        
+            return products
+        # verifica si tiene productos y un for sumador uno a uno de los que lo tengan
+        if len(category.products)>0:
+            for p in category.products:
+                if attribute.key not in p._attribute_keys: # producto que no tiene el attrto
+                    products.append(p)
+            return products
+        return []
 
+    # retorna todos los productos perjudicados
     def del_attribute_check_family_impact(self,attribute:Attribute):
         # tiene que verificar que no perjudique productos, es decir, ancestros tienen que tener ese atributo, o todos los herederos tenerlo propiamente. productos retorna perjudicados si los hay.
-        #si algun ancestro lo tiene 
-        if Category._del_attribute_look_up(category=self,attribute=attribute):
-            return {}
-        
-            
-        
+        products = []
+        #si algun ancestro lo tiene
+        if self.father_categorie and Category._del_attribute_look_up(category=self.father_categorie,attribute=attribute):
+            return products
+        # verifica si tiene productos y un for sumador uno a uno de los que lo tengan
+        if len(self.products)>0:
+            for p in self.products:
+                if attribute.key not in p._attribute_keys:
+                    products.append(p)
+            return products
+        # si tiene hijo categoria
+        for c in self.subcategories:
+            products.extend(Category._del_attribute_look_down(c,attribute=attribute))
+        return products
     
     #delete_all significa que elimina todos las implementaciones de ese attributo en los afectados.
     #si esta en 0 no hace nada
     #si esta en 1 elimina implementaciones
     #si esta en 2 injecta ese attributo en los productos afectados
-    def del_attribute(self, attibute:Attribute,delete_all:int=0):
-        
-        pass
+    def del_attribute(self, attribute:Attribute,delete_all:int=0):
+        products: List[Product] = self.del_attribute_check_family_impact(attribute=attribute).copy() 
+        if not products:
+            self._attribute_keys.discard(attribute.key)
+            self.attributes = [a for a in self.attributes if a.key != attribute.key]
+            return []
+        if delete_all == 0:
+            return products
+        if delete_all == 1:
+            for p in products:
+                p.attributes_implementations = [i for i in p.attributes_implementations if i.attribute.key != attribute.key]
+                p._impl_keys.discard(attribute.key)
+            self._attribute_keys.discard(attribute.key)
+            self.attributes = [a for a in self.attributes if a.key != attribute.key]
+        if delete_all == 2:
+            for p in products:
+                p.attributes.append(attribute)
+                p._attribute_keys.add(attribute.key)
+            self._attribute_keys.discard(attribute.key)
+            self.attributes = [a for a in self.attributes if a.key != attribute.key]
+            return []
 
     # handler para change_categorie_father
     @staticmethod

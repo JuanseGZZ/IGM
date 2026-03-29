@@ -276,3 +276,55 @@ def test2():
     print("padre asignado:", cat_hija4.father_categorie.name)
 
 #test2()
+
+def test3():
+    # ── delete_all=0: hay perjudicados, retorna lista sin modificar nada ──────
+    print("=== TEST3-1: delete_all=0 - retorna perjudicados sin hacer nada ===")
+    attr_color = Attribute(key="color", name="Color", data_type="enum", id=1)
+    attr_color.add_enum_value("rojo")
+
+    cat1 = Category(name="Ropa", id=10, attributes=[attr_color])
+    # prod1: no tiene color propio (perjudicado)
+    prod1 = Product(code="P001", title="Remera A", price=100.0, description="desc", brand="Nike",
+                    id=1, category=cat1,
+                    attributes_implementations=[AttributeImplementation(attribute=attr_color, value="rojo")])
+    # prod2: tiene color propio (no perjudicado)
+    prod2 = Product(code="P002", title="Remera B", price=120.0, description="desc", brand="Adidas",
+                    id=2, category=cat1, attributes=[attr_color])
+    cat1.products = [prod1, prod2]
+
+    result1 = cat1.del_attribute(attribute=attr_color, delete_all=0)
+    print("perjudicados (esperado [Remera A]):", [p.title for p in result1])
+    print("color sigue en cat1 (esperado True):", attr_color.key in cat1._attribute_keys)
+
+    # ── delete_all=1: elimina implementaciones de perjudicados y el attr de la cat
+    print()
+    print("=== TEST3-2: delete_all=1 - elimina implementaciones y attr de categoria ===")
+    attr_talle = Attribute(key="talle", name="Talle", data_type="text", id=2)
+    cat2 = Category(name="Pantalones", id=11, attributes=[attr_talle])
+    prod3 = Product(code="P003", title="Pantalon A", price=80.0, description="desc", brand="Zara",
+                    id=3, category=cat2,
+                    attributes_implementations=[AttributeImplementation(attribute=attr_talle, value="M")])
+    cat2.products = [prod3]
+
+    cat2.del_attribute(attribute=attr_talle, delete_all=1)
+    print("talle en cat2 (esperado False):", attr_talle.key in cat2._attribute_keys)
+    print("attributes_implementations prod3 (esperado []):", prod3.attributes_implementations)
+    print("_impl_keys prod3 (esperado set()):", prod3._impl_keys)
+
+    # ── delete_all=2: inyecta attr en perjudicados y lo elimina de la cat ─────
+    print()
+    print("=== TEST3-3: delete_all=2 - inyecta attr en perjudicados y lo elimina de la categoria ===")
+    attr_material = Attribute(key="material", name="Material", data_type="text", id=3)
+    cat3 = Category(name="Buzos", id=12, attributes=[attr_material])
+    prod4 = Product(code="P004", title="Buzo A", price=150.0, description="desc", brand="Puma",
+                    id=4, category=cat3,
+                    attributes_implementations=[AttributeImplementation(attribute=attr_material, value="algodon")])
+    cat3.products = [prod4]
+
+    cat3.del_attribute(attribute=attr_material, delete_all=2)
+    print("material en cat3 (esperado False):", attr_material.key in cat3._attribute_keys)
+    print("material en prod4._attribute_keys (esperado True):", attr_material.key in prod4._attribute_keys)
+    print("material en prod4.attributes (esperado True):", any(a.key == attr_material.key for a in prod4.attributes))
+
+test3()
