@@ -576,7 +576,7 @@ class Category:
         )
 
 class Variant: # hereda todas las propiedades por asociacion con el producto, y implementa obligatoriamente los atributos del producto y de la categoria.
-    def __init__(self, attribute_implementations:list=None, id:int=None,):
+    def __init__(self, attribute_implementations:List[AttributeImplementation]=None, id:int=None,):
         self.id = id
         self.attribute_implementations = attribute_implementations or [] # lista de objetos AttributeImplementation, implementamos atributos no staticos, es decir, los que no se muestran como informacion del producto, sino que son opciones para elegir.
 
@@ -610,9 +610,9 @@ class Product:
     brand:str, 
     id:int = None, 
     category: Category = None,
-    attributes_implementations: list = None, 
-    attributes: list = None, 
-    variants: list = None
+    attributes_implementations: List[AttributeImplementation] = None, 
+    attributes: List[Attribute] = None, 
+    variants: List[Variant] = None
     ):
         #agregar los otros ifs de los obligatorios
         if category is None:
