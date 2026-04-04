@@ -493,7 +493,7 @@ class Category:
             return False
 
         # atributos disponibles desde self para arriba
-        parent_attr_keys = {a.key for a in self.get_attributes()}
+        parent_attr_keys = self.get_attribute_keys()
         # atributos que solo aporta categorie y no estarán cubiertos al eliminarla
         leftover_attrs = [a for a in categorie.attributes if a.key not in parent_attr_keys]
 
@@ -541,8 +541,8 @@ class Category:
     def create_product(self, product:Product):
         # el producto vive en la categoria
         pass
-    # elimina prod si existe
-    def del_product(self, product:Product):
+    # elimina prod si existe, no de categorias, de todo, se elimina.
+    def del_product(self, product:Product): 
         if product.code not in self._product_codes:
             return False
         self.products = [p for p in self.products if p.code != product.code]
