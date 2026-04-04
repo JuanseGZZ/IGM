@@ -1,7 +1,6 @@
 {
 	"nodes":[
 		{"id":"root","type":"text","text":"# models.py","x":0,"y":0,"width":320,"height":50,"color":"1"},
-
 		{"id":"attr","type":"text","text":"## Attribute","x":450,"y":64,"width":320,"height":50,"color":"3"},
 		{"id":"attr_props","type":"text","text":"Propiedades: key, name, data_type, is_static","x":900,"y":128,"width":320,"height":50,"color":"6"},
 		{"id":"attr_key","type":"text","text":"key → identificador interno único","x":1360,"y":64,"width":360,"height":50},
@@ -11,12 +10,10 @@
 		{"id":"attr_add_enum","type":"text","text":"add_enum_value(value) → agrega valor posible","x":1360,"y":320,"width":360,"height":50},
 		{"id":"attr_check","type":"text","text":"check_value(value) → valida tipo de dato","x":1360,"y":384,"width":360,"height":50},
 		{"id":"attr_json","type":"text","text":"to_json() → serializa a dict","x":1360,"y":448,"width":360,"height":50},
-
 		{"id":"factory","type":"text","text":"## Attribute_factory","x":450,"y":640,"width":320,"height":50,"color":"3"},
 		{"id":"factory_desc","type":"text","text":"Factory con caché — evita duplicar instancias","x":900,"y":704,"width":320,"height":50,"color":"6"},
 		{"id":"factory_get","type":"text","text":"get(key,...) → devuelve instancia existente o nueva","x":1360,"y":672,"width":360,"height":50},
 		{"id":"factory_clear","type":"text","text":"clear() → limpia el caché completo","x":1360,"y":736,"width":360,"height":50},
-
 		{"id":"impl","type":"text","text":"## AttributeImplementation","x":450,"y":896,"width":320,"height":50,"color":"3"},
 		{"id":"impl_desc","type":"text","text":"Une Attribute + valor concreto","x":900,"y":960,"width":320,"height":50,"color":"6"},
 		{"id":"impl_attr","type":"text","text":"attribute → referencia al Attribute","x":1360,"y":928,"width":360,"height":50},
@@ -24,7 +21,6 @@
 		{"id":"impl_methods","type":"text","text":"Métodos","x":900,"y":1152,"width":320,"height":50,"color":"6"},
 		{"id":"impl_json","type":"text","text":"to_json() → serializa con atributo anidado","x":1360,"y":1120,"width":360,"height":50},
 		{"id":"impl_from","type":"text","text":"from_json(data) → deserializa desde dict","x":1360,"y":1184,"width":360,"height":50},
-
 		{"id":"cat","type":"text","text":"## Category","x":450,"y":1344,"width":320,"height":50,"color":"3"},
 		{"id":"cat_props","type":"text","text":"Propiedades","x":900,"y":1408,"width":320,"height":50,"color":"6"},
 		{"id":"cat_attrs","type":"text","text":"attributes → atributos propios","x":1360,"y":1312,"width":360,"height":50},
@@ -46,14 +42,12 @@
 		{"id":"cat_prods_m","type":"text","text":"Productos","x":900,"y":2496,"width":320,"height":50,"color":"6"},
 		{"id":"cat_add_prod","type":"text","text":"add_product(product) → agrega si no hay subcats","x":1360,"y":2464,"width":360,"height":50},
 		{"id":"cat_del_prod","type":"text","text":"del_product(product) → elimina","x":1360,"y":2528,"width":360,"height":50},
-
 		{"id":"variant","type":"text","text":"## Variant","x":450,"y":2688,"width":320,"height":50,"color":"3"},
 		{"id":"var_desc","type":"text","text":"Combinación específica de opciones de producto","x":900,"y":2752,"width":320,"height":50,"color":"6"},
 		{"id":"var_impls","type":"text","text":"attribute_implementations → impls dinámicas","x":1360,"y":2752,"width":360,"height":50},
 		{"id":"var_methods","type":"text","text":"Métodos","x":900,"y":2880,"width":320,"height":50,"color":"6"},
 		{"id":"var_json","type":"text","text":"to_json() → serializa variante","x":1360,"y":2848,"width":360,"height":50},
 		{"id":"var_from","type":"text","text":"from_json(data) → deserializa","x":1360,"y":2912,"width":360,"height":50},
-
 		{"id":"product","type":"text","text":"## Product","x":450,"y":3072,"width":320,"height":50,"color":"3"},
 		{"id":"prod_props","type":"text","text":"Propiedades base","x":900,"y":3136,"width":320,"height":50,"color":"6"},
 		{"id":"prod_code","type":"text","text":"code → código único","x":1360,"y":2976,"width":360,"height":50},
