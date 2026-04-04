@@ -1,0 +1,203 @@
+{
+  "main": {
+    "id": "69172719817d19d0",
+    "type": "split",
+    "children": [
+      {
+        "id": "790818a0d702b5b7",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b7e3264f7418b29b",
+            "type": "leaf",
+            "state": {
+              "type": "canvas",
+              "state": {
+                "file": "igm-models_doc/models.py.canvas",
+                "viewState": {
+                  "x": 1313.8185801324505,
+                  "y": 2719.9170887417226,
+                  "zoom": -2.681114119429051
+                }
+              },
+              "icon": "lucide-layout-dashboard",
+              "title": "models.py"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e5222fab20102551",
+    "type": "split",
+    "children": [
+      {
+        "id": "a433efa06504a991",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "646d2fa97ea8a067",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "5ba8f04b1ff61d35",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "1a3f5ec50fecbeeb",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "598c09b1a200cb45",
+    "type": "split",
+    "children": [
+      {
+        "id": "e8c0ec82c8908045",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0e8f36b505567bdf",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "igm-models_doc/models.py.canvas",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for models.py"
+            }
+          },
+          {
+            "id": "2ab0b33a12923232",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "igm-models_doc/models.py.canvas",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from models.py"
+            }
+          },
+          {
+            "id": "4dcfe0a7893abeb9",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "33df6818cb5ff650",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "fea8269cbc551aed",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "igm-models_doc/models.py.canvas",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of models.py"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "b7e3264f7418b29b",
+  "lastOpenFiles": [
+    "Welcome.md",
+    "igm-models_doc/notas/AttributeImplementation.md",
+    "igm-models_doc/notas/Attribute.md",
+    "igm-models_doc/notas/Category.md",
+    "igm-models_doc/notas/Variant.md",
+    "igm-models_doc/notas/Attribute_factory.md",
+    "igm-models_doc/notas/Product.md",
+    "igm-models_doc/notas",
+    "igm-models_doc/models.py.canvas",
+    "igm-models_doc/models.py - Resumen.md",
+    "igm-models_doc"
+  ]
+}
