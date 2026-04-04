@@ -54,6 +54,19 @@ class Attribute:
             ]
         }
 
+    @classmethod
+    def from_json(cls, data: dict):
+        attr = cls(
+            key=data.get("key"),
+            name=data.get("name"),
+            data_type=data.get("data_type"),
+            id=data.get("id"),
+            is_static=data.get("is_static", False)
+        )
+        for ev in data.get("enum_values", []):
+            attr.enum_values.append(ev)
+        return attr
+
 class Attribute_factory:
     _instances: dict = {}
 
@@ -565,6 +578,9 @@ class Category:
             "attributes": [
                 attr.to_json() if hasattr(attr, "to_json") else attr
                 for attr in self.attributes
+            ],
+            "subcategories": [
+                sub.to_json() for sub in self.subcategories
             ]
         }
 
@@ -575,11 +591,18 @@ class Category:
             for attr in data.get("attributes", [])
         ]
 
-        return cls(
+        category = cls(
             name=data.get("name"),
             id=data.get("id"),
             attributes=attributes
         )
+
+        for sub_data in data.get("subcategories", []):
+            sub = cls.from_json(sub_data) if isinstance(sub_data, dict) else sub_data
+            sub.father_categorie = category
+            category.subcategories.append(sub)
+
+        return category
 
 class Variant: # hereda todas las propiedades por asociacion con el producto, y implementa obligatoriamente los atributos del producto y de la categoria.
     def __init__(self, attribute_implementations:List[AttributeImplementation]=None, id:int=None,):
