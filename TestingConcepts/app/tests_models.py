@@ -326,7 +326,7 @@ def test3():
     # ── TEST3-1: delete_all=0 sobre attr_talle en cat_remeras ─────────────────
     # ningún ancestro tiene talle → perjudicados: prod1, prod2 (no tienen talle propio)
     print("=== TEST3-1: delete_all=0 en Remeras/talle ===")
-    result1 = cat_remeras.del_attribute(attribute=attr_talle, delete_all=0)
+    result1 = cat_remeras.del_attribute(attribute=attr_talle, delete_opt=0)
     print("perjudicados (esperado [Remera Lisa, Remera Rayada]):", [p.title for p in result1])
     print("talle sigue en cat_remeras (esperado True):", attr_talle.key in cat_remeras._attribute_keys)
 
@@ -334,7 +334,7 @@ def test3():
     # perjudicados: prod1, prod3 (no tienen material propio)
     print()
     print("=== TEST3-2: delete_all=0 en Remeras/material ===")
-    result2 = cat_remeras.del_attribute(attribute=attr_material, delete_all=0)
+    result2 = cat_remeras.del_attribute(attribute=attr_material, delete_opt=0)
     print("perjudicados (esperado [Remera Lisa, Remera Polo]):", [p.title for p in result2])
     print("material sigue en cat_remeras (esperado True):", attr_material.key in cat_remeras._attribute_keys)
 
@@ -342,7 +342,7 @@ def test3():
     # elimina impls de talle en prod1 y prod2, no toca prod3 (tiene talle propio)
     print()
     print("=== TEST3-3: delete_all=1 en Remeras/talle ===")
-    cat_remeras.del_attribute(attribute=attr_talle, delete_all=1)
+    cat_remeras.del_attribute(attribute=attr_talle, delete_opt=1)
     print("talle en cat_remeras (esperado False):", attr_talle.key in cat_remeras._attribute_keys)
     print("impl talle prod1 (esperado []):", [i.attribute.key for i in prod1.attributes_implementations if i.attribute.key == "talle"])
     print("impl talle prod2 (esperado []):", [i.attribute.key for i in prod2.attributes_implementations if i.attribute.key == "talle"])
@@ -352,7 +352,7 @@ def test3():
     # inyecta material en prod1 y prod3 (perjudicados), no toca prod2 (tiene material propio)
     print()
     print("=== TEST3-4: delete_all=2 en Remeras/material ===")
-    cat_remeras.del_attribute(attribute=attr_material, delete_all=2)
+    cat_remeras.del_attribute(attribute=attr_material, delete_opt=2)
     print("material en cat_remeras (esperado False):", attr_material.key in cat_remeras._attribute_keys)
     print("material en prod1._attribute_keys (esperado True):", attr_material.key in prod1._attribute_keys)
     print("material en prod3._attribute_keys (esperado True):", attr_material.key in prod3._attribute_keys)
@@ -362,7 +362,7 @@ def test3():
     # perjudicados: prod4, prod5. prod6 tiene largo propio.
     print()
     print("=== TEST3-5: delete_all=1 en Pantalones/largo ===")
-    cat_pantalon.del_attribute(attribute=attr_largo, delete_all=1)
+    cat_pantalon.del_attribute(attribute=attr_largo, delete_opt=1)
     print("largo en cat_pantalon (esperado False):", attr_largo.key in cat_pantalon._attribute_keys)
     print("impl largo prod4 (esperado []):", [i.attribute.key for i in prod4.attributes_implementations])
     print("impl largo prod5 (esperado []):", [i.attribute.key for i in prod5.attributes_implementations])
@@ -378,7 +378,7 @@ def test3():
                     category=cat_remeras_2,
                     attributes_implementations=[AttributeImplementation(attribute=attr_color, value="rojo")])
     cat_remeras_2.products = [prod7]
-    result6 = cat_remeras_2.del_attribute(attribute=attr_color, delete_all=0)
+    result6 = cat_remeras_2.del_attribute(attribute=attr_color, delete_opt=0)
     print("perjudicados (esperado []):", [p.title for p in result6])
     print("color eliminado de cat_remeras_2 (esperado False):", attr_color.key in cat_remeras_2._attribute_keys)
 
@@ -641,4 +641,4 @@ def test5():
     print("impls color en var1 (esperado []):", [i.attribute.key for i in var1.attribute_implementations if i.attribute.key == "color"])
     print("impls color en var2 (esperado []):", [i.attribute.key for i in var2.attribute_implementations if i.attribute.key == "color"])
 
-test5()
+#test5()

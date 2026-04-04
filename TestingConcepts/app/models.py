@@ -373,21 +373,21 @@ class Category:
     #si esta en 0 no hace nada
     #si esta en 1 elimina implementaciones
     #si esta en 2 injecta ese attributo en los productos afectados
-    def del_attribute(self, attribute:Attribute,delete_all:int=0):
+    def del_attribute(self, attribute:Attribute,delete_opt:int=0):
         products: List[Product] = self.del_attribute_check_family_impact(attribute=attribute).copy() 
         if not products:
             self._attribute_keys.discard(attribute.key)
             self.attributes = [a for a in self.attributes if a.key != attribute.key]
             return []
-        if delete_all == 0:
+        if delete_opt == 0:
             return products
-        if delete_all == 1:
+        if delete_opt == 1:
             for p in products:
                 p.attributes_implementations = [i for i in p.attributes_implementations if i.attribute.key != attribute.key]
                 p._impl_keys.discard(attribute.key)
             self._attribute_keys.discard(attribute.key)
             self.attributes = [a for a in self.attributes if a.key != attribute.key]
-        if delete_all == 2:
+        if delete_opt == 2:
             for p in products:
                 p.attributes.append(attribute)
                 p._attribute_keys.add(attribute.key)
