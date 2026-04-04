@@ -516,4 +516,129 @@ def test4():
     print("talle en prod5._attribute_keys (esperado True):", attr_talle.key in prod5._attribute_keys)
     print("Deportiva en Ropa (esperado False):", cat_deportiva in cat_ropa.subcategories)
 
-test4()
+#test4()
+
+def test5():
+    # ── jerarquia ──────────────────────────────────────────────────────────────
+    # Base [attr_talle (dynamic)]
+    #   └── Ropa [] (hereda talle)
+    #
+    # prod1: attributes=[attr_lavado (static), attr_color (dynamic)]
+    #        attributes_implementations=[impl_lavado]
+    #        variants: var1(color=rojo), var2(color=azul)
+    #
+    # prod2: attributes=[attr_talle (dynamic)] <-- cubierto por ancestro Base
+    #        variants: var3(talle=M)
+    #
+    # prod3: attributes=[attr_material (static)] sin implementacion
+    #
+    # prod4: attributes=[attr_temporada (dynamic)] sin variantes
+
+    attr_talle     = Attribute(key="talle",     name="Talle",     data_type="text",    id=1)
+    attr_lavado    = Attribute(key="lavado",     name="Lavado",    data_type="boolean", id=2, is_static=True)
+    attr_color     = Attribute(key="color",      name="Color",     data_type="enum",    id=3)
+    attr_color.add_enum_value("rojo"); attr_color.add_enum_value("azul")
+    attr_material  = Attribute(key="material",   name="Material",  data_type="text",    id=4, is_static=True)
+    attr_temporada = Attribute(key="temporada",  name="Temporada", data_type="text",    id=5)
+
+    def build():
+        cat_base = Category(name="Base", id=1, attributes=[attr_talle])
+        cat_ropa = Category(name="Ropa", id=2, attributes=[], father_categorie=cat_base)
+
+        var1 = Variant(id=1, attribute_implementations=[AttributeImplementation(attribute=attr_color, value="rojo")])
+        var2 = Variant(id=2, attribute_implementations=[AttributeImplementation(attribute=attr_color, value="azul")])
+        prod1 = Product(code="P001", title="Remera", price=100.0, description="d", brand="Nike", id=1,
+                        category=cat_ropa,
+                        attributes=[attr_lavado, attr_color],
+                        attributes_implementations=[AttributeImplementation(attribute=attr_lavado, value=True)],
+                        variants=[var1, var2])
+
+        var3 = Variant(id=3, attribute_implementations=[AttributeImplementation(attribute=attr_talle, value="M")])
+        prod2 = Product(code="P002", title="Jean", price=200.0, description="d", brand="Levi", id=2,
+                        category=cat_ropa,
+                        attributes=[attr_talle],
+                        variants=[var3])
+
+        prod3 = Product(code="P003", title="Buzo", price=150.0, description="d", brand="Puma", id=3,
+                        category=cat_ropa,
+                        attributes=[attr_material])
+
+        prod4 = Product(code="P004", title="Gorra", price=50.0, description="d", brand="Under", id=4,
+                        category=cat_ropa,
+                        attributes=[attr_temporada])
+
+        return cat_base, cat_ropa, prod1, prod2, prod3, prod4, var1, var2, var3
+
+    # ── TEST5-1: atributo no esta en el producto → False ─────────────────────
+    print("=== TEST5-1: atributo no en producto → False ===")
+    _, _, prod1, *_ = build()
+    attr_ajena = Attribute(key="ajena", name="Ajena", data_type="text", id=99)
+    result = prod1.del_attribute(attr_ajena)
+    print("resultado (esperado False):", result)
+
+    # ── TEST5-2: ancestro cubre el atributo → borra sin impacto ──────────────
+    print()
+    print("=== TEST5-2: ancestro (cat_base) ya cubre attr_talle → borra del producto sin impacto ===")
+    _, _, prod1, prod2, prod3, prod4, var1, var2, var3 = build()
+    result = prod2.del_attribute(attr_talle)
+    print("resultado (esperado []):", result)
+    print("talle en prod2._attribute_keys (esperado False):", attr_talle.key in prod2._attribute_keys)
+    print("impl talle en var3 intacta (esperado True):", any(i.attribute.key == "talle" for i in var3.attribute_implementations))
+
+    # ── TEST5-3: sin ancestro, atributo estatico sin implementacion → borra ───
+    print()
+    print("=== TEST5-3: sin ancestro, atributo estatico sin impl → borra directo ===")
+    _, _, prod1, prod2, prod3, prod4, var1, var2, var3 = build()
+    result = prod3.del_attribute(attr_material)
+    print("resultado (esperado []):", result)
+    print("material en prod3._attribute_keys (esperado False):", attr_material.key in prod3._attribute_keys)
+
+    # ── TEST5-4: sin ancestro, atributo dinamico sin variantes → borra ───────
+    print()
+    print("=== TEST5-4: sin ancestro, atributo dinamico sin variantes → borra directo ===")
+    _, _, prod1, prod2, prod3, prod4, var1, var2, var3 = build()
+    result = prod4.del_attribute(attr_temporada)
+    print("resultado (esperado []):", result)
+    print("temporada en prod4._attribute_keys (esperado False):", attr_temporada.key in prod4._attribute_keys)
+
+    # ── TEST5-5: estatico con impl, delete_opt=0 → retorna impls sin borrar ──
+    print()
+    print("=== TEST5-5: estatico con impl, delete_opt=0 → retorna impls afectadas ===")
+    _, _, prod1, prod2, prod3, prod4, var1, var2, var3 = build()
+    result = prod1.del_attribute(attr_lavado, delete_opt=0)
+    print("cantidad impactadas (esperado 1):", len(result))
+    print("key de la impl (esperado lavado):", result[0].attribute.key)
+    print("lavado sigue en prod1._attribute_keys (esperado True):", attr_lavado.key in prod1._attribute_keys)
+    print("impl sigue en prod1 (esperado True):", any(i.attribute.key == "lavado" for i in prod1.attributes_implementations))
+
+    # ── TEST5-6: estatico con impl, delete_opt=1 → elimina impl y atributo ───
+    print()
+    print("=== TEST5-6: estatico con impl, delete_opt=1 → elimina impl y atributo ===")
+    _, _, prod1, prod2, prod3, prod4, var1, var2, var3 = build()
+    result = prod1.del_attribute(attr_lavado, delete_opt=1)
+    print("resultado (esperado []):", result)
+    print("lavado en prod1._attribute_keys (esperado False):", attr_lavado.key in prod1._attribute_keys)
+    print("lavado en prod1._impl_keys (esperado False):", attr_lavado.key in prod1._impl_keys)
+    print("impl lavado en prod1 (esperado []):", [i.attribute.key for i in prod1.attributes_implementations if i.attribute.key == "lavado"])
+
+    # ── TEST5-7: dinamico con impls en variantes, delete_opt=0 → retorna variantes
+    print()
+    print("=== TEST5-7: dinamico con impls en variantes, delete_opt=0 → retorna variantes afectadas ===")
+    _, _, prod1, prod2, prod3, prod4, var1, var2, var3 = build()
+    result = prod1.del_attribute(attr_color, delete_opt=0)
+    print("variantes impactadas (esperado 2):", len(result))
+    print("ids (esperado {1,2}):", {v.id for v in result})
+    print("color sigue en prod1._attribute_keys (esperado True):", attr_color.key in prod1._attribute_keys)
+    print("impls en var1 intactas (esperado True):", any(i.attribute.key == "color" for i in var1.attribute_implementations))
+
+    # ── TEST5-8: dinamico con impls en variantes, delete_opt=1 → elimina todo ─
+    print()
+    print("=== TEST5-8: dinamico con impls en variantes, delete_opt=1 → elimina impls y atributo ===")
+    _, _, prod1, prod2, prod3, prod4, var1, var2, var3 = build()
+    result = prod1.del_attribute(attr_color, delete_opt=1)
+    print("resultado (esperado []):", result)
+    print("color en prod1._attribute_keys (esperado False):", attr_color.key in prod1._attribute_keys)
+    print("impls color en var1 (esperado []):", [i.attribute.key for i in var1.attribute_implementations if i.attribute.key == "color"])
+    print("impls color en var2 (esperado []):", [i.attribute.key for i in var2.attribute_implementations if i.attribute.key == "color"])
+
+test5()

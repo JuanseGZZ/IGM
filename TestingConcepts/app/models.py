@@ -120,6 +120,12 @@ class Category:
             attributes += self.father_categorie.get_attributes()
         return attributes
 
+    def get_attribute_keys(self) -> set: # version recursiva que devuelve solo los keys
+        keys = {a.key for a in self.attributes}
+        if self.father_categorie:
+            keys |= self.father_categorie.get_attribute_keys()
+        return keys
+
     # busca recursivamente para arriba si esta un attibute espesifico
     def _add_attribute_look_up(self,attribute:Attribute):
         #si lo tengo retorno true
@@ -633,11 +639,15 @@ class Product:
     #tiene este attributo ?
     def is_attribute_in(self, attribute: Attribute):
         return attribute.key in self._attribute_keys
-
+    #devuelve los atributos del producto
     def get_attributes(self):
         attributes = self.attributes.copy()
         attributes += self.category.get_attributes()
         return attributes
+
+    def get_attribute_keys(self) -> set: # keys propios + todos los de la categoria recursivamente
+        return self._attribute_keys | self.category.get_attribute_keys()
+
     # agrega attributo de variante
     def add_dinamic_attribute(self,
         attribute:Attribute,
@@ -706,10 +716,42 @@ class Product:
             return True
 
         return False
+    #elimina un attributo de un producto
+    def del_attribute(self, attribute:Attribute, delete_opt:int=0):
+        # delete_opt : 0=avisa impacto, 1=elimina de una sin importar impacto y borra implementaciones
+        if attribute.key not in self._attribute_keys:
+            return False
 
-    def del_attribute(self):
-        #verificar que no joda porque la ancestros contienen ese attribute.
-        pass
+        # si la categoria (o algun ancestro) ya cubre el atributo, no hay impacto
+        if attribute.key in self.category.get_attribute_keys():
+            self.attributes = [a for a in self.attributes if a.key != attribute.key]
+            self._attribute_keys.discard(attribute.key)
+            return []
+
+        # buscamos implementaciones huerfanas segun tipo
+        if attribute.is_static:
+            impacted = [i for i in self.attributes_implementations if i.attribute.key == attribute.key]
+        else:
+            impacted = [v for v in self.variants if any(i.attribute.key == attribute.key for i in v.attribute_implementations)]
+
+        if not impacted:
+            self.attributes = [a for a in self.attributes if a.key != attribute.key]
+            self._attribute_keys.discard(attribute.key)
+            return []
+
+        if delete_opt == 0:
+            return impacted
+
+        # delete_opt == 1: borra implementaciones y el atributo
+        if attribute.is_static:
+            self.attributes_implementations = [i for i in self.attributes_implementations if i.attribute.key != attribute.key]
+            self._impl_keys.discard(attribute.key)
+        else:
+            for v in self.variants:
+                v.attribute_implementations = [i for i in v.attribute_implementations if i.attribute.key != attribute.key]
+        self.attributes = [a for a in self.attributes if a.key != attribute.key]
+        self._attribute_keys.discard(attribute.key)
+        return []
 
     def to_json(self) -> dict:
         return {
@@ -774,8 +816,10 @@ class Product:
     def _add_variant(self, variant:Variant):
         self.variants.append(variant)
 
-    def del_variant(self,variant_id:int):
-        pass
+    def del_variant(self, variant_id:int):
+        original_len = len(self.variants)
+        self.variants = [v for v in self.variants if v.id != variant_id]
+        return len(self.variants) < original_len
     #agrega implementaciones de producto
     def add_product_implementation(self, attribute_implementation:AttributeImplementation):
         if not attribute_implementation.attribute.is_static:
