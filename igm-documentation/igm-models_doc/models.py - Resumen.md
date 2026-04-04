@@ -13,6 +13,7 @@
 - `add_enum_value(value)` → agrega valor posible al enum (lanza error si ya existe)
 - `check_value(value)` → valida que el valor sea del tipo correcto
 - `to_json()` → serializa el atributo a dict
+- `from_json(data)` → reconstruye el atributo desde dict
 
 ---
 
@@ -61,7 +62,7 @@ Vive en `Product.attributes_implementations` (estáticos) o en `Variant.attribut
 - `add_static_attribute(attribute, implementations)` → agrega atributo de producto; requiere valor para cada producto afectado
 
 **Eliminar atributos**
-- `del_attribute(attribute, delete_all=0)` → modo `0` avisa impacto, `1` borra implementaciones, `2` inyecta el atributo en los productos afectados
+- `del_attribute(attribute, delete_opt=0)` → modo `0` avisa impacto sin modificar, `1` borra implementaciones huérfanas, `2` inyecta el atributo directamente en los productos afectados
 - `del_attribute_check_family_impact(attribute)` → retorna productos que quedarían sin cobertura
 
 **Jerarquía de categorías**
@@ -109,6 +110,7 @@ No tiene precio ni título propio: los hereda del `Product` al que pertenece.
 **Agregar atributos**
 - `add_dinamic_attribute(attribute, variant_options)` → agrega atributo de variante y aplica valores a cada variante
 - `add_static_attribute(attribute, implementation)` → agrega atributo estático con su implementación
+- `add_product_implementation(attribute_implementation)` → verifica y agrega una implementación estática (lanza error si ya existe)
 
 **Gestión de variantes**
 - `create_variant_by_implementations(implementations)` → crea una `Variant` validando que las implementaciones coincidan exactamente con los atributos requeridos

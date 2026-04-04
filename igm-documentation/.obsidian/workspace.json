@@ -15,9 +15,9 @@
               "state": {
                 "file": "igm-models_doc/models.py.canvas",
                 "viewState": {
-                  "x": 1313.8185801324505,
-                  "y": 2719.9170887417226,
-                  "zoom": -2.681114119429051
+                  "x": 763.3051008974855,
+                  "y": 3380.3006957111593,
+                  "zoom": -0.04731168482567744
                 }
               },
               "icon": "lucide-layout-dashboard",
@@ -188,15 +188,15 @@
   },
   "active": "b7e3264f7418b29b",
   "lastOpenFiles": [
-    "Welcome.md",
+    "igm-models_doc/notas/Product.md",
     "igm-models_doc/notas/AttributeImplementation.md",
     "igm-models_doc/notas/Attribute.md",
+    "igm-models_doc/models.py.canvas",
+    "Welcome.md",
     "igm-models_doc/notas/Category.md",
     "igm-models_doc/notas/Variant.md",
     "igm-models_doc/notas/Attribute_factory.md",
-    "igm-models_doc/notas/Product.md",
     "igm-models_doc/notas",
-    "igm-models_doc/models.py.canvas",
     "igm-models_doc/models.py - Resumen.md",
     "igm-models_doc"
   ]

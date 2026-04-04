@@ -12,7 +12,7 @@ Si `Attribute` es la columna de una tabla (ej: "Color"), `AttributeImplementatio
 |---|---|---|
 | `id` | int | Identificador en base de datos |
 | `attribute` | Attribute | Referencia al objeto `Attribute` que se está implementando |
-| `value` | str | Valor concreto asignado |
+| `value` | str \| int \| float \| bool | Valor concreto asignado (el tipo depende del `data_type` del atributo) |
 
 ## Dónde vive
 

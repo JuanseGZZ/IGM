@@ -21,6 +21,12 @@
 
 > ⚠️ Si no se pasa `category`, el constructor lanza `ValueError`.
 
+## Caches internos
+
+`_attribute_keys` e `_impl_keys` se mantienen sincronizados **manualmente** dentro de cada método. Modificar `attributes` o `attributes_implementations` directamente (sin usar los métodos de la clase) deja los caches desactualizados.
+
+> Siempre usar los métodos oficiales para agregar o eliminar atributos e implementaciones.
+
 ---
 
 ## Métodos de lectura
@@ -56,6 +62,11 @@ Elimina un atributo propio del producto con dos modos:
 - `0` → Retorna lista de variantes/implementaciones afectadas sin eliminar
 - `1` → Elimina el atributo y borra las implementaciones huérfanas
 
+### `add_product_implementation(attribute_implementation)`
+Verifica y agrega una implementación de atributo estático al producto.
+- Valida tipo de dato y que el atributo esté suscripto en el producto o categoría.
+- Lanza `ValueError` si la implementación ya existe para ese atributo.
+
 ---
 
 ## Métodos de variantes
@@ -81,9 +92,6 @@ Agrega directamente una variante a la lista (sin validaciones extra). Usado inte
 
 ### `_check_implementation(attr_impl) → bool`
 Valida que una implementación tenga tipo correcto y que el atributo esté suscripto en el producto o categoría. Lanza `ValueError` si no.
-
-### `add_product_implementation(attribute_implementation)`
-Verifica y agrega una implementación de atributo estático al producto (sin duplicados).
 
 ---
 

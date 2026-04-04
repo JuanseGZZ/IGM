@@ -15,6 +15,12 @@
 | `products` | list[Product] | Productos que pertenecen directamente a esta categoría |
 | `_product_codes` | set | Caché de códigos de productos |
 
+## Caches internos
+
+`_attribute_keys` y `_product_codes` se mantienen sincronizados **manualmente** dentro de cada método. Si se modifican `attributes` o `products` directamente (sin pasar por los métodos de la clase), los caches quedan desactualizados y el comportamiento es impredecible.
+
+> Siempre usar los métodos oficiales para agregar o eliminar atributos y productos.
+
 ## Regla fundamental
 
 > Una categoría **no puede tener subcategorías y productos al mismo tiempo**.  
@@ -49,7 +55,7 @@ Agrega un atributo **estático** (de producto) a la categoría.
 
 ## Métodos de atributos — Eliminar
 
-### `del_attribute(attribute, delete_all=0)`
+### `del_attribute(attribute, delete_opt=0)`
 Elimina un atributo de la categoría con tres modos:
 - `0` → Solo avisa qué productos se verían afectados (no elimina)
 - `1` → Elimina el atributo **y** borra las implementaciones en productos afectados
@@ -73,6 +79,8 @@ Elimina una subcategoría hija con tres modos:
 - `0` → Inyecta los atributos sobrantes en los productos afectados
 - `1` → Elimina las implementaciones huérfanas
 - `2` → Solo retorna los productos impactados (sin modificar nada)
+
+Retorna `False` si `categorie` no es hija directa de `self`.
 
 ---
 
@@ -120,7 +128,10 @@ Recolecta todos los atributos desde una categoría hacia arriba, sin duplicados.
 ## Serialización
 
 ### `to_json() → dict`
-Serializa id, nombre y atributos propios (sin recursión de hijos).
+Serializa `id`, `name`, `attributes` y `subcategories` (recursivo hacia abajo).
+- `father_categorie` y `products` no se serializan para evitar referencias circulares (`Product.to_json` embebe la categoría).
 
 ### `from_json(data: dict) → Category` *(classmethod)*
-Reconstruye una categoría desde un diccionario.
+Reconstruye una categoría desde un diccionario, incluyendo sus `subcategories` de forma recursiva.
+- A cada subcategoría reconstruida se le setea `father_categorie` apuntando al padre.
+- `products` no se reconstruyen desde aquí.
