@@ -475,34 +475,53 @@ class Category:
         if del_option == 0 and orphan_impact:
             return orphan_impact
 
-        # 7. impacto de atributos nuevos en descendientes
-        # {attr: [(product, [{"variant_id": id, "value": None}, ...]), ...]}
-        impact_map = {}
+        # 7. impacto de atributos nuevos en descendientes, separado por tipo
+        # static_impact_map:  {attr: [product, ...]}
+        # dynamic_impact_map: {attr: [(product, [{"variant_id": id, "value": None}, ...]), ...]}
+        static_impact_map = {}
+        dynamic_impact_map = {}
         for attr in father_attributes:
             impacted = self._add_attribute_look_down(attribute=attr)
-            if impacted:
-                impact_map[attr] = [
+            if not impacted:
+                continue
+            if attr.is_static:
+                static_impact_map[attr] = impacted
+            else:
+                dynamic_impact_map[attr] = [
                     (product, [{"variant_id": v.id, "value": None} for v in product.variants])
                     for product in impacted
                 ]
 
-        # 8. validar implementations para atributos nuevos
-        # implementations: {attr_key: [(product_id, [{"variant_id": id, "value": value}, ...]), ...]}
-        if impact_map:
-            for attr, product_entries in impact_map.items():
+        # 8. validar implementations para atributos nuevos segun tipo
+        # estaticos:  {attr_key: [(product_id, value), ...]}
+        # dinamicos:  {attr_key: [(product_id, [{"variant_id": id, "value": value}, ...]), ...]}
+        impact_map = {**static_impact_map, **dynamic_impact_map}  # union para retornar en caso de error
+        if static_impact_map or dynamic_impact_map:
+            for attr, products in static_impact_map.items():
                 impl_entries = implementations.get(attr.key)
                 if not impl_entries:
                     return impact_map  # falta el atributo entero
+                impl_product_map = {pid: value for pid, value in impl_entries}
+                for product in products:
+                    value = impl_product_map.get(product.id)
+                    if value is None:
+                        return impact_map  # falta el producto
+                    try:
+                        if not attr.check_value(value):
+                            return impact_map
+                    except ValueError:
+                        return impact_map
 
+            for attr, product_entries in dynamic_impact_map.items():
+                impl_entries = implementations.get(attr.key)
+                if not impl_entries:
+                    return impact_map  # falta el atributo entero
                 impl_product_map = {pid: variants for pid, variants in impl_entries}
-
                 for product, variant_slots in product_entries:
                     impl_variants = impl_product_map.get(product.id)
                     if impl_variants is None:
                         return impact_map  # falta el producto
-
                     impl_variant_map = {v["variant_id"]: v["value"] for v in impl_variants}
-
                     for slot in variant_slots:
                         value = impl_variant_map.get(slot["variant_id"])
                         if value is None:
@@ -513,10 +532,18 @@ class Category:
                         except ValueError:
                             return impact_map
 
-        # 9. todo validado — aplicamos implementaciones de atributos nuevos
-        if impact_map:
+        # 9. todo validado — aplicamos implementaciones de atributos nuevos segun tipo
+        if static_impact_map or dynamic_impact_map:
+            for attr, products in static_impact_map.items():
+                impl_entries = implementations.get(attr.key)
+                impl_product_map = {pid: value for pid, value in impl_entries}
+                for product in products:
+                    impl = AttributeImplementation(attribute=attr, value=impl_product_map[product.id])
+                    product.attributes_implementations.append(impl)
+                    product._impl_keys.add(attr.key)
+
             pending = []
-            for attr, product_entries in impact_map.items():
+            for attr, product_entries in dynamic_impact_map.items():
                 impl_entries = implementations.get(attr.key)
                 impl_product_map = {pid: variants for pid, variants in impl_entries}
                 for product, variant_slots in product_entries:

@@ -133,7 +133,6 @@ La función requiere `implementations` con la siguiente estructura:
 - Si `father_categorie` tiene productos propios (`len(products) > 0`) → `ValueError`, operación bloqueada.
   - Regla fundamental: un nodo no puede tener subcategorías y productos al mismo tiempo.
 
-> **Limitación conocida — solo maneja atributos del nuevo padre como dinámicos:** `change_lookup_for_attributes` recolecta todos los atributos del nuevo padre (estáticos y dinámicos juntos), pero el código de aplicación siempre construye slots de variante (`variant_id`) para todos. Si algún atributo del nuevo padre es **estático**, la implementación igual se aplica a nivel variante, que no es su lugar correcto.
 
 ### Condición previa adicional — validación anti-ciclo
 - Se recorre la cadena `father_categorie → father_categorie.father_categorie → ...` hacia arriba.
@@ -159,21 +158,37 @@ En todos los escenarios que llegan al punto de aplicar cambios, `self` se remuev
 ### Escenario B — el nuevo padre tiene atributos que los productos descendientes de self no tienen
 Se recolectan todos los atributos del nuevo padre hacia arriba (sin duplicados). Para cada atributo nuevo, se determinan los productos impactados.
 
-La función requiere `implementations` con la siguiente estructura:
+La función requiere `implementations` con estructura diferente según el tipo de atributo:
+
+- **Estáticos** → `{attr_key: [(product_id, value), ...]}`
+- **Dinámicos** → `{attr_key: [(product_id, [{"variant_id": id, "value": value}, ...]), ...]}`
+
+Ambos tipos conviven en el mismo dict:
 ```python
-{
-  attr_key: [(product_id, [{"variant_id": id, "value": value}, ...]), ...],
-  ...
+implementations = {
+    "peso": [                          # estático
+        (1, 500),
+        (2, 320),
+    ],
+    "color": [                         # dinámico
+        (1, [
+            {"variant_id": 10, "value": "rojo"},
+            {"variant_id": 11, "value": "azul"},
+        ]),
+        (2, [
+            {"variant_id": 20, "value": "negro"},
+        ]),
+    ],
 }
 ```
 
 | Sub-condición | Efecto |
 |---|---|
-| Falta un atributo entero en `implementations` | Retorna `impact_map`, **sin modificar nada** |
-| Falta un producto dentro de un atributo | Retorna `impact_map`, **sin modificar nada** |
-| Falta una variante dentro de un producto | Retorna `impact_map`, **sin modificar nada** |
-| Un valor es `None` o inválido para el tipo de dato | Retorna `impact_map`, **sin modificar nada** |
-| Cobertura exacta y valores válidos | Aplica `AttributeImplementation` a cada variante afectada; luego realiza el cambio de padre. Retorna `{}` |
+| Falta un atributo entero en `implementations` | Retorna `impact_map` combinado, **sin modificar nada** |
+| Falta un producto dentro de un atributo | Retorna `impact_map` combinado, **sin modificar nada** |
+| Falta una variante dentro de un producto (dinámico) | Retorna `impact_map` combinado, **sin modificar nada** |
+| Un valor es `None` o inválido para el tipo de dato | Retorna `impact_map` combinado, **sin modificar nada** |
+| Cobertura exacta y valores válidos | Estáticos → aplica `AttributeImplementation` a `product.attributes_implementations` y actualiza `_impl_keys`. Dinámicos → aplica a `variant.attribute_implementations`. Luego realiza el cambio de padre. Retorna `{}` |
 
 > **Nota:** solo los atributos de la nueva rama padre que los descendientes **no tienen** requieren implementación. Los que ya tienen los productos no se tocan.
 
