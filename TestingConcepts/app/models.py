@@ -482,7 +482,7 @@ class Category:
         static_impact_map = {}
         dynamic_impact_map = {}
         for attr in father_attributes:
-            impacted = self._add_attribute_look_down(attribute=attr)
+            impacted = [p for p in self._add_attribute_look_down(attribute=attr) if not p.is_attribute_in(attr)]
             if not impacted:
                 continue
             if attr.is_static:
@@ -834,7 +834,8 @@ class Product:
         implementation:AttributeImplementation
         ):
         # verifica que el value sea correcto.
-        attribute.check_value(implementation.value)
+        if not attribute.check_value(implementation.value):
+            raise ValueError(f"El valor '{implementation.value}' no es válido para el atributo '{attribute.name}'.")
         # verifica que exista la subscripcion.
         needed_keys = {a.key for a in self.get_needed_atributes_implementations(is_static=True)}
         if attribute.key in needed_keys:
