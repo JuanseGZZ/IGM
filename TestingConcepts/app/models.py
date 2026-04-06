@@ -433,6 +433,7 @@ class Category:
 
     # vamos a cambiar de en vez de add_categorie, a change categorie father
     # resuelve menjor y cumple lo mismo
+    # refactorizar en varios metodos distintos.
     def change_categorie_father(self, father_categorie: Category, implementations, del_option: int = 0):
         # del_option controla que hacer con los atributos que el padre anterior aportaba y el nuevo no:
         # 0 = si hay impacto, retorna el mapa de huerfanos sin modificar nada
