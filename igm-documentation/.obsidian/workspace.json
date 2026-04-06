@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "igm-models_doc/checklist_refactoring.md",
+                "file": "igm-models_doc/notas/Category.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "checklist_refactoring"
+              "title": "Category"
             }
           }
         ]
@@ -185,6 +185,9 @@
   },
   "active": "b7e3264f7418b29b",
   "lastOpenFiles": [
+    "igm-models_doc/notas/Product.md",
+    "igm-models_doc/models.py - Resumen.md",
+    "igm-models_doc/notas/Category.md",
     "igm-models_doc/checklist_refactoring.md",
     "igm-models_doc/refactoring.md",
     "igm-models_doc/Refactorizacion del modelo/M2 - Canvas estructura final refactorizada/M2 - Estructura final refactorizada.canvas",
@@ -203,15 +206,12 @@
     "igm-models_doc/Refactorizacion del modelo",
     "igm-models_doc/models.py.canvas",
     "igm-models_doc/reglas_negocio.md",
-    "igm-models_doc/notas/Product.md",
     "igm-models_doc/notas/AttributeImplementation.md",
     "igm-models_doc/notas/Attribute.md",
     "Welcome.md",
-    "igm-models_doc/notas/Category.md",
     "igm-models_doc/notas/Variant.md",
     "igm-models_doc/notas/Attribute_factory.md",
     "igm-models_doc/notas",
-    "igm-models_doc/models.py - Resumen.md",
     "igm-models_doc"
   ]
 }

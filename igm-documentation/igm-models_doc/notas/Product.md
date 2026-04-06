@@ -50,17 +50,30 @@ Retorna el conjunto de atributos que **deben tener implementación** en el produ
 ### `add_dinamic_attribute(attribute, variant_options)`
 Agrega un atributo **dinámico** al producto y aplica los valores a cada variante.
 - `variant_options`: `[{"variant_id": id, "value": value}]`
-- Verifica cobertura exacta: deben estar **todas** las variantes.
+
+**Escenario A — el atributo ya está en `needed_keys` (cubierto por la categoría o el producto mismo):**
+- Se agrega directamente a `self.attributes` y `_attribute_keys` **sin tocar las variantes ni usar `variant_options`**. Retorna `True`.
+
+**Escenario B — el atributo no está cubierto:**
+- Verifica cobertura exacta: deben estar **todas** las variantes, sin duplicados.
+- Valida el tipo de dato de cada valor.
 - Retorna `True` si exitoso, `False` si hay error de validación.
 
 ### `add_static_attribute(attribute, implementation)`
 Agrega un atributo **estático** con su implementación al producto.
-- Verifica tipo de dato y que el atributo esté suscripto en la categoría.
+- Lanza `ValueError` si el valor no es del tipo correcto del atributo.
+- Retorna `False` si el atributo no está suscripto en el producto o su categoría.
+- Lanza `ValueError` si el atributo ya está implementado en el producto.
+- Retorna `True` si todo es válido y la implementación se agrega.
 
 ### `del_attribute(attribute, delete_opt=0)`
-Elimina un atributo propio del producto con dos modos:
-- `0` → Retorna lista de variantes/implementaciones afectadas sin eliminar
-- `1` → Elimina el atributo y borra las implementaciones huérfanas
+Elimina un atributo propio del producto.
+- Si el atributo no está en `self._attribute_keys` → retorna `False`.
+- Si la categoría (o un ancestro) ya cubre el atributo → lo elimina de `self.attributes` directamente, sin verificar huérfanos. Retorna `[]`.
+- Si no hay implementaciones huérfanas → lo elimina directamente. Retorna `[]`.
+- Si hay implementaciones huérfanas:
+  - `0` → retorna lista de `AttributeImplementation` (estático) o `Variant` (dinámico) afectadas, sin modificar nada
+  - `1` → elimina el atributo y borra las implementaciones huérfanas
 
 ### `add_product_implementation(attribute_implementation)`
 Verifica y agrega una implementación de atributo estático al producto.

@@ -66,7 +66,7 @@ Vive en `Product.attributes_implementations` (estáticos) o en `Variant.attribut
 - `del_attribute_check_family_impact(attribute)` → retorna productos que quedarían sin cobertura
 
 **Jerarquía de categorías**
-- `change_categorie_father(father_categorie, implementations)` → mueve esta categoría como hija de otra; resuelve herencia de atributos
+- `change_categorie_father(father_categorie, implementations, del_option=0)` → mueve esta categoría como hija de otra; resuelve herencia de atributos nuevos e impacto de atributos huérfanos del padre anterior (`del_option`: `0`=reporta sin modificar, `1`=inyecta huérfanos en `self`, `2`=elimina implementaciones huérfanas)
 - `del_categorie(categorie, del_option)` → elimina subcategoría hija con tres modos: `0` inyecta atributos sobrantes en productos, `1` borra implementaciones, `2` solo reporta impacto
 
 **Productos**

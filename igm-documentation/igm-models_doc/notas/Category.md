@@ -68,10 +68,20 @@ Retorna los productos que quedarían sin cobertura si se elimina el atributo.
 
 ## Métodos de jerarquía de categorías
 
-### `change_categorie_father(father_categorie, implementations)`
+### `change_categorie_father(father_categorie, implementations, del_option=0)`
 Mueve esta categoría como hija de otra.
-- Detecta los atributos nuevos que hereda del padre y los aplica a los productos descendientes.
-- `implementations`: dict `{attr_key: [(product_id, [{"variant_id": id, "value": value}])]}`.
+
+**Condiciones previas:**
+- Si `father_categorie` tiene productos propios → `ValueError`. Regla: un nodo no puede tener subcategorías y productos al mismo tiempo.
+- **Validación anti-ciclo:** se recorre la cadena `father_categorie → father_categorie.father_categorie → ...` hacia arriba. Si `self` aparece en algún punto → `ValueError`. Previene que el árbol forme un ciclo que rompería toda búsqueda recursiva.
+- Detecta los atributos nuevos que hereda del nuevo padre y los aplica a los productos descendientes.
+- Detecta los atributos del padre anterior que quedan huérfanos (no cubiertos por el nuevo padre ni por `self`). `del_option` controla cómo se manejan:
+  - `0` → si hay atributos huérfanos con impacto en productos, retorna `orphan_impact` (`{attr: [products]}`) sin modificar nada
+  - `1` → inyecta los atributos huérfanos directamente en `self` para que los descendientes los sigan heredando
+  - `2` → elimina las implementaciones huérfanas de los productos afectados
+- `implementations`: dict con claves por `attr_key`. Soporta atributos estáticos y dinámicos en el mismo dict:
+  - Estáticos → `{attr_key: [(product_id, value), ...]}`
+  - Dinámicos → `{attr_key: [(product_id, [{"variant_id": id, "value": value}, ...]), ...]}`
 - Retorna `{}` si exitoso o el mapa de impacto si falta información.
 
 ### `del_categorie(categorie, del_option)`
