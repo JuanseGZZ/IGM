@@ -11,17 +11,14 @@
             "id": "b7e3264f7418b29b",
             "type": "leaf",
             "state": {
-              "type": "canvas",
+              "type": "markdown",
               "state": {
-                "file": "igm-models_doc/models.py.canvas",
-                "viewState": {
-                  "x": 846.9257292185006,
-                  "y": 3270.948920687434,
-                  "zoom": -1.2029379658696442
-                }
+                "file": "igm-models_doc/acciones_reglas_negocio.md",
+                "mode": "source",
+                "source": false
               },
-              "icon": "lucide-layout-dashboard",
-              "title": "models.py"
+              "icon": "lucide-file",
+              "title": "acciones_reglas_negocio"
             }
           }
         ]
@@ -188,8 +185,8 @@
   },
   "active": "b7e3264f7418b29b",
   "lastOpenFiles": [
-    "igm-models_doc/reglas_negocio.md",
     "igm-models_doc/models.py.canvas",
+    "igm-models_doc/reglas_negocio.md",
     "igm-models_doc/notas/Product.md",
     "igm-models_doc/notas/AttributeImplementation.md",
     "igm-models_doc/notas/Attribute.md",

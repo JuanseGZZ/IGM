@@ -419,15 +419,32 @@ class Category:
 
     # vamos a cambiar de en vez de add_categorie, a change categorie father
     # resuelve menjor y cumple lo mismo
-    def change_categorie_father(self,father_categorie:Category,implementations):
-        # no puede tener productos si quiere tener categorias
-        if len(father_categorie.products) >0 :
+    def change_categorie_father(self, father_categorie: Category, implementations):
+        # 1. validar que no se forme un ciclo
+        cursor = father_categorie
+        while cursor is not None:
+            if cursor is self:
+                raise ValueError("No se puede asignar un descendiente como padre: se formaría un ciclo.")
+            cursor = cursor.father_categorie
+
+        # 2. no puede tener productos si quiere tener categorias
+        if len(father_categorie.products) > 0:
             raise ValueError("No puede tener productos si quiere poner categorias")
 
-        # traemos todos los atributos del nuevo padre para arriba sin replica
+        # 3. atributos del nuevo padre hacia arriba sin replica
         father_attributes = Category.change_lookup_for_attributes(father_categorie)
+        father_attr_keys = {a.key for a in father_attributes}
 
-        # por cada atributo miramos para abajo desde self que productos impacta
+        # 4. atributos del padre anterior que dejan de estar cubiertos (huerfanos)
+        old_orphan_attrs = []
+        if self.father_categorie:
+            old_attrs = Category.change_lookup_for_attributes(self.father_categorie)
+            old_orphan_attrs = [
+                a for a in old_attrs
+                if a.key not in father_attr_keys and a.key not in self._attribute_keys
+            ]
+
+        # 5. impacto de atributos nuevos en descendientes
         # {attr: [(product, [{"variant_id": id, "value": None}, ...]), ...]}
         impact_map = {}
         for attr in father_attributes:
@@ -438,57 +455,71 @@ class Category:
                     for product in impacted
                 ]
 
-        # si no hay impacto aplicamos directo
-        if not impact_map:
-            self.father_categorie = father_categorie
-            father_categorie.subcategories.append(self)
-            return {}
-
-        # validamos que implementations tenga la misma estructura que impact_map pero con values
+        # 6. validar implementations para atributos nuevos
         # implementations: {attr_key: [(product_id, [{"variant_id": id, "value": value}, ...]), ...]}
-        for attr, product_entries in impact_map.items():
-            impl_entries = implementations.get(attr.key)
-            if not impl_entries:
-                return impact_map  # falta el atributo entero
+        if impact_map:
+            for attr, product_entries in impact_map.items():
+                impl_entries = implementations.get(attr.key)
+                if not impl_entries:
+                    return impact_map  # falta el atributo entero
 
-            # construimos map de product_id -> variants_map para lo que llega
-            impl_product_map = {pid: variants for pid, variants in impl_entries}
+                impl_product_map = {pid: variants for pid, variants in impl_entries}
 
-            for product, variant_slots in product_entries:
-                impl_variants = impl_product_map.get(product.id)
-                if impl_variants is None:
-                    return impact_map  # falta el producto
+                for product, variant_slots in product_entries:
+                    impl_variants = impl_product_map.get(product.id)
+                    if impl_variants is None:
+                        return impact_map  # falta el producto
 
-                impl_variant_map = {v["variant_id"]: v["value"] for v in impl_variants}
+                    impl_variant_map = {v["variant_id"]: v["value"] for v in impl_variants}
 
-                for slot in variant_slots:
-                    value = impl_variant_map.get(slot["variant_id"])
-                    if value is None:
-                        return impact_map  # falta la variante
-                    # validamos el valor contra el atributo
-                    try:
-                        if not attr.check_value(value):
+                    for slot in variant_slots:
+                        value = impl_variant_map.get(slot["variant_id"])
+                        if value is None:
+                            return impact_map  # falta la variante
+                        try:
+                            if not attr.check_value(value):
+                                return impact_map
+                        except ValueError:
                             return impact_map
-                    except ValueError:
-                        return impact_map
 
-        # todo matcheó, aplicamos
-        pending = []
-        for attr, product_entries in impact_map.items():
-            impl_entries = implementations.get(attr.key)
-            impl_product_map = {pid: variants for pid, variants in impl_entries}
-            for product, variant_slots in product_entries:
-                impl_variants = impl_product_map[product.id]
-                impl_variant_map = {v["variant_id"]: v["value"] for v in impl_variants}
-                variants_map = {v.id: v for v in product.variants}
-                for slot in variant_slots:
-                    variant = variants_map[slot["variant_id"]]
-                    impl = AttributeImplementation(attribute=attr, value=impl_variant_map[slot["variant_id"]])
-                    pending.append((variant, impl))
+        # 7. todo validado — aplicamos implementaciones de atributos nuevos
+        if impact_map:
+            pending = []
+            for attr, product_entries in impact_map.items():
+                impl_entries = implementations.get(attr.key)
+                impl_product_map = {pid: variants for pid, variants in impl_entries}
+                for product, variant_slots in product_entries:
+                    impl_variants = impl_product_map[product.id]
+                    impl_variant_map = {v["variant_id"]: v["value"] for v in impl_variants}
+                    variants_map = {v.id: v for v in product.variants}
+                    for slot in variant_slots:
+                        variant = variants_map[slot["variant_id"]]
+                        impl = AttributeImplementation(attribute=attr, value=impl_variant_map[slot["variant_id"]])
+                        pending.append((variant, impl))
+            for variant, impl in pending:
+                variant.attribute_implementations.append(impl)
 
-        for variant, impl in pending:
-            variant.attribute_implementations.append(impl)
+        # 8. desvincular del padre anterior y limpiar implementaciones huerfanas
+        if self.father_categorie:
+            self.father_categorie.subcategories = [
+                c for c in self.father_categorie.subcategories if c is not self
+            ]
+            for attr in old_orphan_attrs:
+                affected = self._add_attribute_look_down(attr)
+                for product in affected:
+                    if attr.is_static:
+                        if attr.key in product._impl_keys:
+                            product.attributes_implementations = [
+                                i for i in product.attributes_implementations if i.attribute.key != attr.key
+                            ]
+                            product._impl_keys.discard(attr.key)
+                    else:
+                        for variant in product.variants:
+                            variant.attribute_implementations = [
+                                i for i in variant.attribute_implementations if i.attribute.key != attr.key
+                            ]
 
+        # 9. vincular al nuevo padre
         self.father_categorie = father_categorie
         father_categorie.subcategories.append(self)
         return {}
