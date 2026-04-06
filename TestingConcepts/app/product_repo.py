@@ -23,6 +23,36 @@ class ProductRepo(CrudBase[Product]):
         }
 
     @classmethod
+    def _load_category_attributes(cls, category_id: int) -> list:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT a.id, a.key, a.name, a.data_type, a.is_static
+                FROM category_atributes ca
+                JOIN atribute a ON a.id = ca.atribute_id
+                WHERE ca.category_id = %s
+                ORDER BY ca.id
+                """,
+                (category_id,),
+            )
+            rows = cur.fetchall()
+
+        attributes = []
+        for row in rows:
+            attribute = AttributeRepo.read(row["id"])
+            if attribute is None:
+                attribute = Attribute(
+                    id=row["id"],
+                    key=row["key"],
+                    name=row["name"],
+                    data_type=row["data_type"],
+                    is_static=row["is_static"],
+                )
+            attributes.append(attribute)
+
+        return attributes
+
+    @classmethod
     def _load_category(cls, category_id: int):
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute(
@@ -41,7 +71,7 @@ class ProductRepo(CrudBase[Product]):
         return Category(
             id=row["id"],
             name=row["name"],
-            attributes=[],
+            attributes=cls._load_category_attributes(category_id),
         )
 
     @classmethod
