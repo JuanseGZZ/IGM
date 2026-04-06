@@ -11,14 +11,10 @@
             "id": "b7e3264f7418b29b",
             "type": "leaf",
             "state": {
-              "type": "markdown",
-              "state": {
-                "file": "igm-models_doc/acciones_reglas_negocio.md",
-                "mode": "source",
-                "source": false
-              },
+              "type": "empty",
+              "state": {},
               "icon": "lucide-file",
-              "title": "acciones_reglas_negocio"
+              "title": "New tab"
             }
           }
         ]
@@ -185,6 +181,22 @@
   },
   "active": "b7e3264f7418b29b",
   "lastOpenFiles": [
+    "igm-models_doc/checklist_refactoring.md",
+    "igm-models_doc/refactoring.md",
+    "igm-models_doc/Refactorizacion del modelo/M2 - Canvas estructura final refactorizada/M2 - Estructura final refactorizada.canvas",
+    "igm-models_doc/Refactorizacion del modelo/Lista de refactoreo.md",
+    "igm-models_doc/Refactorizacion del modelo/M2 - Canvas estructura final refactorizada/M2 - Estructura final refactorizada - notas.md",
+    "igm-models_doc/Refactorizacion del modelo/M2 - Canvas estructura final refactorizada",
+    "igm-models_doc/Refactorizacion del modelo/Refactorizacion del modelo/M2 - Canvas estructura final refactorizada/M2 - Estructura final refactorizada.canvas",
+    "igm-models_doc/Refactorizacion del modelo/Refactorizacion del modelo/M2 - Canvas estructura final refactorizada/M2 - Estructura final refactorizada - notas.md",
+    "igm-models_doc/Refactorizacion del modelo/Refactorizacion del modelo/M2 - Canvas estructura final refactorizada",
+    "igm-models_doc/Refactorizacion del modelo/Refactorizacion del modelo",
+    "igm-models_doc/Refactorizacion del modelo/M1 - Metodos a refactorizar/M1 - Metodos a refactorizar - Resumen.md",
+    "igm-models_doc/Refactorizacion del modelo/M1 - Metodos a refactorizar/Lista de refactoreo.md",
+    "igm-models_doc/Refactorizacion del modelo/M1 - Metodos a refactorizar/M1 - Metodos a refactorizar.canvas",
+    "igm-models_doc/acciones_reglas_negocio.md",
+    "igm-models_doc/Refactorizacion del modelo/M1 - Metodos a refactorizar",
+    "igm-models_doc/Refactorizacion del modelo",
     "igm-models_doc/models.py.canvas",
     "igm-models_doc/reglas_negocio.md",
     "igm-models_doc/notas/Product.md",
