@@ -118,10 +118,8 @@ La función requiere `implementations` con la siguiente estructura:
 |---|---|---|
 | cualquiera | No hay productos en riesgo (`[]`) | Elimina el atributo de `self.attributes` y `_attribute_keys`. Retorna `[]` |
 | `0` (default) | Hay productos en riesgo | Solo retorna la lista de productos afectados, **sin modificar nada** |
-| `1` | Hay productos en riesgo | Elimina el atributo; borra las `AttributeImplementation` del atributo en `product.attributes_implementations` (implementaciones estáticas). Retorna `None` implícitamente (sin `return` explícito) |
+| `1` | Hay productos en riesgo | Elimina el atributo y sus implementaciones según tipo: si es **estático** → limpia `product.attributes_implementations` y `_impl_keys`; si es **dinámico** → limpia `variant.attribute_implementations` en todas las variantes. Retorna `[]` |
 | `2` | Hay productos en riesgo | Elimina el atributo de la categoría; inyecta el atributo directamente en cada producto afectado (`product.attributes` y `_attribute_keys`). Retorna `[]` |
-
-> **Limitación conocida — `delete_opt=1` y atributos dinámicos:** el código solo limpia `product.attributes_implementations`. Si el atributo eliminado es **dinámico**, las implementaciones que viven en `variant.attribute_implementations` de cada variante **no se eliminan**. Las variantes quedan con implementaciones huérfanas.
 
 ---
 
@@ -204,8 +202,8 @@ Se calculan los atributos que aporta `categorie` y que **no** están cubiertos p
 
 | `del_option` | Efecto |
 |---|---|
-| `0` | Migra la **definición** del atributo sobrante directamente al producto (`product.attributes` y `_attribute_keys`). Las implementaciones (`_impl_keys`) ya existentes se mantienen intactas. Luego elimina `categorie`. Retorna `[]` |
-| `1` | Elimina las `AttributeImplementation` de los atributos sobrantes en `product.attributes_implementations` y actualiza `_impl_keys`. Luego elimina `categorie`. Retorna `[]` |
+| `0` | Migra la **definición** del atributo sobrante directamente al producto (`product.attributes` y `_attribute_keys`). Las implementaciones ya existentes se mantienen intactas. Luego elimina `categorie`. Retorna `[]` |
+| `1` | Elimina las implementaciones huérfanas según tipo: si el atributo es **estático** → elimina de `product.attributes_implementations` y actualiza `_impl_keys`; si es **dinámico** → elimina de `variant.attribute_implementations` en todas las variantes del producto. Luego elimina `categorie`. Retorna `[]` |
 | `2` | Solo retorna la lista de productos impactados, **sin modificar nada** |
 
 ---

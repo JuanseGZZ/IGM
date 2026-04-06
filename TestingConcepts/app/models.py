@@ -387,19 +387,33 @@ class Category:
     #si esta en 1 elimina implementaciones
     #si esta en 2 injecta ese attributo en los productos afectados
     def del_attribute(self, attribute:Attribute,delete_opt:int=0):
-        products: List[Product] = self.del_attribute_check_family_impact(attribute=attribute).copy() 
+        # 1. calcular productos impactados
+        products: List[Product] = self.del_attribute_check_family_impact(attribute=attribute).copy()
+
+        # 2. sin impacto, eliminamos directo
         if not products:
             self._attribute_keys.discard(attribute.key)
             self.attributes = [a for a in self.attributes if a.key != attribute.key]
             return []
+
+        # 3. delete_opt=0: solo avisa, no modifica nada
         if delete_opt == 0:
             return products
+
+        # 4. delete_opt=1: elimina implementaciones segun tipo de atributo
         if delete_opt == 1:
             for p in products:
-                p.attributes_implementations = [i for i in p.attributes_implementations if i.attribute.key != attribute.key]
-                p._impl_keys.discard(attribute.key)
+                if attribute.is_static:
+                    p.attributes_implementations = [i for i in p.attributes_implementations if i.attribute.key != attribute.key]
+                    p._impl_keys.discard(attribute.key)
+                else:
+                    for variant in p.variants:
+                        variant.attribute_implementations = [i for i in variant.attribute_implementations if i.attribute.key != attribute.key]
             self._attribute_keys.discard(attribute.key)
             self.attributes = [a for a in self.attributes if a.key != attribute.key]
+            return []
+
+        # 5. delete_opt=2: inyecta la definicion del atributo en los productos, mantiene implementaciones
         if delete_opt == 2:
             for p in products:
                 p.attributes.append(attribute)
@@ -558,20 +572,22 @@ class Category:
         # recolectar todos los de la categoria y hacer la diferencia de attributos.
         # los que queden tienen impacto de eliminacion para esa categoria.
         # hay tres opciones, integrarle los attrb sobrantes a los productos 0, eliminarl las integraciones 1, no hacer nada 2.
+
+        # 1. verificar que categorie es hija directa de self
         if categorie not in self.subcategories:
             return False
 
-        # atributos disponibles desde self para arriba
+        # 2. atributos sobrantes: los que aporta categorie y self (ni sus ancestros) no cubren
         parent_attr_keys = self.get_attribute_keys()
-        # atributos que solo aporta categorie y no estarán cubiertos al eliminarla
         leftover_attrs = [a for a in categorie.attributes if a.key not in parent_attr_keys]
 
+        # 3. si no hay sobrantes, eliminamos directo sin impacto
         if not leftover_attrs:
             self.subcategories = [c for c in self.subcategories if c is not categorie]
             categorie.father_categorie = None
             return []
 
-        # para cada atributo sobrante, obtenemos los productos impactados
+        # 4. calcular productos impactados por atributo
         # no podemos pasar categorie directamente a _del_attribute_look_down porque
         # categorie tiene el attr y retornaria [] — salteamos ese check mirando directo
         impact_map = {}
@@ -582,20 +598,28 @@ class Category:
             impact_map[attr] = impacted
         all_impacted = {p.code: p for products in impact_map.values() for p in products}
 
+        # 5. si hay sobrantes pero ningun producto los usa, eliminamos directo
         if not all_impacted:
             self.subcategories = [c for c in self.subcategories if c is not categorie]
             categorie.father_categorie = None
             return []
 
+        # 6. del_option=2: solo retorna productos impactados sin modificar nada
         if del_option == 2:
             return list(all_impacted.values())
 
+        # 7. del_option=1: elimina implementaciones huerfanas segun tipo de atributo
         if del_option == 1:
             for attr, products in impact_map.items():
                 for p in products:
-                    p.attributes_implementations = [i for i in p.attributes_implementations if i.attribute.key != attr.key]
-                    p._impl_keys.discard(attr.key)
+                    if attr.is_static:
+                        p.attributes_implementations = [i for i in p.attributes_implementations if i.attribute.key != attr.key]
+                        p._impl_keys.discard(attr.key)
+                    else:
+                        for variant in p.variants:
+                            variant.attribute_implementations = [i for i in variant.attribute_implementations if i.attribute.key != attr.key]
 
+        # 8. del_option=0: inyecta la definicion del atributo en los productos, mantiene implementaciones
         if del_option == 0:
             for attr, products in impact_map.items():
                 for p in products:
@@ -603,6 +627,7 @@ class Category:
                         p.attributes.append(attr)
                         p._attribute_keys.add(attr.key)
 
+        # 9. eliminar la categoria y desconectar
         self.subcategories = [c for c in self.subcategories if c is not categorie]
         categorie.father_categorie = None
         return []
