@@ -11,10 +11,14 @@
             "id": "b7e3264f7418b29b",
             "type": "leaf",
             "state": {
-              "type": "empty",
-              "state": {},
+              "type": "markdown",
+              "state": {
+                "file": "igm-models_doc/checklist_refactoring.md",
+                "mode": "source",
+                "source": false
+              },
               "icon": "lucide-file",
-              "title": "New tab"
+              "title": "checklist_refactoring"
             }
           }
         ]
