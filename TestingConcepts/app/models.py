@@ -419,7 +419,12 @@ class Category:
 
     # vamos a cambiar de en vez de add_categorie, a change categorie father
     # resuelve menjor y cumple lo mismo
-    def change_categorie_father(self, father_categorie: Category, implementations):
+    def change_categorie_father(self, father_categorie: Category, implementations, del_option: int = 0):
+        # del_option controla que hacer con los atributos que el padre anterior aportaba y el nuevo no:
+        # 0 = si hay impacto, retorna el mapa de huerfanos sin modificar nada
+        # 1 = inyecta los atributos huerfanos en self para que los descendientes los sigan heredando
+        # 2 = elimina las implementaciones de los atributos huerfanos en los productos afectados
+
         # 1. validar que no se forme un ciclo
         cursor = father_categorie
         while cursor is not None:
@@ -444,7 +449,19 @@ class Category:
                 if a.key not in father_attr_keys and a.key not in self._attribute_keys
             ]
 
-        # 5. impacto de atributos nuevos en descendientes
+        # 5. calcular impacto de atributos huerfanos
+        # {attr: [products]} — productos que tienen implementacion del attr y la perderan
+        orphan_impact = {}
+        for attr in old_orphan_attrs:
+            affected = [p for p in self._add_attribute_look_down(attr) if attr.key in p._impl_keys]
+            if affected:
+                orphan_impact[attr] = affected
+
+        # 6. si del_option=0 y hay impacto de huerfanos, retornar sin modificar nada
+        if del_option == 0 and orphan_impact:
+            return orphan_impact
+
+        # 7. impacto de atributos nuevos en descendientes
         # {attr: [(product, [{"variant_id": id, "value": None}, ...]), ...]}
         impact_map = {}
         for attr in father_attributes:
@@ -455,7 +472,7 @@ class Category:
                     for product in impacted
                 ]
 
-        # 6. validar implementations para atributos nuevos
+        # 8. validar implementations para atributos nuevos
         # implementations: {attr_key: [(product_id, [{"variant_id": id, "value": value}, ...]), ...]}
         if impact_map:
             for attr, product_entries in impact_map.items():
@@ -482,7 +499,7 @@ class Category:
                         except ValueError:
                             return impact_map
 
-        # 7. todo validado — aplicamos implementaciones de atributos nuevos
+        # 9. todo validado — aplicamos implementaciones de atributos nuevos
         if impact_map:
             pending = []
             for attr, product_entries in impact_map.items():
@@ -499,27 +516,35 @@ class Category:
             for variant, impl in pending:
                 variant.attribute_implementations.append(impl)
 
-        # 8. desvincular del padre anterior y limpiar implementaciones huerfanas
+        # 10. desvincular del padre anterior
         if self.father_categorie:
             self.father_categorie.subcategories = [
                 c for c in self.father_categorie.subcategories if c is not self
             ]
+
+        # 11. manejar atributos huerfanos segun del_option
+        if del_option == 1:
+            # inyecta los huerfanos en self para que los descendientes los sigan heredando
             for attr in old_orphan_attrs:
-                affected = self._add_attribute_look_down(attr)
-                for product in affected:
+                if attr.key not in self._attribute_keys:
+                    self.attributes.append(attr)
+                    self._attribute_keys.add(attr.key)
+        elif del_option == 2:
+            # elimina las implementaciones huerfanas de los productos afectados
+            for attr, products in orphan_impact.items():
+                for product in products:
                     if attr.is_static:
-                        if attr.key in product._impl_keys:
-                            product.attributes_implementations = [
-                                i for i in product.attributes_implementations if i.attribute.key != attr.key
-                            ]
-                            product._impl_keys.discard(attr.key)
+                        product.attributes_implementations = [
+                            i for i in product.attributes_implementations if i.attribute.key != attr.key
+                        ]
+                        product._impl_keys.discard(attr.key)
                     else:
                         for variant in product.variants:
                             variant.attribute_implementations = [
                                 i for i in variant.attribute_implementations if i.attribute.key != attr.key
                             ]
 
-        # 9. vincular al nuevo padre
+        # 12. vincular al nuevo padre
         self.father_categorie = father_categorie
         father_categorie.subcategories.append(self)
         return {}

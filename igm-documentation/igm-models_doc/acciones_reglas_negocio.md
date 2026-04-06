@@ -141,17 +141,22 @@ La función requiere `implementations` con la siguiente estructura:
 - Se recorre la cadena `father_categorie → father_categorie.father_categorie → ...` hacia arriba.
 - Si `self` aparece en algún punto → `ValueError`. Previene que el árbol forme un ciclo que rompería toda búsqueda recursiva.
 
-### En todos los escenarios — atributos huérfanos del padre anterior
-Antes de vincular al nuevo padre, se calculan los atributos que el padre anterior aportaba y que el nuevo padre **no cubre** (y que `self` tampoco tiene propios). Para cada uno:
-- Si el atributo es **estático**: se eliminan sus `AttributeImplementation` de `product.attributes_implementations` y se actualiza `_impl_keys`.
-- Si el atributo es **dinámico**: se eliminan sus implementaciones de `variant.attribute_implementations` en todas las variantes de los productos afectados.
+### Parámetro `del_option` — atributos huérfanos del padre anterior
+Cuando `self` cambia de padre, los atributos que el padre viejo aportaba y el nuevo no cubre (y que `self` no tiene propios) quedan **huérfanos**. `del_option` controla qué se hace con ellos:
+
+| `del_option` | Condición | Efecto |
+|---|---|---|
+| `0` (default) | Hay productos con implementaciones de atributos huérfanos | Retorna `orphan_impact` (`{attr: [products]}`), **sin modificar nada** |
+| `0` | No hay impacto de huérfanos | Continúa normalmente |
+| `1` | Siempre | Inyecta los atributos huérfanos directamente en `self.attributes` y `_attribute_keys`, para que los descendientes los sigan heredando. Las implementaciones ya existentes en los productos se mantienen intactas |
+| `2` | Siempre | Elimina las implementaciones huérfanas de los productos afectados: estáticas en `product.attributes_implementations`, dinámicas en `variant.attribute_implementations` |
 
 ### Desvinculación del padre anterior
-Antes de vincular al nuevo padre, se remueve `self` de `old_father.subcategories`.
+En todos los escenarios que llegan al punto de aplicar cambios, `self` se remueve de `old_father.subcategories`.
 
 ### Escenario A — el nuevo padre no aporta atributos nuevos a los descendientes de self
 - Todos los atributos del nuevo padre ya están cubiertos por los productos de self (o no hay productos impactados).
-- **Efecto:** se limpian huérfanos, se desvincula del padre viejo, se vincula al nuevo. Retorna `{}`.
+- **Efecto:** se resuelven huérfanos según `del_option`, se desvincula del padre viejo, se vincula al nuevo. Retorna `{}`.
 
 ### Escenario B — el nuevo padre tiene atributos que los productos descendientes de self no tienen
 Se recolectan todos los atributos del nuevo padre hacia arriba (sin duplicados). Para cada atributo nuevo, se determinan los productos impactados.
