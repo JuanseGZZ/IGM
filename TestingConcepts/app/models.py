@@ -41,6 +41,14 @@ class Attribute:
         else:
             raise ValueError("Tipo de dato no reconocido.")
 
+    def __eq__(self, other):
+        if not isinstance(other, Attribute):
+            return NotImplemented
+        return self.id == other.id if self.id is not None else self is other
+
+    def __hash__(self):
+        return hash(self.id) if self.id is not None else id(self)
+
     def to_json(self) -> dict:
         return {
             "id": self.id,
@@ -192,6 +200,9 @@ class Category:
         # algun ancestro ya lo cubre, nada que hacer
         if impact is None:
             return None
+
+        # para atributo dinámico: solo productos con variantes necesitan cobertura
+        impact = [p for p in impact if p.variants]
 
         # no hay productos perjudicados, agregamos libre
         if not impact:
@@ -785,6 +796,8 @@ class Product:
         attribute:Attribute,
         variant_options:list = None,
         ):
+        if attribute.is_static:
+            raise ValueError("El attributo que se quiere incertar es estatico")
         # variant_options[{ "variant_id": "value" },...] struct que llega.
         #debe verificar que no este, y ademas pedir data de variantes para aplicar los cambios.
         # pedimos atributos purgados
@@ -959,11 +972,7 @@ class Product:
             raise ValueError("Estas intentando meter un atributo dinamico como implementacion estatica")
 
         # chequeamos tipo de dato y que esta en attributs del producto o categoria
-        try: 
-            self._check_implementation(attr_impl=attribute_implementation)
-        except ValueError as error:
-            print(error)    
-            return False
+        self._check_implementation(attr_impl=attribute_implementation)
 
         # verificar si el atributo ya esta implementado en el producto
         if attribute_implementation.attribute.key in self._impl_keys:
@@ -1010,7 +1019,9 @@ class Product:
         # ya sabemos que las implementaciones para los atributos son los que tiene que poner, ahora mandamos a chequear los types para los values.
         for i in implementations:
             try:
-                i.attribute.check_value(i.value)
+                if not i.attribute.check_value(i.value):
+                    print(f"Error en tipo: valor inválido para '{i.attribute.name}'.")
+                    return None
             except ValueError as error:
                 print(f"Error en tipo: {error}")
                 return None
