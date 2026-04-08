@@ -402,3 +402,36 @@ class ProductRepo(CrudBase[Product]):
         cls._save_variants(obj)
         conn.commit()
         return cls.read(saved.id)
+
+    @classmethod
+    def delete(cls, obj_id: int) -> bool:
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                "SELECT atr_imp_id FROM product_implementation WHERE product_id = %s",
+                (obj_id,),
+            )
+            prod_imp_ids = [row["atr_imp_id"] for row in cur.fetchall()]
+
+            cur.execute(
+                """
+                SELECT DISTINCT vi.atr_imp_id
+                FROM variant v
+                JOIN variant_implementation vi ON vi.variant_id = v.id
+                WHERE v.product_id = %s
+                """,
+                (obj_id,),
+            )
+            var_imp_ids = [row["atr_imp_id"] for row in cur.fetchall()]
+
+        deleted = super().delete(obj_id)
+
+        if deleted:
+            with conn.cursor() as cur:
+                for atr_imp_id in prod_imp_ids + var_imp_ids:
+                    cur.execute(
+                        "DELETE FROM atr_implementation WHERE id = %s",
+                        (atr_imp_id,),
+                    )
+            conn.commit()
+
+        return deleted

@@ -60,15 +60,46 @@ class CategoryRepo(CrudBase[Category]):
         return attributes
 
     @classmethod
+    def _load_products(cls, category) -> list:
+        from product_repo import ProductRepo
+
+        with conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """
+                SELECT id, code, title, price, description, brand, category_id
+                FROM product
+                WHERE category_id = %s
+                ORDER BY id
+                """,
+                (category.id,),
+            )
+            rows = cur.fetchall()
+
+        products = []
+        for row in rows:
+            product = ProductRepo._row_to_obj(row)
+            if product is not None:
+                product.category = category
+                products.append(product)
+
+        return products
+
+    @classmethod
     def _row_to_obj(cls, row):
         if row is None:
             return None
 
-        return Category(
+        category = Category(
             id=row["id"],
             name=row["name"],
             attributes=cls._load_attributes(row["id"]),
         )
+
+        for product in cls._load_products(category):
+            category.products.append(product)
+            category._product_codes.add(product.code)
+
+        return category
 
     @classmethod
     def save(cls, obj: Category) -> Category:
