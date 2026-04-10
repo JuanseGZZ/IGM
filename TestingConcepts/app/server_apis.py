@@ -32,6 +32,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from service import AttributeService, CategoryService, ProductService
+from config import conn
 
 
 app = FastAPI(title="IGM — Product Management API", version="1.0")
@@ -46,11 +47,15 @@ def _400(msg: str) -> None:
     raise HTTPException(status_code=400, detail=msg)
 
 def _run(fn):
-    """Ejecuta fn(), convierte ValueError → 400."""
+    """Ejecuta fn(), convierte ValueError → 400. Rollback en cualquier error."""
     try:
         return fn()
     except ValueError as e:
+        conn.rollback()
         _400(str(e))
+    except Exception:
+        conn.rollback()
+        raise
 
 def _serialize_cat(cat):
     d = cat.to_json()
