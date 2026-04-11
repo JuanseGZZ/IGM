@@ -147,6 +147,65 @@ Lista todas las categorías. Cada una incluye sus atributos y productos.
 
 Actualiza solo el nombre.
 
+### `change_parent(cat_id, parent_id, implementations=None, del_opt=0) → dict`
+
+Cambia el padre de la categoría llamando a `Category.change_categorie_father`.
+
+**Flujo:**
+1. Carga `cat` y `new_parent`.
+2. Convierte `implementations` del formato API al formato esperado por el modelo.
+3. Llama `cat.change_categorie_father(new_parent, model_impls, del_opt)`.
+4. Si el resultado no es vacío → determina el tipo de impacto y retorna el dict correspondiente.
+5. Si es exitoso → guarda todos los productos del subárbol de `cat` (pueden tener nuevas implementaciones) y luego guarda la categoría.
+
+**Tipos de impacto:**
+
+| Retorno | Cuándo |
+|---|---|
+| `{"needs_decision": True, "impact": [...]}` | `del_opt=0` y hay atributos huérfanos del padre anterior |
+| `{"needs_implementations": True, "impact": [...]}` | El nuevo padre tiene atributos que los descendientes no cubren |
+| `{"category": Category}` | Éxito |
+
+`impact` para `needs_decision`:
+```python
+[
+  {
+    "attribute_key": "color",
+    "attribute_name": "Color",
+    "is_static": False,
+    "affected_products": [{"product_id": 1, "product_code": "REMERA-001"}]
+  }
+]
+```
+
+`impact` para `needs_implementations`:
+```python
+[
+  {
+    "attribute_key": "material",
+    "attribute_name": "Material",
+    "is_static": True,
+    "products": [{"product_id": 1, "product_code": "REMERA-001"}]
+  },
+  {
+    "attribute_key": "color",
+    "attribute_name": "Color",
+    "is_static": False,
+    "products": [
+      {"product_id": 1, "product_code": "REMERA-001", "variants": [{"variant_id": 10}]}
+    ]
+  }
+]
+```
+
+`implementations` (formato API → se convierte internamente a tuplas para el modelo):
+```python
+{
+  "material": [{"product_id": 1, "value": "algodón"}],
+  "color":    [{"product_id": 1, "variants": [{"variant_id": 10, "value": "rojo"}]}]
+}
+```
+
 ### `delete(cat_id) → bool`
 
 Elimina la categoría. La BD tiene `ON DELETE RESTRICT` en `product.category_id` — falla si hay productos asociados.
@@ -335,11 +394,74 @@ Todos los campos son opcionales. `enum_values` reemplaza la lista completa.
 | `GET` | `/categories/{id}` | Obtiene una categoría |
 | `POST` | `/categories` | Crea categoría |
 | `PATCH` | `/categories/{id}` | Actualiza nombre |
+| `PATCH` | `/categories/{id}/parent` | Cambia el padre de la categoría |
 | `DELETE` | `/categories/{id}` | Elimina categoría |
 | `POST` | `/categories/{id}/dynamic-attribute` | Agrega atributo dinámico |
 | `POST` | `/categories/{id}/static-attribute` | Agrega atributo estático |
 | `DELETE` | `/categories/{id}/attributes/{attr_id}` | Elimina atributo (`?del_opt=0`) |
 | `POST` | `/categories/{id}/products/{product_id}` | Reasigna producto a esta categoría |
+
+#### PATCH `/categories/{id}/parent`
+
+Primera llamada (del_opt=0, sin implementations):
+```json
+{ "parent_id": 3 }
+```
+Respuesta si hay huérfanos del padre anterior:
+```json
+{
+  "needs_decision": true,
+  "impact": [
+    {
+      "attribute_key": "peso",
+      "attribute_name": "Peso",
+      "is_static": true,
+      "affected_products": [{"product_id": 1, "product_code": "REMERA-001"}]
+    }
+  ]
+}
+```
+Segunda llamada (eligiendo del_opt):
+```json
+{ "parent_id": 3, "del_opt": 1 }
+```
+Respuesta si el nuevo padre tiene atributos sin implementations:
+```json
+{
+  "needs_implementations": true,
+  "impact": [
+    {
+      "attribute_key": "color",
+      "attribute_name": "Color",
+      "is_static": false,
+      "products": [
+        {"product_id": 1, "product_code": "REMERA-001", "variants": [{"variant_id": 10}]}
+      ]
+    }
+  ]
+}
+```
+Llamada final con implementations:
+```json
+{
+  "parent_id": 3,
+  "del_opt": 1,
+  "implementations": {
+    "color": [
+      {"product_id": 1, "variants": [{"variant_id": 10, "value": "rojo"}]}
+    ]
+  }
+}
+```
+Respuesta exitosa: la categoría actualizada (mismo formato que `GET /categories/{id}`).
+
+| `del_opt` | Efecto sobre atributos huérfanos del padre anterior |
+|---|---|
+| `0` (default) | Retorna `needs_decision=true` sin modificar nada |
+| `1` | Inyecta los atributos huérfanos en la propia categoría |
+| `2` | Elimina las implementaciones huérfanas de los productos afectados |
+
+---
 
 #### POST `/categories/{id}/dynamic-attribute`
 
@@ -522,5 +644,8 @@ Cliente                          Server
 |---|---|
 | `DELETE /categories/{id}/attributes/{attr_id}?del_opt=0` | Hay productos que quedarían sin cobertura del atributo |
 | `DELETE /products/{id}/attributes/{attr_key}?del_opt=0` | Hay implementaciones huérfanas |
+| `PATCH /categories/{id}/parent` (del_opt=0) | El padre anterior aportaba atributos que el nuevo padre no cubre |
+
+> **Nota:** `PATCH /categories/{id}/parent` puede encadenar los dos patrones en secuencia: primero `needs_decision` (atributos huérfanos del padre anterior) y luego `needs_implementations` (atributos nuevos del nuevo padre que necesitan valores). El cliente resuelve uno por llamada.
 
 El cliente elige `del_opt` (1 o 2) y reintenta con el query param correspondiente.

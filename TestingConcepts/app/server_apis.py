@@ -29,6 +29,7 @@ Para correr:  uvicorn server_apis:app --reload --app-dir TestingConcepts/app
 from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from service import AttributeService, CategoryService, ProductService
@@ -36,6 +37,13 @@ from config import conn
 
 
 app = FastAPI(title="IGM — Product Management API", version="1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 # ─── helpers ────────────────────────────────────────────────────────────────
@@ -91,6 +99,11 @@ class CategoryCreateBody(BaseModel):
 
 class CategoryUpdateBody(BaseModel):
     name: str
+
+class ChangeCategoryParentBody(BaseModel):
+    parent_id:       int
+    del_opt:         int            = 0
+    implementations: Optional[dict] = None
 
 class VariantImplEntry(BaseModel):
     variant_id: int
@@ -235,6 +248,30 @@ def update_category(cat_id: int, body: CategoryUpdateBody):
     if cat is None:
         _404("Categoría", cat_id)
     return _serialize_cat(cat)
+
+
+@app.patch("/categories/{cat_id}/parent", tags=["categories"])
+def change_category_parent(cat_id: int, body: ChangeCategoryParentBody):
+    """
+    Cambia el padre de la categoría.
+
+    Primera llamada (del_opt=0, sin implementations):
+      → Si hay atributos huérfanos del padre anterior retorna needs_decision=true con impact.
+      → Si el nuevo padre tiene atributos sin implementations retorna needs_implementations=true con impact.
+
+    Segunda llamada:
+      → needs_decision: reintenta con del_opt=1 (inyectar huérfanos) o del_opt=2 (eliminar impls huérfanas).
+      → needs_implementations: reintenta con implementations completas.
+    """
+    result = _run(lambda: CategoryService.change_parent(
+        cat_id, body.parent_id, body.implementations, body.del_opt
+    ))
+
+    if result.get("needs_decision"):
+        return {"needs_decision": True, "impact": result["impact"]}
+    if result.get("needs_implementations"):
+        return {"needs_implementations": True, "impact": result["impact"]}
+    return _serialize_cat(result["category"])
 
 
 @app.delete("/categories/{cat_id}", tags=["categories"])

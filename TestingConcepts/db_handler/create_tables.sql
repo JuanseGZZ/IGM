@@ -5,8 +5,9 @@
 -- ============================================================
 
 CREATE TABLE category (
-    id   SERIAL       PRIMARY KEY,
-    name VARCHAR(255) NOT NULL
+    id        SERIAL       PRIMARY KEY,
+    name      VARCHAR(255) NOT NULL,
+    father_id INT          REFERENCES category(id) ON DELETE SET NULL
 );
 
 CREATE TABLE atribute (

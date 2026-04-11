@@ -126,6 +126,95 @@ class CategoryService:
         return CategoryRepo.save(cat)
 
     @staticmethod
+    def change_parent(cat_id: int, parent_id: int,
+                      implementations: dict = None, del_opt: int = 0) -> dict:
+        """
+        Cambia el padre de la categoría.
+
+        implementations: {attr_key: [{"product_id": id, "value": val}]
+                         | [{"product_id": id, "variants": [{"variant_id": id, "value": val}]}]}
+
+        del_opt 0 → si hay atributos huérfanos del padre anterior, retorna needs_decision.
+        del_opt 1 → inyecta los atributos huérfanos en la categoría.
+        del_opt 2 → elimina las implementaciones huérfanas de los productos afectados.
+        """
+        cat        = _require_cat(cat_id)
+        new_parent = _require_cat(parent_id)
+
+        # Convierte formato API → formato esperado por el modelo
+        model_impls: dict = {}
+        for attr_key, entries in (implementations or {}).items():
+            model_impls[attr_key] = [
+                (e["product_id"], e["variants"]) if "variants" in e
+                else (e["product_id"], e["value"])
+                for e in entries
+            ]
+
+        result = cat.change_categorie_father(new_parent, model_impls, del_opt)
+
+        if result:  # dict no vacío → requiere acción del cliente
+            new_parent_attr_keys = {a.key for a in new_parent.get_attributes()}
+            is_impl_impact = (
+                del_opt != 0
+                or {a.key for a in result}.issubset(new_parent_attr_keys)
+            )
+
+            if is_impl_impact:
+                # Atributos del nuevo padre que necesitan implementations
+                impact = []
+                for attr, val in result.items():
+                    entry = {
+                        "attribute_key":  attr.key,
+                        "attribute_name": attr.name,
+                        "is_static":      attr.is_static,
+                    }
+                    if attr.is_static:
+                        entry["products"] = [
+                            {"product_id": p.id, "product_code": p.code}
+                            for p in val
+                        ]
+                    else:
+                        entry["products"] = [
+                            {
+                                "product_id":   p.id,
+                                "product_code": p.code,
+                                "variants":     [{"variant_id": s["variant_id"]} for s in slots],
+                            }
+                            for p, slots in val
+                        ]
+                    impact.append(entry)
+                return {"needs_implementations": True, "impact": impact}
+            else:
+                # Atributos huérfanos del padre anterior — cliente elige del_opt
+                return {
+                    "needs_decision": True,
+                    "impact": [
+                        {
+                            "attribute_key":   a.key,
+                            "attribute_name":  a.name,
+                            "is_static":       a.is_static,
+                            "affected_products": [
+                                {"product_id": p.id, "product_code": p.code}
+                                for p in prods
+                            ],
+                        }
+                        for a, prods in result.items()
+                    ],
+                }
+
+        # Éxito — guardar productos afectados en el subárbol y luego la categoría
+        def _products_in_tree(c):
+            items = list(c.products)
+            for sub in c.subcategories:
+                items.extend(_products_in_tree(sub))
+            return items
+
+        for prod in _products_in_tree(cat):
+            ProductRepo.save(prod)
+
+        return {"category": CategoryRepo.save(cat)}
+
+    @staticmethod
     def delete(cat_id: int) -> bool:
         return CategoryRepo.delete(cat_id)
 

@@ -20,10 +20,10 @@
 ### Diagrama de relaciones
 
 ```
-category ──────────────────────────── product
-   │  └── category_atributes              │  └── products_atributes
-   │           │                          │           │
-   │           ▼                          │           ▼
+category ◄─── category (father_id, auto-referencia)
+   │  └── category_atributes ──────── product
+   │           │                          │  └── products_atributes
+   │           ▼                          │           │
    │        atribute ◄──────── atr_implementation ◄── product_implementation
    │           │  └── enum_values              ▲
    │                                           │
@@ -37,8 +37,9 @@ category ───────────────────────�
 |---|---|---|
 | `id` | SERIAL PK | Identificador |
 | `name` | VARCHAR(255) | Nombre de la categoría |
+| `father_id` | FK → `category` ON DELETE SET NULL | Padre en el árbol; `NULL` si es raíz |
 
-> No tiene columna `parent_id`. El árbol padre-hijo vive **solo en memoria** — no se persiste en la BD.
+Auto-referencia: al borrar un padre su `father_id` queda en `NULL` en los hijos (no se borran en cascada).
 
 ---
 
@@ -242,15 +243,16 @@ Tabla principal: `category`
 ### Mapeo `_obj_to_row`
 
 ```python
-{ "id", "name" }
+{ "id", "name", "father_id" }
 ```
 
-Solo se persisten estos dos campos. El árbol (`father_categorie`, `subcategories`) no tiene columnas en la BD.
+`father_id` toma el valor de `obj.father_categorie.id` si hay padre, o `None` si la categoría es raíz. `subcategories` no se mapea — es la lista inversa y se reconstituye al leer.
 
 ### Carga (`_row_to_obj`)
 
-1. Construye `Category(id, name, attributes=_load_attributes(id))`.
+1. Construye `Category(id, name, attributes=_load_attributes(id), father_categorie=_load_father_chain(row["father_id"]))`.
 2. Llama `_load_products(category)` y agrega cada producto a `category.products` y `category._product_codes`.
+3. Llama `_load_subcategories_recursive(category)` para poblar `subcategories` hacia abajo.
 
 #### `_load_attributes(category_id)`
 
@@ -279,9 +281,31 @@ ORDER BY id
 
 Llama `ProductRepo._row_to_obj(row)` para cada fila (carga completa con variantes e implementaciones), luego sobreescribe `product.category = category` para que el producto apunte al objeto categoría ya construido.
 
+#### `_load_father_chain(father_id)`
+
+Carga la cadena de padres hacia **arriba** recursivamente. Cada nodo se construye con sus atributos, sus productos y a su vez su propio padre vía `_load_father_chain(row["father_id"])`. No carga `subcategories` de los ancestros — solo la línea genealógica necesaria para que `get_attributes()` y las validaciones del modelo funcionen.
+
+Query (ejecutada una vez por nivel):
+```sql
+SELECT * FROM category WHERE id = %s
+```
+
+#### `_load_subcategories_recursive(parent)`
+
+Carga las subcategorías directas y sus descendientes hacia **abajo** recursivamente. Para cada hijo:
+1. Construye el objeto con sus atributos y productos.
+2. Asigna `father_categorie=parent` (referencia al objeto ya construido).
+3. Lo agrega a `parent.subcategories`.
+4. Llama recursivamente para sus propios hijos.
+
+Query por nivel:
+```sql
+SELECT * FROM category WHERE father_id = %s ORDER BY id
+```
+
 ### `save(obj: Category) → Category`
 
-1. `super().save(obj)` → INSERT o UPDATE en `category`.
+1. `super().save(obj)` → INSERT o UPDATE en `category` (incluye `father_id`).
 2. `DELETE FROM category_atributes WHERE category_id = %s` (limpia la asociación actual).
 3. Re-inserta todos los atributos actuales de `obj.attributes` en `category_atributes`.
    - Si algún atributo no tiene `id` → `ValueError`.
@@ -292,8 +316,10 @@ Llama `ProductRepo._row_to_obj(row)` para cada fila (carga completa con variante
 
 - `save` siempre reemplaza las asociaciones de atributos (no hace merge).
 - Un atributo debe existir en la BD (tener `id`) antes de poder asociarse a una categoría.
-- El campo `father_categorie` y la lista `subcategories` **no se persisten**. Son relaciones en memoria que se construyen a nivel servicio.
+- `father_id` se persiste automáticamente via `_obj_to_row`. Si `father_categorie=None`, se guarda `NULL` (la categoría queda como raíz).
+- `subcategories` no se persiste directamente — la relación inversa se reconstruye via `_load_subcategories_recursive` al leer.
 - `delete` con FK `ON DELETE RESTRICT` en `product.category_id`: no se puede borrar una categoría si tiene productos asociados.
+- Al borrar un padre, la FK `ON DELETE SET NULL` deja a sus hijos con `father_id=NULL` — quedan como raíces independientes.
 
 ---
 
@@ -423,15 +449,11 @@ Retorna el producto completo construido via `_row_to_obj`.
 
 ## 6. Limitaciones conocidas
 
-### `father_categorie` y `subcategories` no se persisten
-
-La tabla `category` no tiene `parent_id`. El árbol de categorías es una estructura **solo en memoria**. Si se recarga una categoría desde la BD, `father_categorie` es `None` y `subcategories` es `[]`.
-
-La construcción del árbol debe hacerse a nivel servicio ensamblando los nodos leídos de la BD.
-
 ### `_load_category` en `ProductRepo` es superficial
 
 Al leer un producto, su `product.category` tiene `id`, `name` y `attributes`, pero **no** tiene `father_categorie`, `subcategories` ni `products`. Es suficiente para las operaciones del producto, pero no para operaciones que requieran el árbol completo.
+
+Para eso hay que cargar la categoría vía `CategoryRepo.read`, que sí carga la cadena completa de padres e hijos.
 
 ### `atr_implementation` sin cascade automático
 
