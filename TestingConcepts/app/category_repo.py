@@ -86,10 +86,15 @@ class CategoryRepo(CrudBase[Category]):
         return products
 
     @classmethod
-    def _load_father_chain(cls, father_id: int) -> "Category | None":
+    def _load_father_chain(cls, father_id: int, _visited: set = None) -> "Category | None":
         """Carga la cadena de padres hacia arriba (sin subcategorías)."""
         if not father_id:
             return None
+        if _visited is None:
+            _visited = set()
+        if father_id in _visited:
+            return None  # ciclo en DB — cortar para no recursar infinito
+        _visited.add(father_id)
         with conn.cursor(row_factory=dict_row) as cur:
             cur.execute("SELECT * FROM category WHERE id = %s", (father_id,))
             row = cur.fetchone()
@@ -99,7 +104,7 @@ class CategoryRepo(CrudBase[Category]):
             id=row["id"],
             name=row["name"],
             attributes=cls._load_attributes(row["id"]),
-            father_categorie=cls._load_father_chain(row.get("father_id")),
+            father_categorie=cls._load_father_chain(row.get("father_id"), _visited),
         )
         for product in cls._load_products(father):
             father.products.append(product)

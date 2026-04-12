@@ -695,6 +695,10 @@ class Category:
         return {
             "id": self.id,
             "name": self.name,
+            "father": {
+                "id":   self.father_categorie.id,
+                "name": self.father_categorie.name,
+            } if self.father_categorie else None,
             "attributes": [
                 attr.to_json() if hasattr(attr, "to_json") else attr
                 for attr in self.attributes

@@ -17,6 +17,8 @@ import {
   buildDynamicImplForm,
   buildStaticImplForm,
   buildDecisionForm,
+  buildChangeParentDecisionForm,
+  buildChangeParentImplForm,
 } from "./formBuilder.js";
 
 export const CategoryService = {
@@ -220,6 +222,85 @@ export const CategoryService = {
         }
       );
     });
+  },
+
+  /**
+   * Cambia el padre de una categoría.
+   *
+   * Flujo automático de hasta tres llamadas:
+   *   1. Primera llamada con { parent_id }.
+   *   2. Si needs_decision=true → renderiza buildChangeParentDecisionForm en container;
+   *      el usuario elige del_opt=1 (inyectar en categoría) o del_opt=2 (eliminar impls huérfanas).
+   *      Segunda llamada con { parent_id, del_opt }.
+   *   3. Si needs_implementations=true (puede venir de la primera o segunda llamada) →
+   *      obtiene data_type/enum_values de los atributos afectados, renderiza
+   *      buildChangeParentImplForm, el usuario completa los valores.
+   *      Llamada final con { parent_id, del_opt, implementations }.
+   *
+   * @param {number}      catId
+   * @param {number}      parentId
+   * @param {HTMLElement} container   Div donde se renderizan los formularios intermedios
+   * @returns {Promise<CategoryDTO>}
+   */
+  async changeParent(catId, parentId, container) {
+    const r1 = await CategoryApi.changeParent(catId, { parent_id: parentId, del_opt: 0 });
+    if (r1.status === 400) throw new Error(r1.data?.detail ?? "Error al cambiar padre");
+    if (r1.status === 404) throw new Error(r1.data?.detail ?? "Categoría no encontrada");
+
+    let d = r1.data;
+    let delOpt = 0;
+
+    // success directo sin impacto — el servidor devuelve la categoría directamente
+    if (!d.needs_decision && !d.needs_implementations) {
+      return CategoryDTO.fromJSON(d);
+    }
+
+    // Step 1: atributos huérfanos del padre anterior → pedir decisión
+    if (d.needs_decision) {
+      delOpt = await new Promise((resolve) => {
+        buildChangeParentDecisionForm(container, d.impact, resolve);
+      });
+
+      const r2 = await CategoryApi.changeParent(catId, { parent_id: parentId, del_opt: delOpt });
+      if (r2.status === 400) throw new Error(r2.data?.detail ?? "Error al aplicar decisión");
+      if (r2.status === 404) throw new Error(r2.data?.detail ?? "No encontrado");
+
+      d = r2.data;
+      if (!d.needs_decision && !d.needs_implementations) {
+        return CategoryDTO.fromJSON(d);
+      }
+    }
+
+    // Step 2: nuevo padre tiene atributos sin cobertura → pedir implementations
+    if (d.needs_implementations) {
+      // enriquecer el impact con data_type y enum_values via AttributeApi
+      const { data: allAttrsRaw } = await AttributeApi.getAll();
+      const attrsByKey = Object.fromEntries(
+        (allAttrsRaw ?? []).map((a) => [a.key, a])
+      );
+
+      const impactWithAttrs = d.impact.map((attrInfo) => ({
+        ...attrInfo,
+        data_type:   attrsByKey[attrInfo.attribute_key]?.data_type   ?? "text",
+        enum_values: attrsByKey[attrInfo.attribute_key]?.enum_values ?? [],
+      }));
+
+      const implementations = await new Promise((resolve) => {
+        buildChangeParentImplForm(container, impactWithAttrs, resolve);
+      });
+
+      const r3 = await CategoryApi.changeParent(catId, {
+        parent_id: parentId,
+        del_opt: delOpt,
+        implementations,
+      });
+      if (r3.status === 400) throw new Error(r3.data?.detail ?? "Error al aplicar implementaciones");
+      if (r3.status === 404) throw new Error(r3.data?.detail ?? "No encontrado");
+
+      return CategoryDTO.fromJSON(r3.data);
+    }
+
+    throw new Error("Respuesta inesperada del servidor");
   },
 
   /**

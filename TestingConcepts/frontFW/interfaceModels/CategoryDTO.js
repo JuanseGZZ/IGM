@@ -20,9 +20,11 @@ export class CategoryDTO {
    * @param {object[]} [raw.attributes]
    * @param {object[]} [raw.products]    Se pasan como raw; mapear con ProductDTO externamente
    */
-  constructor({ id = null, name, attributes = [], products = [] }) {
+  constructor({ id = null, name, father = null, attributes = [], products = [] }) {
     this.id         = id;
     this.name       = name;
+    /** { id, name } del padre, o null si es raíz */
+    this.father     = father ?? null;
     this.attributes = (attributes ?? []).map((a) =>
       a instanceof AttributeDTO ? a : AttributeDTO.fromJSON(a)
     );
@@ -39,6 +41,7 @@ export class CategoryDTO {
     return {
       id:         this.id,
       name:       this.name,
+      father:     this.father,
       attributes: this.attributes.map((a) => a.toJSON()),
       products:   this.products.map((p) =>
         typeof p.toJSON === "function" ? p.toJSON() : p

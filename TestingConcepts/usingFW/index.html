@@ -331,6 +331,14 @@
     .igm-decision { display: flex; flex-direction: column; gap: 12px; }
     .igm-impact-list { padding-left: 20px; margin-top: 4px; }
     .igm-impact-item { padding: 2px 0; color: var(--text-muted); font-size: 13px; }
+    .igm-attr-block {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-bottom: 10px;
+    }
+    .igm-btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
 
     /* ── Attribute chips ─────────────────────────────────────────────────────── */
     .attr-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
@@ -687,10 +695,14 @@
         catNode.open = true;
 
         const summary = document.createElement("summary");
+        const parentInfo = cat.father
+          ? `<span style="font-size:11px;color:var(--text-muted)">↳ ${escHtml(cat.father.name)}</span>`
+          : "";
         summary.innerHTML = `
           <span class="tree-chevron">▶</span>
           <span class="tree-icon">📂</span>
           <span class="tree-name">${escHtml(cat.name)}</span>
+          ${parentInfo}
           <span class="tree-meta">id:${cat.id} · ${(byCat[cat.id]||[]).length} producto${(byCat[cat.id]||[]).length !== 1 ? "s" : ""}</span>
         `;
         catNode.appendChild(summary);
@@ -1050,17 +1062,22 @@
 
         const prodCount = (cat.products || []).length;
 
+        const fatherBadge = cat.father
+          ? `<span class="tag tag--purple" style="font-size:11px">↳ ${escHtml(cat.father.name)}</span>`
+          : `<span class="tag tag--gray"   style="font-size:11px">raíz</span>`;
+
         card.innerHTML = `
           <div class="card-header">
             <div>
-              <div class="card-title">${escHtml(cat.name)}</div>
+              <div class="card-title">${escHtml(cat.name)} ${fatherBadge}</div>
               <div class="card-subtitle">id: ${cat.id} · ${prodCount} producto${prodCount !== 1 ? "s" : ""}</div>
             </div>
             <div class="card-actions">
-              <button class="btn btn--ghost btn--sm" data-action="rename-cat" data-cat-id="${cat.id}">Renombrar</button>
-              <button class="btn btn--ghost btn--sm" data-action="add-dynamic" data-cat-id="${cat.id}">+ Attr dinámico</button>
-              <button class="btn btn--ghost btn--sm" data-action="add-static"  data-cat-id="${cat.id}">+ Attr estático</button>
-              <button class="btn btn--danger btn--sm" data-action="delete-cat" data-cat-id="${cat.id}">Eliminar</button>
+              <button class="btn btn--ghost btn--sm" data-action="rename-cat"    data-cat-id="${cat.id}">Renombrar</button>
+              <button class="btn btn--ghost btn--sm" data-action="change-parent" data-cat-id="${cat.id}">🔗 Cambiar padre</button>
+              <button class="btn btn--ghost btn--sm" data-action="add-dynamic"   data-cat-id="${cat.id}">+ Attr dinámico</button>
+              <button class="btn btn--ghost btn--sm" data-action="add-static"    data-cat-id="${cat.id}">+ Attr estático</button>
+              <button class="btn btn--danger btn--sm" data-action="delete-cat"   data-cat-id="${cat.id}">Eliminar</button>
             </div>
           </div>
           ${cat.attributes?.length > 0 ? `
@@ -1102,6 +1119,53 @@
               } catch (e) { toast(e.message, "error"); }
             }
           );
+        });
+
+      } else if (action === "change-parent") {
+        openModal(`Cambiar padre — ${cat.name}`, body => {
+          const otherCats = allCats.filter(c => c.id !== catId);
+          if (otherCats.length === 0) {
+            body.innerHTML = '<p class="igm-hint" style="padding:10px">No hay otras categorías disponibles para usar como padre.</p>';
+            return;
+          }
+
+          const wrap = document.createElement("div");
+          wrap.className = "attr-picker";
+
+          const hint = document.createElement("p");
+          hint.className = "igm-hint";
+          hint.style.marginBottom = "8px";
+          hint.textContent = "Seleccioná la nueva categoría padre:";
+          wrap.appendChild(hint);
+
+          const sel = document.createElement("select");
+          sel.className = "igm-select";
+          for (const c of otherCats) {
+            const o = document.createElement("option");
+            o.value = c.id;
+            o.textContent = c.name;
+            sel.appendChild(o);
+          }
+          wrap.appendChild(sel);
+
+          const btn = document.createElement("button");
+          btn.className = "igm-btn igm-btn--primary";
+          btn.textContent = "Confirmar";
+          btn.addEventListener("click", async () => {
+            const newParentId = parseInt(sel.value);
+            body.innerHTML = '<div class="loading">Procesando…</div>';
+            try {
+              await CategoryService.changeParent(catId, newParentId, body);
+              toast("Padre de categoría actualizado");
+              closeModal();
+              loadCats();
+            } catch (e) {
+              body.innerHTML = `<p class="igm-hint" style="color:var(--danger);padding:10px">${escHtml(e.message)}</p>`;
+              toast(e.message, "error");
+            }
+          });
+          wrap.appendChild(btn);
+          body.appendChild(wrap);
         });
 
       } else if (action === "add-dynamic") {
@@ -1439,6 +1503,15 @@
 
       } else if (action === "new-variant") {
         openModal(`Nueva variante — ${prod.code}`, body => {
+          const dynAttrs = prod.getAllDynamicAttributes();
+          if (dynAttrs.length === 0) {
+            body.innerHTML = `
+              <p style="padding:12px;color:var(--text-muted)">
+                Este producto no tiene atributos dinámicos. Las variantes requieren al menos un
+                atributo dinámico para diferenciarse.
+              </p>`;
+            return;
+          }
           body.innerHTML = '<div class="loading">Cargando atributos requeridos…</div>';
           ProductService.createVariant(prodId, [], body)
             .then(() => { toast("Variante creada"); closeModal(); loadProds(); })

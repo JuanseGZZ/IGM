@@ -36,9 +36,12 @@ export class ApiError extends Error {
  * @throws  {ApiError}  Solo en error de red o status >= 500
  */
 export async function request(method, path, body = null) {
+  const headers = {};
+  if (body !== null) headers["Content-Type"] = "application/json";
+
   const opts = {
     method,
-    headers: { ...Config.defaultHeaders },
+    headers,
   };
   if (body !== null) opts.body = JSON.stringify(body);
 

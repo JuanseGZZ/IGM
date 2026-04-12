@@ -141,6 +141,18 @@ class CategoryService:
         cat        = _require_cat(cat_id)
         new_parent = _require_cat(parent_id)
 
+        # Verificar que no se crea un ciclo (nuevo padre no puede ser el mismo ni
+        # un descendiente de la categoría que se está moviendo)
+        if new_parent.id == cat_id:
+            raise ValueError("Una categoría no puede ser su propio padre")
+        ancestor = new_parent.father_categorie
+        while ancestor is not None:
+            if ancestor.id == cat_id:
+                raise ValueError(
+                    "No se puede asignar un descendiente como padre: crearía un ciclo"
+                )
+            ancestor = ancestor.father_categorie
+
         # Convierte formato API → formato esperado por el modelo
         model_impls: dict = {}
         for attr_key, entries in (implementations or {}).items():

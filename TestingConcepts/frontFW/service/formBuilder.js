@@ -27,6 +27,18 @@
  *     → formulario genérico iterando un schema de campos
  *       schema: { fieldKey: { label, type, options?, required?, placeholder? } }
  *       onSubmit: (data: Object) => void
+ *
+ *   buildChangeParentDecisionForm(container, { impact }, onDecision)
+ *     → para cuando needs_decision=true al cambiar el padre de una categoría
+ *       impact: [{attribute_key, attribute_name, is_static, affected_products:[{product_id, product_code}]}]
+ *       onDecision: (del_opt: 1|2) => void
+ *
+ *   buildChangeParentImplForm(container, impactWithAttrs, onSubmit)
+ *     → para cuando needs_implementations=true al cambiar el padre
+ *       impactWithAttrs: [{attribute_key, attribute_name, is_static, data_type, enum_values, products}]
+ *       products para estáticos: [{product_id, product_code}]
+ *       products para dinámicos: [{product_id, product_code, variants:[{variant_id}]}]
+ *       onSubmit: (implementations: { attr_key: [...] }) => void
  */
 
 // ── helpers de DOM ────────────────────────────────────────────────────────────
@@ -461,6 +473,184 @@ export function buildGenericForm(container, schema, defaults = {}, onSubmit) {
 
   form.appendChild(
     el("button", { type: "submit", class: "igm-btn igm-btn--primary" }, "Guardar")
+  );
+  container.appendChild(form);
+}
+
+/**
+ * Formulario de decisión para cuando needs_decision=true al cambiar el padre
+ * de una categoría. Muestra los atributos que quedarían huérfanos y ofrece:
+ *   del_opt=1 → inyectar esos atributos directamente en la categoría
+ *   del_opt=2 → eliminar las implementaciones huérfanas de los productos
+ *
+ * @param {HTMLElement} container
+ * @param {object}      schema
+ * @param {Array}       schema.impact
+ *   [{attribute_key, attribute_name, is_static, affected_products:[{product_id, product_code}]}]
+ * @param {Function}    onDecision   (del_opt: 1|2) => void
+ */
+export function buildChangeParentDecisionForm(container, impact, onDecision) {
+  clear(container);
+
+  const wrap = sec("igm-decision");
+  wrap.appendChild(ttl("Atributos huérfanos al cambiar padre", 3));
+  wrap.appendChild(
+    el("p", { class: "igm-hint" },
+      "Al cambiar el padre, los siguientes atributos heredados quedarían sin cobertura en los productos:"
+    )
+  );
+
+  for (const attrInfo of impact) {
+    const attrSec = sec("igm-attr-block");
+    attrSec.appendChild(
+      ttl(`${attrInfo.attribute_name} (${attrInfo.is_static ? "estático" : "dinámico"})`, 4)
+    );
+
+    const list = el("ul", { class: "igm-impact-list" });
+    for (const p of attrInfo.affected_products ?? []) {
+      list.appendChild(
+        el("li", { class: "igm-impact-item" }, `${p.product_code} (id: ${p.product_id})`)
+      );
+    }
+    attrSec.appendChild(list);
+    wrap.appendChild(attrSec);
+  }
+
+  const btnRow = sec("igm-btn-row");
+  btnRow.appendChild(
+    el("button", {
+      type: "button",
+      class: "igm-btn igm-btn--warning",
+      onclick: () => onDecision(1),
+    }, "Inyectar en la categoría")
+  );
+  btnRow.appendChild(
+    el("button", {
+      type: "button",
+      class: "igm-btn igm-btn--danger",
+      onclick: () => onDecision(2),
+    }, "Eliminar implementaciones huérfanas")
+  );
+
+  wrap.appendChild(btnRow);
+  container.appendChild(wrap);
+}
+
+/**
+ * Formulario para completar implementaciones cuando needs_implementations=true
+ * al cambiar el padre. El nuevo padre tiene atributos que los productos
+ * descendientes no cubren aún.
+ *
+ * Muestra cada atributo con sus productos (y variantes si es dinámico).
+ *
+ * @param {HTMLElement} container
+ * @param {Array}       impactWithAttrs
+ *   [{attribute_key, attribute_name, is_static, data_type, enum_values, products}]
+ *   products para estáticos: [{product_id, product_code}]
+ *   products para dinámicos: [{product_id, product_code, variants:[{variant_id}]}]
+ * @param {Function}    onSubmit
+ *   onSubmit(implementations: { attr_key: [{product_id, value}] | [{product_id, variants:[{variant_id, value}]}] })
+ */
+export function buildChangeParentImplForm(container, impactWithAttrs, onSubmit) {
+  clear(container);
+
+  // { attribute_key, is_static, data_type, product_id, variant_id?, inputEl }
+  const inputMap = [];
+
+  const form = el("form", {
+    class: "igm-form igm-form--change-parent",
+    onsubmit: (e) => {
+      e.preventDefault();
+      const implementations = {};
+
+      for (const entry of inputMap) {
+        const value = parseValue(entry.data_type, entry.inputEl.value);
+        if (!implementations[entry.attribute_key]) {
+          implementations[entry.attribute_key] = [];
+        }
+
+        if (entry.is_static) {
+          implementations[entry.attribute_key].push({ product_id: entry.product_id, value });
+        } else {
+          let prodEntry = implementations[entry.attribute_key]
+            .find((p) => p.product_id === entry.product_id);
+          if (!prodEntry) {
+            prodEntry = { product_id: entry.product_id, variants: [] };
+            implementations[entry.attribute_key].push(prodEntry);
+          }
+          prodEntry.variants.push({ variant_id: entry.variant_id, value });
+        }
+      }
+
+      onSubmit(implementations);
+    },
+  });
+
+  form.appendChild(ttl("Completar implementaciones para el nuevo padre", 3));
+  form.appendChild(
+    el("p", { class: "igm-hint" },
+      "El nuevo padre aporta atributos que los productos descendientes no tienen aún. Completá los valores:"
+    )
+  );
+
+  for (const attrInfo of impactWithAttrs) {
+    const attrSec = sec("igm-attr-block");
+    attrSec.appendChild(
+      ttl(`${attrInfo.attribute_name} (${attrInfo.is_static ? "estático" : "dinámico"})`, 4)
+    );
+
+    const fakeAttr = {
+      data_type:   attrInfo.data_type,
+      enum_values: attrInfo.enum_values,
+      name:        attrInfo.attribute_name,
+    };
+
+    for (const prod of attrInfo.products) {
+      if (attrInfo.is_static) {
+        const row = sec("igm-product-row");
+        row.appendChild(lbl(`${prod.product_code} (id: ${prod.product_id})`));
+        const inp = makeInput(fakeAttr, `cp_${attrInfo.attribute_key}_p${prod.product_id}`);
+        row.appendChild(inp);
+        attrSec.appendChild(row);
+        inputMap.push({
+          attribute_key: attrInfo.attribute_key,
+          is_static: true,
+          data_type: attrInfo.data_type,
+          product_id: prod.product_id,
+          inputEl: inp,
+        });
+      } else {
+        const prodSec = sec("igm-product-section");
+        prodSec.appendChild(
+          ttl(`Producto: ${prod.product_code} (id: ${prod.product_id})`, 5)
+        );
+        for (const variant of prod.variants ?? []) {
+          const row = sec("igm-variant-row");
+          row.appendChild(lbl(`Variante #${variant.variant_id}`));
+          const inp = makeInput(
+            fakeAttr,
+            `cp_${attrInfo.attribute_key}_p${prod.product_id}_v${variant.variant_id}`
+          );
+          row.appendChild(inp);
+          prodSec.appendChild(row);
+          inputMap.push({
+            attribute_key: attrInfo.attribute_key,
+            is_static: false,
+            data_type: attrInfo.data_type,
+            product_id: prod.product_id,
+            variant_id: variant.variant_id,
+            inputEl: inp,
+          });
+        }
+        attrSec.appendChild(prodSec);
+      }
+    }
+
+    form.appendChild(attrSec);
+  }
+
+  form.appendChild(
+    el("button", { type: "submit", class: "igm-btn igm-btn--primary" }, "Confirmar")
   );
   container.appendChild(form);
 }

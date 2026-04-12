@@ -7,4 +7,6 @@ export {
   buildDecisionForm,
   buildVariantForm,
   buildGenericForm,
+  buildChangeParentDecisionForm,
+  buildChangeParentImplForm,
 } from "./formBuilder.js";

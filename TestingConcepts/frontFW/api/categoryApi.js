@@ -78,6 +78,24 @@ export const CategoryApi = {
   },
 
   /**
+   * PATCH /categories/{id}/parent
+   *
+   * Primera llamada  → { parent_id }
+   * Segunda llamada  → { parent_id, del_opt: 1|2 }
+   * Llamada final    → { parent_id, del_opt, implementations: { attr_key: [...] } }
+   *
+   * Respuesta A (atributos huérfanos del padre anterior):
+   *   { needs_decision: true, impact: [{attribute_key, attribute_name, is_static, affected_products}] }
+   * Respuesta B (nuevo padre tiene atributos sin cobertura):
+   *   { needs_implementations: true, impact: [{attribute_key, attribute_name, is_static, products}] }
+   * Respuesta C (éxito):
+   *   { category: {...} }
+   */
+  changeParent(catId, body) {
+    return request("PATCH", `/categories/${catId}/parent`, body);
+  },
+
+  /**
    * POST /categories/{cat_id}/products/{product_id}
    * Reasigna un producto a esta categoría.
    */

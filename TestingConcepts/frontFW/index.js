@@ -33,4 +33,6 @@ export {
   buildDecisionForm,
   buildVariantForm,
   buildGenericForm,
+  buildChangeParentDecisionForm,
+  buildChangeParentImplForm,
 } from "./service/index.js";

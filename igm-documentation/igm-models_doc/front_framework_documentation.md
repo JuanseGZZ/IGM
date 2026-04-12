@@ -231,11 +231,24 @@ CategoryApi.getById(id)                     // GET  /categories/{id}
 CategoryApi.create(name)                    // POST /categories
 CategoryApi.updateName(id, name)            // PATCH /categories/{id}
 CategoryApi.delete(id)                      // DELETE /categories/{id}
+CategoryApi.changeParent(id, body)          // PATCH /categories/{id}/parent
 CategoryApi.addDynamicAttribute(id, body)   // POST /categories/{id}/dynamic-attributes
 CategoryApi.addStaticAttribute(id, body)    // POST /categories/{id}/static-attributes
 CategoryApi.removeAttribute(id, attrId, del_opt)
                                             // DELETE /categories/{id}/attributes/{attrId}?del_opt=N
 CategoryApi.addProduct(id, productId)       // POST /categories/{id}/products
+```
+
+`changeParent` acepta tres formas de body:
+```js
+// Primera llamada — solo parent_id
+{ parent_id: 3 }
+
+// Segunda llamada — con decisión sobre atributos huérfanos
+{ parent_id: 3, del_opt: 1 }   // 1: inyectar en la categoría | 2: eliminar impls huérfanas
+
+// Llamada final — con implementaciones para el nuevo padre
+{ parent_id: 3, del_opt: 1, implementations: { attr_key: [...] } }
 ```
 
 ---
@@ -321,6 +334,14 @@ await CategoryService.addProduct(catId, productId)
 **Operaciones con impacto:**
 
 ```js
+// Cambia el padre de la categoría. Flujo automático de hasta 3 llamadas:
+//   1. Detecta atributos huérfanos del padre anterior → renderiza decisión en container.
+//      del_opt=1: inyectar en la categoría | del_opt=2: eliminar impls huérfanas
+//   2. Detecta atributos del nuevo padre sin cobertura → renderiza form de implementations.
+// Cada paso puede o no ocurrir según el estado del árbol.
+await CategoryService.changeParent(catId, parentId, container)
+// → CategoryDTO
+
 // Agrega atributo dinámico. Si hay variantes afectadas → renderiza form en container.
 await CategoryService.addDynamicAttribute(catId, attrId, container)
 // → CategoryDTO
@@ -400,7 +421,9 @@ Todos los elementos tienen prefijo `igm-` para evitar colisiones:
 | Formulario estático   | `igm-form igm-form--static`                    |
 | Formulario variante   | `igm-form igm-form--variant`                   |
 | Formulario genérico   | `igm-form igm-form--generic`                   |
+| Formulario change-parent impls | `igm-form igm-form--change-parent`    |
 | Formulario decisión   | `igm-decision`                                 |
+| Bloque de atributo    | `igm-section igm-attr-block`                   |
 | Sección de producto   | `igm-section igm-product-section`              |
 | Fila de variante      | `igm-section igm-variant-row`                  |
 | Fila de atributo      | `igm-section igm-attr-row`                     |
@@ -480,6 +503,66 @@ Pide el valor de cada atributo necesario para crear la variante.
 
 ---
 
+### buildChangeParentDecisionForm
+
+```js
+buildChangeParentDecisionForm(container, { impact }, onDecision)
+```
+
+Para cuando el servidor responde `needs_decision: true` al cambiar el padre de una categoría.
+Muestra los atributos que quedarían huérfanos del padre anterior (con sus productos afectados) y dos botones de acción.
+
+- `impact` (array directo, no objeto): `[{ attribute_key, attribute_name, is_static, affected_products: [{ product_id, product_code }] }]`
+- `onDecision`: `(del_opt: 1 | 2) => void`
+  - `del_opt=1` → inyectar los atributos huérfanos directamente en la categoría
+  - `del_opt=2` → eliminar las implementaciones huérfanas de los productos afectados
+
+---
+
+### buildChangeParentImplForm
+
+```js
+buildChangeParentImplForm(container, impactWithAttrs, onSubmit)
+```
+
+Para cuando el servidor responde `needs_implementations: true` al cambiar el padre.
+El nuevo padre aporta atributos que los productos descendientes no cubren todavía.
+Muestra un bloque por atributo: una fila por producto (estáticos) o una fila por variante (dinámicos).
+
+- `impactWithAttrs`: array enriquecido por el servicio con `data_type` y `enum_values`:
+  ```js
+  [
+    {
+      attribute_key:   "material",
+      attribute_name:  "Material",
+      is_static:       true,
+      data_type:       "text",         // obtenido de AttributeApi.getAll()
+      enum_values:     [],
+      products: [{ product_id, product_code }]
+    },
+    {
+      attribute_key:   "color",
+      attribute_name:  "Color",
+      is_static:       false,
+      data_type:       "enum",
+      enum_values:     ["rojo", "azul"],
+      products: [{ product_id, product_code, variants: [{ variant_id }] }]
+    }
+  ]
+  ```
+- `onSubmit`: `(implementations: { attr_key: [...] }) => void`
+  ```js
+  // formato que recibe la API:
+  {
+    material: [{ product_id: 1, value: "algodón" }],
+    color:    [{ product_id: 1, variants: [{ variant_id: 10, value: "rojo" }] }]
+  }
+  ```
+
+> **Nota:** el servicio llama a `AttributeApi.getAll()` automáticamente para enriquecer el impact con `data_type` y `enum_values` antes de pasar el dato a este builder.
+
+---
+
 ### buildGenericForm
 
 ```js
@@ -522,6 +605,29 @@ Segunda llamada automática con los datos
    ↓
 Promise resuelve con el DTO final
 ```
+
+### Ejemplo — Cambiar el padre de una categoría
+
+```js
+const container = document.getElementById("form-area");
+
+try {
+  const category = await CategoryService.changeParent(catId, newParentId, container);
+  // Caso 1 — sin impacto: resuelve inmediato
+  // Caso 2 — hay huérfanos del padre anterior:
+  //   renderiza buildChangeParentDecisionForm, el usuario elige del_opt,
+  //   hace la segunda llamada automática. Si luego no hay más impacto → resuelve.
+  // Caso 3 — el nuevo padre tiene atributos sin cobertura (puede venir del caso 2):
+  //   llama AttributeApi.getAll() para enriquecer el impact,
+  //   renderiza buildChangeParentImplForm, el usuario completa los valores,
+  //   hace la llamada final → resuelve con CategoryDTO.
+  console.log("Padre actualizado. Categoría:", category.name);
+} catch (err) {
+  console.error(err.message);
+}
+```
+
+---
 
 ### Ejemplo — Agregar atributo estático a categoría
 
