@@ -9,49 +9,66 @@
 html, body { height: 100%; margin: 0; overflow: hidden; font-size: 13px; }
 #app { display: flex; height: 100vh; }
 
-/* Sidebar */
-#sidebar { width: 300px; flex-shrink: 0; background: #f8f9fa; border-right: 1px solid #dee2e6; display: flex; flex-direction: column; overflow: hidden; }
-#sb-header { padding: 10px 14px; background: #212529; color: #fff; display: flex; align-items: center; gap: 8px; }
+#sidebar { width: 310px; flex-shrink: 0; background: #f8f9fa; border-right: 1px solid #dee2e6; display: flex; flex-direction: column; overflow: hidden; }
+#sb-header { padding: 10px 14px; background: #212529; color: #fff; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 #sb-header h6 { margin: 0; font-size: 14px; }
-#sb-tabs { display: flex; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid #dee2e6; }
+#sb-tabs { display: flex; gap: 2px; padding: 8px 8px 0; border-bottom: 1px solid #dee2e6; flex-shrink: 0; }
 .tb { flex: 1; border: none; background: none; padding: 5px 4px; font-size: 11px; border-radius: 4px 4px 0 0; cursor: pointer; color: #495057; border-bottom: 2px solid transparent; }
 .tb.on { background: #fff; border-bottom: 2px solid #212529; font-weight: 600; color: #212529; }
-#sb-body { flex: 1; overflow-y: auto; padding: 10px; }
+#sb-body { flex: 1; overflow-y: auto; padding: 10px; min-height: 0; }
 .panel { display: none; } .panel.on { display: block; }
 
-/* Entity cards */
+#sb-log { flex-shrink: 0; height: 170px; border-top: 1px solid #dee2e6; display: flex; flex-direction: column; }
+#sb-log-header { padding: 4px 10px; background: #e9ecef; font-size: 10px; color: #6c757d; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; display: flex; justify-content: space-between; align-items: center; }
+#log { flex: 1; overflow-y: auto; padding: 4px 10px; }
+.log-entry { padding: 2px 0; border-bottom: 1px solid #f0f0f0; font-size: 11px; line-height: 1.4; }
+
 .ec { background: #fff; border-radius: 5px; padding: 7px 9px; margin-bottom: 5px; border-left: 4px solid; box-shadow: 0 1px 2px rgba(0,0,0,.08); display: flex; align-items: flex-start; gap: 6px; }
 .ec-a { border-color: #0d6efd; } .ec-c { border-color: #198754; } .ec-p { border-color: #fd7e14; } .ec-v { border-color: #6f42c1; }
 .ec-body { flex: 1; min-width: 0; }
 .ec-body b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 12px; }
 .ec-body small { color: #6c757d; font-size: 11px; }
 .ec-acts { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
-.ec-acts button { border: 1px solid; border-radius: 3px; background: none; cursor: pointer; padding: 0 4px; font-size: 11px; line-height: 18px; }
+.ec-acts button { border: 1px solid; border-radius: 3px; background: none; cursor: pointer; padding: 0 5px; font-size: 11px; line-height: 18px; }
 
-/* Main */
 #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-#toolbar { padding: 5px 10px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-#cy-wrap { flex: 1; position: relative; }
+#toolbar { padding: 5px 10px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+#cy-wrap { flex: 1; position: relative; min-height: 0; }
 #cy { width: 100%; height: 100%; }
 
 .flt { display: flex; align-items: center; gap: 4px; font-size: 11px; cursor: pointer; }
 .fdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
-#detail { display: none; position: absolute; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,.96); border-top: 1px solid #dee2e6; padding: 10px 14px; font-size: 12px; z-index: 20; }
-#detail .close-btn { float: right; border: none; background: none; font-size: 16px; cursor: pointer; line-height: 1; }
+#detail { display: none; position: absolute; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,.97); border-top: 2px solid #dee2e6; padding: 10px 14px; font-size: 12px; z-index: 20; max-height: 160px; overflow-y: auto; }
+#detail .close-btn { float: right; border: none; background: none; font-size: 18px; cursor: pointer; line-height: 1; color: #6c757d; }
 
-.legend { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,.92); border: 1px solid #dee2e6; border-radius: 5px; padding: 7px 11px; font-size: 11px; z-index: 10; }
+.legend { position: absolute; top: 10px; left: 10px; background: rgba(255,255,255,.93); border: 1px solid #dee2e6; border-radius: 5px; padding: 7px 11px; font-size: 11px; z-index: 10; }
 .legend div { display: flex; align-items: center; gap: 5px; margin-bottom: 2px; }
 .ldot { width: 9px; height: 9px; border-radius: 50%; }
-
 .gctrls { position: absolute; top: 10px; right: 10px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
 
-/* form labels smaller */
 .form-label { font-size: 12px; margin-bottom: 3px; }
 .form-control-sm, .form-select-sm { font-size: 12px; }
+
+#file-warning { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 9999; align-items: center; justify-content: center; }
+#file-warning.show { display: flex; }
+#file-warning-box { background: #fff; border-radius: 8px; padding: 32px 40px; max-width: 520px; }
 </style>
 </head>
 <body>
+
+<!-- file:// warning -->
+<div id="file-warning">
+  <div id="file-warning-box">
+    <h5>Servidor local requerido</h5>
+    <p>Esta app usa <code>import</code>/<code>export</code> de ES modules, que el browser bloquea con <code>file://</code>.</p>
+    <p>Ejecutá uno de estos en la carpeta del proyecto:</p>
+    <pre style="background:#f4f4f4;padding:10px;border-radius:4px;font-size:12px">python -m http.server 8080
+npx serve .</pre>
+    <p class="mb-0">Luego abrí <code>http://localhost:8080/igm-explorer.html</code></p>
+  </div>
+</div>
+
 <div id="app">
 
 <!-- SIDEBAR -->
@@ -59,6 +76,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; font-size: 13px; }
   <div id="sb-header">
     <i class="bi bi-diagram-3-fill"></i>
     <h6>IGM Explorer</h6>
+    <span id="node-count" class="ms-auto text-secondary" style="font-size:10px;"></span>
   </div>
   <div id="sb-tabs">
     <button class="tb on" onclick="switchTab('a',this)"><span style="color:#0d6efd">●</span> Attrs</button>
@@ -68,48 +86,58 @@ html, body { height: 100%; margin: 0; overflow: hidden; font-size: 13px; }
   </div>
   <div id="sb-body">
     <div id="panel-a" class="panel on">
-      <div class="d-flex justify-content-between align-items-center mb-2 mt-1">
-        <span class="fw-semibold">Atributos</span>
-        <button class="btn btn-sm btn-primary" style="font-size:11px;padding:2px 8px;" onclick="openModal('attr')">+ Nuevo</button>
+      <div class="d-flex justify-content-between align-items-center my-2">
+        <span class="fw-semibold" style="font-size:12px">Atributos</span>
+        <button class="btn btn-sm btn-primary" style="font-size:11px;padding:2px 8px" onclick="openModal('attr')">+ Nuevo</button>
       </div>
       <div id="list-a"></div>
     </div>
     <div id="panel-c" class="panel">
-      <div class="d-flex justify-content-between align-items-center mb-2 mt-1">
-        <span class="fw-semibold">Categorías</span>
-        <button class="btn btn-sm btn-success" style="font-size:11px;padding:2px 8px;" onclick="openModal('cat')">+ Nueva</button>
+      <div class="d-flex justify-content-between align-items-center my-2">
+        <span class="fw-semibold" style="font-size:12px">Categorías</span>
+        <button class="btn btn-sm btn-success" style="font-size:11px;padding:2px 8px" onclick="openModal('cat')">+ Nueva</button>
       </div>
       <div id="list-c"></div>
     </div>
     <div id="panel-p" class="panel">
-      <div class="d-flex justify-content-between align-items-center mb-2 mt-1">
-        <span class="fw-semibold">Productos</span>
-        <button class="btn btn-sm btn-warning" style="font-size:11px;padding:2px 8px;" onclick="openModal('prod')">+ Nuevo</button>
+      <div class="d-flex justify-content-between align-items-center my-2">
+        <span class="fw-semibold" style="font-size:12px">Productos</span>
+        <button class="btn btn-sm btn-warning" style="font-size:11px;padding:2px 8px" onclick="openModal('prod')">+ Nuevo</button>
       </div>
       <div id="list-p"></div>
     </div>
     <div id="panel-v" class="panel">
-      <div class="d-flex justify-content-between align-items-center mb-2 mt-1">
-        <span class="fw-semibold">Variantes</span>
-        <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:#6f42c1;color:#fff;border:none;border-radius:4px;" onclick="openModal('var')">+ Nueva</button>
+      <div class="d-flex justify-content-between align-items-center my-2">
+        <span class="fw-semibold" style="font-size:12px">Variantes</span>
+        <button class="btn btn-sm" style="font-size:11px;padding:2px 8px;background:#6f42c1;color:#fff;border:none;border-radius:4px" onclick="openModal('var')">+ Nueva</button>
       </div>
       <div id="list-v"></div>
     </div>
+  </div>
+
+  <!-- LOG -->
+  <div id="sb-log">
+    <div id="sb-log-header">
+      Operaciones
+      <button onclick="document.getElementById('log').innerHTML=''" style="border:none;background:none;font-size:10px;cursor:pointer;color:#adb5bd">limpiar</button>
+    </div>
+    <div id="log"></div>
   </div>
 </div>
 
 <!-- MAIN -->
 <div id="main">
   <div id="toolbar">
-    <button class="btn btn-sm btn-outline-secondary" style="font-size:11px;" onclick="cy.fit()"><i class="bi bi-arrows-fullscreen"></i> Fit</button>
-    <button class="btn btn-sm btn-outline-secondary" style="font-size:11px;" onclick="relayout()"><i class="bi bi-diagram-3"></i> Layout</button>
+    <button class="btn btn-sm btn-outline-secondary" style="font-size:11px" onclick="cy.fit()"><i class="bi bi-arrows-fullscreen"></i> Fit</button>
+    <button class="btn btn-sm btn-outline-secondary" style="font-size:11px" onclick="relayout()"><i class="bi bi-diagram-3"></i> Layout</button>
     <div class="vr"></div>
     <label class="flt"><input type="checkbox" id="fa" checked onchange="applyFilter()"> <span class="fdot" style="background:#0d6efd"></span> Atributos</label>
     <label class="flt"><input type="checkbox" id="fc" checked onchange="applyFilter()"> <span class="fdot" style="background:#198754"></span> Categorías</label>
     <label class="flt"><input type="checkbox" id="fp" checked onchange="applyFilter()"> <span class="fdot" style="background:#fd7e14"></span> Productos</label>
     <label class="flt"><input type="checkbox" id="fv" checked onchange="applyFilter()"> <span class="fdot" style="background:#6f42c1"></span> Variantes</label>
     <div class="vr"></div>
-    <span id="node-count" class="text-muted" style="font-size:11px;"></span>
+    <button class="btn btn-sm btn-light border" style="font-size:11px" onclick="cy.zoom(cy.zoom()*1.2);cy.center()">＋</button>
+    <button class="btn btn-sm btn-light border" style="font-size:11px" onclick="cy.zoom(cy.zoom()*0.8);cy.center()">－</button>
   </div>
   <div id="cy-wrap">
     <div id="cy"></div>
@@ -118,10 +146,6 @@ html, body { height: 100%; margin: 0; overflow: hidden; font-size: 13px; }
       <div><span class="ldot" style="background:#198754"></span> Categoría</div>
       <div><span class="ldot" style="background:#fd7e14"></span> Producto</div>
       <div><span class="ldot" style="background:#6f42c1"></span> Variante</div>
-    </div>
-    <div class="gctrls">
-      <button class="btn btn-sm btn-light border" style="font-size:11px;" onclick="cy.zoom(cy.zoom()*1.2);cy.center()">＋</button>
-      <button class="btn btn-sm btn-light border" style="font-size:11px;" onclick="cy.zoom(cy.zoom()*0.8);cy.center()">－</button>
     </div>
     <div id="detail">
       <button class="close-btn" onclick="hideDetail()">×</button>
@@ -132,7 +156,7 @@ html, body { height: 100%; margin: 0; overflow: hidden; font-size: 13px; }
 
 </div>
 
-<!-- MODAL -->
+<!-- CRUD Modal -->
 <div class="modal fade" id="mainModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -149,490 +173,32 @@ html, body { height: 100%; margin: 0; overflow: hidden; font-size: 13px; }
   </div>
 </div>
 
+<!-- Impact Modal -->
+<div class="modal fade" id="impactModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header py-2" style="background:#fff3cd">
+        <h6 class="modal-title mb-0" id="impact-title">⚠ Impacto detectado</h6>
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="impact-body"></div>
+      <div class="modal-footer py-2">
+        <button class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancelar operación</button>
+        <button class="btn btn-sm btn-warning" onclick="saveImpact()">Aplicar con estos valores</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+if (location.protocol === 'file:') {
+  document.getElementById('file-warning').classList.add('show');
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cytoscape@3.28.1/dist/cytoscape.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
-<script>
-// ─── State ────────────────────────────────────────────────────────────────────
-let _uid = 1;
-const uid = () => _uid++;
-
-const DB = {
-  attrs: new Map(),   // {id, key, name, data_type, is_static, enum_values:[]}
-  cats:  new Map(),   // {id, name, father_id, attr_ids:[]}
-  prods: new Map(),   // {id, code, title, price, description, brand, cat_id, attr_ids:[]}
-  vars:  new Map(),   // {id, prod_id, impls:{attr_id: value}}
-};
-
-// ─── Tabs ─────────────────────────────────────────────────────────────────────
-function switchTab(key, btn) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
-  document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
-  document.getElementById('panel-' + key).classList.add('on');
-  btn.classList.add('on');
-}
-
-// ─── Render lists ─────────────────────────────────────────────────────────────
-function renderAll() { renderA(); renderC(); renderP(); renderV(); updateCount(); }
-
-function renderA() {
-  const el = document.getElementById('list-a');
-  if (!DB.attrs.size) { el.innerHTML = '<p class="text-muted" style="font-size:11px">Sin atributos.</p>'; return; }
-  el.innerHTML = [...DB.attrs.values()].map(a => `
-    <div class="ec ec-a">
-      <div class="ec-body">
-        <b>${h(a.name)} <span class="badge bg-primary" style="font-size:9px">${a.data_type}</span>${a.is_static ? ' <span class="badge bg-secondary" style="font-size:9px">estático</span>' : ''}</b>
-        <small>${h(a.key)}${a.enum_values.length ? ' · ' + a.enum_values.join(', ') : ''}</small>
-      </div>
-      <div class="ec-acts">
-        <button style="color:#0d6efd;border-color:#0d6efd" onclick="openModal('attr',${a.id})">✏</button>
-        <button style="color:#dc3545;border-color:#dc3545" onclick="del('attrs',${a.id})">🗑</button>
-      </div>
-    </div>`).join('');
-}
-
-function renderC() {
-  const el = document.getElementById('list-c');
-  if (!DB.cats.size) { el.innerHTML = '<p class="text-muted" style="font-size:11px">Sin categorías.</p>'; return; }
-  el.innerHTML = [...DB.cats.values()].map(c => {
-    const dad = c.father_id ? DB.cats.get(c.father_id) : null;
-    const attrs = c.attr_ids.map(id => DB.attrs.get(id)?.name).filter(Boolean).join(', ');
-    return `
-    <div class="ec ec-c">
-      <div class="ec-body">
-        <b>${h(c.name)}</b>
-        <small>${dad ? '↑ ' + h(dad.name) : 'Raíz'}${attrs ? ' · ' + attrs : ''}</small>
-      </div>
-      <div class="ec-acts">
-        <button style="color:#198754;border-color:#198754" onclick="openModal('cat',${c.id})">✏</button>
-        <button style="color:#dc3545;border-color:#dc3545" onclick="del('cats',${c.id})">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderP() {
-  const el = document.getElementById('list-p');
-  if (!DB.prods.size) { el.innerHTML = '<p class="text-muted" style="font-size:11px">Sin productos.</p>'; return; }
-  el.innerHTML = [...DB.prods.values()].map(p => {
-    const cat = p.cat_id ? DB.cats.get(p.cat_id) : null;
-    const varCount = [...DB.vars.values()].filter(v => v.prod_id === p.id).length;
-    return `
-    <div class="ec ec-p">
-      <div class="ec-body">
-        <b>${h(p.title)} <span class="badge bg-warning text-dark" style="font-size:9px">${h(p.code)}</span></b>
-        <small>${cat ? h(cat.name) : '—'} · $${p.price}${varCount ? ' · ' + varCount + ' var.' : ''}</small>
-      </div>
-      <div class="ec-acts">
-        <button style="color:#fd7e14;border-color:#fd7e14" onclick="openModal('prod',${p.id})">✏</button>
-        <button style="color:#dc3545;border-color:#dc3545" onclick="del('prods',${p.id})">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderV() {
-  const el = document.getElementById('list-v');
-  if (!DB.vars.size) { el.innerHTML = '<p class="text-muted" style="font-size:11px">Sin variantes.</p>'; return; }
-  el.innerHTML = [...DB.vars.values()].map(v => {
-    const prod = v.prod_id ? DB.prods.get(v.prod_id) : null;
-    const implStr = Object.entries(v.impls).map(([aid, val]) => {
-      const a = DB.attrs.get(parseInt(aid));
-      return a ? `${a.name}=${val}` : '';
-    }).filter(Boolean).join(', ');
-    return `
-    <div class="ec ec-v">
-      <div class="ec-body">
-        <b>Var #${v.id}</b>
-        <small>${prod ? h(prod.title) : '—'}${implStr ? ' · ' + implStr : ''}</small>
-      </div>
-      <div class="ec-acts">
-        <button style="color:#6f42c1;border-color:#6f42c1" onclick="openModal('var',${v.id})">✏</button>
-        <button style="color:#dc3545;border-color:#dc3545" onclick="del('vars',${v.id})">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function updateCount() {
-  document.getElementById('node-count').textContent =
-    `${DB.attrs.size} attr · ${DB.cats.size} cat · ${DB.prods.size} prod · ${DB.vars.size} var`;
-}
-
-// ─── Modal ────────────────────────────────────────────────────────────────────
-let _mCtx = { type: null, id: null };
-let _bsModal;
-
-function openModal(type, id = null) {
-  _mCtx = { type, id };
-  const titles = { attr: 'Atributo', cat: 'Categoría', prod: 'Producto', var: 'Variante' };
-  document.getElementById('modal-title').textContent = (id ? 'Editar' : 'Nuevo') + ' ' + titles[type];
-  document.getElementById('modal-body').innerHTML = buildForm(type, id);
-  if (!_bsModal) _bsModal = new bootstrap.Modal(document.getElementById('mainModal'));
-  _bsModal.show();
-  if (type === 'attr') {
-    toggleEnum();
-    document.getElementById('f-dt').addEventListener('change', toggleEnum);
-  }
-}
-
-function toggleEnum() {
-  const sec = document.getElementById('f-enum-sec');
-  if (sec) sec.style.display = document.getElementById('f-dt').value === 'enum' ? '' : 'none';
-}
-
-function buildForm(type, id) {
-  if (type === 'attr') {
-    const a = id ? DB.attrs.get(id) : null;
-    return `<div class="row g-2">
-      <div class="col-6"><label class="form-label">Key *</label>
-        <input id="f-key" class="form-control form-control-sm" value="${ea(a?.key??'')}" placeholder="color, peso…"></div>
-      <div class="col-6"><label class="form-label">Nombre *</label>
-        <input id="f-name" class="form-control form-control-sm" value="${ea(a?.name??'')}" placeholder="Color, Peso…"></div>
-      <div class="col-6"><label class="form-label">Tipo *</label>
-        <select id="f-dt" class="form-select form-select-sm">
-          ${['text','number','boolean','enum'].map(t=>`<option value="${t}"${a?.data_type===t?' selected':''}>${t}</option>`).join('')}
-        </select></div>
-      <div class="col-6 d-flex align-items-end pb-1">
-        <div class="form-check"><input id="f-static" class="form-check-input" type="checkbox"${a?.is_static?' checked':''}>
-          <label class="form-check-label" for="f-static" style="font-size:12px">Estático (producto)</label></div></div>
-      <div class="col-12" id="f-enum-sec" style="display:none"><label class="form-label">Valores enum (coma separados)</label>
-        <input id="f-enum" class="form-control form-control-sm" value="${ea((a?.enum_values??[]).join(', '))}" placeholder="rojo, azul, verde"></div>
-    </div>`;
-  }
-
-  if (type === 'cat') {
-    const c = id ? DB.cats.get(id) : null;
-    const catOpts = [...DB.cats.values()].filter(x=>x.id!==id)
-      .map(x=>`<option value="${x.id}"${c?.father_id===x.id?' selected':''}>${h(x.name)}</option>`).join('');
-    const attrOpts = [...DB.attrs.values()]
-      .map(a=>`<option value="${a.id}"${(c?.attr_ids??[]).includes(a.id)?' selected':''}>${h(a.name)} (${a.data_type}${a.is_static?' est':''})</option>`).join('');
-    return `<div class="row g-2">
-      <div class="col-12"><label class="form-label">Nombre *</label>
-        <input id="f-name" class="form-control form-control-sm" value="${ea(c?.name??'')}" placeholder="Indumentaria…"></div>
-      <div class="col-12"><label class="form-label">Categoría padre</label>
-        <select id="f-father" class="form-select form-select-sm">
-          <option value="">Sin padre (raíz)</option>${catOpts}
-        </select></div>
-      <div class="col-12"><label class="form-label">Atributos <small class="text-muted">(Ctrl+click = varios)</small></label>
-        <select id="f-attr-ids" class="form-select form-select-sm" multiple size="5">${attrOpts}</select></div>
-    </div>`;
-  }
-
-  if (type === 'prod') {
-    const p = id ? DB.prods.get(id) : null;
-    const catOpts = [...DB.cats.values()]
-      .map(c=>`<option value="${c.id}"${p?.cat_id===c.id?' selected':''}>${h(c.name)}</option>`).join('');
-    const attrOpts = [...DB.attrs.values()]
-      .map(a=>`<option value="${a.id}"${(p?.attr_ids??[]).includes(a.id)?' selected':''}>${h(a.name)} (${a.data_type})</option>`).join('');
-    return `<div class="row g-2">
-      <div class="col-4"><label class="form-label">Código *</label>
-        <input id="f-code" class="form-control form-control-sm" value="${ea(p?.code??'')}" placeholder="SKU-001"></div>
-      <div class="col-4"><label class="form-label">Precio *</label>
-        <input id="f-price" type="number" step="0.01" class="form-control form-control-sm" value="${p?.price??''}"></div>
-      <div class="col-4"><label class="form-label">Marca</label>
-        <input id="f-brand" class="form-control form-control-sm" value="${ea(p?.brand??'')}"></div>
-      <div class="col-12"><label class="form-label">Título *</label>
-        <input id="f-title" class="form-control form-control-sm" value="${ea(p?.title??'')}" placeholder="Nombre del producto"></div>
-      <div class="col-12"><label class="form-label">Descripción</label>
-        <textarea id="f-desc" class="form-control form-control-sm" rows="2">${h(p?.description??'')}</textarea></div>
-      <div class="col-12"><label class="form-label">Categoría *</label>
-        <select id="f-cat" class="form-select form-select-sm">
-          <option value="">Seleccionar…</option>${catOpts}
-        </select></div>
-      <div class="col-12"><label class="form-label">Atributos propios <small class="text-muted">(Ctrl+click)</small></label>
-        <select id="f-attr-ids" class="form-select form-select-sm" multiple size="4">${attrOpts}</select></div>
-    </div>`;
-  }
-
-  if (type === 'var') {
-    const v = id ? DB.vars.get(id) : null;
-    const prodOpts = [...DB.prods.values()]
-      .map(p=>`<option value="${p.id}"${v?.prod_id===p.id?' selected':''}>${h(p.title)} (${h(p.code)})</option>`).join('');
-    const dynAttrs = [...DB.attrs.values()].filter(a=>!a.is_static);
-    const implFields = dynAttrs.length ? dynAttrs.map(a => {
-      const val = v?.impls?.[a.id];
-      if (a.data_type === 'boolean') return `
-        <div class="col-6"><label class="form-label">${h(a.name)}</label>
-          <select id="fi-${a.id}" class="form-select form-select-sm">
-            <option value="">— N/A —</option>
-            <option value="true"${val===true||val==='true'?' selected':''}>true</option>
-            <option value="false"${val===false||val==='false'?' selected':''}>false</option>
-          </select></div>`;
-      if (a.data_type === 'enum') return `
-        <div class="col-6"><label class="form-label">${h(a.name)}</label>
-          <select id="fi-${a.id}" class="form-select form-select-sm">
-            <option value="">— N/A —</option>
-            ${a.enum_values.map(ev=>`<option value="${ea(ev)}"${val===ev?' selected':''}>${h(ev)}</option>`).join('')}
-          </select></div>`;
-      return `
-        <div class="col-6"><label class="form-label">${h(a.name)} (${a.data_type})</label>
-          <input id="fi-${a.id}" type="${a.data_type==='number'?'number':'text'}" class="form-control form-control-sm" value="${ea(String(val??''))}"></div>`;
-    }).join('') : '<div class="col-12"><p class="text-muted small mb-0">No hay atributos dinámicos.</p></div>';
-    return `<div class="row g-2">
-      <div class="col-12"><label class="form-label">Producto *</label>
-        <select id="f-prod" class="form-select form-select-sm">
-          <option value="">Seleccionar…</option>${prodOpts}
-        </select></div>
-      <div class="col-12"><label class="form-label">Implementaciones (atributos dinámicos)</label>
-        <div class="row g-2">${implFields}</div></div>
-    </div>`;
-  }
-  return '';
-}
-
-// ─── Save ─────────────────────────────────────────────────────────────────────
-function saveEntity() {
-  try {
-    const { type, id } = _mCtx;
-    if (type === 'attr') {
-      const key = document.getElementById('f-key').value.trim();
-      const name = document.getElementById('f-name').value.trim();
-      const data_type = document.getElementById('f-dt').value;
-      const is_static = document.getElementById('f-static').checked;
-      const enumRaw = document.getElementById('f-enum')?.value ?? '';
-      const enum_values = data_type === 'enum' ? enumRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
-      if (!key || !name) throw new Error('Key y Nombre son obligatorios.');
-      const eid = id ?? uid();
-      DB.attrs.set(eid, { id: eid, key, name, data_type, is_static, enum_values });
-    }
-    else if (type === 'cat') {
-      const name = document.getElementById('f-name').value.trim();
-      const fRaw = document.getElementById('f-father').value;
-      const father_id = fRaw ? parseInt(fRaw) : null;
-      const attr_ids = [...document.getElementById('f-attr-ids').selectedOptions].map(o=>parseInt(o.value));
-      if (!name) throw new Error('Nombre es obligatorio.');
-      const eid = id ?? uid();
-      DB.cats.set(eid, { id: eid, name, father_id, attr_ids });
-    }
-    else if (type === 'prod') {
-      const code = document.getElementById('f-code').value.trim();
-      const title = document.getElementById('f-title').value.trim();
-      const price = parseFloat(document.getElementById('f-price').value) || 0;
-      const description = document.getElementById('f-desc').value.trim();
-      const brand = document.getElementById('f-brand').value.trim();
-      const catRaw = document.getElementById('f-cat').value;
-      const cat_id = catRaw ? parseInt(catRaw) : null;
-      const attr_ids = [...document.getElementById('f-attr-ids').selectedOptions].map(o=>parseInt(o.value));
-      if (!code || !title) throw new Error('Código y Título son obligatorios.');
-      if (!cat_id) throw new Error('Categoría es obligatoria.');
-      const eid = id ?? uid();
-      DB.prods.set(eid, { id: eid, code, title, price, description, brand, cat_id, attr_ids });
-    }
-    else if (type === 'var') {
-      const prodRaw = document.getElementById('f-prod').value;
-      const prod_id = prodRaw ? parseInt(prodRaw) : null;
-      if (!prod_id) throw new Error('Producto es obligatorio.');
-      const dynAttrs = [...DB.attrs.values()].filter(a=>!a.is_static);
-      const impls = {};
-      for (const a of dynAttrs) {
-        const el = document.getElementById(`fi-${a.id}`);
-        if (el && el.value !== '') {
-          let val = el.value;
-          if (a.data_type === 'number') val = parseFloat(val);
-          else if (a.data_type === 'boolean') val = val === 'true';
-          impls[a.id] = val;
-        }
-      }
-      const eid = id ?? uid();
-      DB.vars.set(eid, { id: eid, prod_id, impls });
-    }
-    _bsModal.hide();
-    renderAll();
-    refreshGraph();
-  } catch(e) { alert('Error: ' + e.message); }
-}
-
-// ─── Delete ───────────────────────────────────────────────────────────────────
-function del(store, id) {
-  if (!confirm('¿Eliminar este elemento?')) return;
-  DB[store].delete(id);
-  renderAll();
-  refreshGraph();
-}
-
-// ─── Cytoscape graph ──────────────────────────────────────────────────────────
-let cy;
-
-document.addEventListener('DOMContentLoaded', () => {
-  cy = cytoscape({
-    container: document.getElementById('cy'),
-    elements: [],
-    style: [
-      { selector: 'node', style: {
-          label: 'data(label)', 'text-valign': 'center', 'text-halign': 'center',
-          'font-size': 10, color: '#fff', 'text-wrap': 'wrap', 'text-max-width': 85, 'font-weight': 'bold',
-      }},
-      { selector: 'node[type="attr"]',  style: { 'background-color': '#0d6efd', shape: 'ellipse', width: 78, height: 78 }},
-      { selector: 'node[type="cat"]',   style: { 'background-color': '#198754', shape: 'round-rectangle', width: 110, height: 42 }},
-      { selector: 'node[type="prod"]',  style: { 'background-color': '#fd7e14', shape: 'rectangle', width: 110, height: 42 }},
-      { selector: 'node[type="var"]',   style: { 'background-color': '#6f42c1', shape: 'diamond', width: 80, height: 80 }},
-      { selector: 'node:selected',      style: { 'border-width': 3, 'border-color': '#212529' }},
-      { selector: '.faded',             style: { opacity: 0.15 }},
-      { selector: 'edge', style: {
-          width: 1.5, 'line-color': '#adb5bd', 'target-arrow-color': '#adb5bd',
-          'target-arrow-shape': 'triangle', 'curve-style': 'bezier',
-          label: 'data(label)', 'font-size': 9, color: '#6c757d', 'text-rotation': 'autorotate',
-          'text-background-color': '#fff', 'text-background-opacity': 0.8, 'text-background-padding': '2px',
-      }},
-      { selector: '.hidden', style: { display: 'none' }},
-    ],
-    layout: { name: 'dagre' },
-  });
-
-  cy.on('tap', 'node', e => showDetail(e.target.data()));
-  cy.on('tap', e => { if (e.target === cy) { cy.elements().removeClass('faded'); hideDetail(); }});
-
-  loadSample();
-  renderAll();
-  refreshGraph();
-});
-
-function relayout() {
-  cy.layout({ name: 'dagre', rankDir: 'TB', nodeSep: 55, rankSep: 75, edgeSep: 15 }).run();
-}
-
-function refreshGraph() {
-  cy.elements().remove();
-  const els = [];
-  let ei = 0;
-
-  for (const a of DB.attrs.values())
-    els.push({ data: { id: `a${a.id}`, label: `${a.name}\n[${a.data_type}]`, type: 'attr', eid: a.id }});
-  for (const c of DB.cats.values())
-    els.push({ data: { id: `c${c.id}`, label: c.name, type: 'cat', eid: c.id }});
-  for (const p of DB.prods.values())
-    els.push({ data: { id: `p${p.id}`, label: `${p.title}\n${p.code}`, type: 'prod', eid: p.id }});
-  for (const v of DB.vars.values())
-    els.push({ data: { id: `v${v.id}`, label: `Var #${v.id}`, type: 'var', eid: v.id }});
-
-  // cat → parent cat
-  for (const c of DB.cats.values()) {
-    if (c.father_id && DB.cats.has(c.father_id))
-      els.push({ data: { id: `e${ei++}`, source: `c${c.id}`, target: `c${c.father_id}`, label: 'subcateg.' }});
-    for (const aid of c.attr_ids)
-      if (DB.attrs.has(aid))
-        els.push({ data: { id: `e${ei++}`, source: `c${c.id}`, target: `a${aid}`, label: 'attr.' }});
-  }
-  // prod → cat, prod → own attrs
-  for (const p of DB.prods.values()) {
-    if (p.cat_id && DB.cats.has(p.cat_id))
-      els.push({ data: { id: `e${ei++}`, source: `p${p.id}`, target: `c${p.cat_id}`, label: 'categ.' }});
-    for (const aid of (p.attr_ids ?? []))
-      if (DB.attrs.has(aid))
-        els.push({ data: { id: `e${ei++}`, source: `p${p.id}`, target: `a${aid}`, label: 'propio' }});
-  }
-  // prod → var, var → attr impls
-  for (const v of DB.vars.values()) {
-    if (v.prod_id && DB.prods.has(v.prod_id))
-      els.push({ data: { id: `e${ei++}`, source: `p${v.prod_id}`, target: `v${v.id}`, label: 'variante' }});
-    for (const [aidStr, val] of Object.entries(v.impls ?? {})) {
-      const aid = parseInt(aidStr);
-      if (DB.attrs.has(aid))
-        els.push({ data: { id: `e${ei++}`, source: `v${v.id}`, target: `a${aid}`, label: String(val) }});
-    }
-  }
-
-  cy.add(els);
-  applyFilter();
-  relayout();
-}
-
-function applyFilter() {
-  if (!cy) return;
-  const showA = document.getElementById('fa').checked;
-  const showC = document.getElementById('fc').checked;
-  const showP = document.getElementById('fp').checked;
-  const showV = document.getElementById('fv').checked;
-  cy.nodes('[type="attr"]').toggleClass('hidden', !showA);
-  cy.nodes('[type="cat"]').toggleClass('hidden',  !showC);
-  cy.nodes('[type="prod"]').toggleClass('hidden', !showP);
-  cy.nodes('[type="var"]').toggleClass('hidden',  !showV);
-  cy.edges().forEach(e => e.toggleClass('hidden', e.source().hasClass('hidden') || e.target().hasClass('hidden')));
-}
-
-// ─── Node detail panel ────────────────────────────────────────────────────────
-function showDetail(data) {
-  const { type, eid } = data;
-  let html = '';
-  if (type === 'attr') {
-    const a = DB.attrs.get(eid);
-    if (!a) return;
-    html = `<b>Atributo:</b> ${h(a.name)} <span class="badge bg-primary" style="font-size:10px">${a.data_type}</span>${a.is_static?' <span class="badge bg-secondary" style="font-size:10px">estático</span>':''}
-      <br><small>Key: <code>${h(a.key)}</code>${a.enum_values.length?' · Valores: '+a.enum_values.join(', '):''}</small>`;
-  } else if (type === 'cat') {
-    const c = DB.cats.get(eid);
-    if (!c) return;
-    const dad = c.father_id ? DB.cats.get(c.father_id) : null;
-    const subs = [...DB.cats.values()].filter(x=>x.father_id===c.id).map(x=>x.name).join(', ');
-    const prods = [...DB.prods.values()].filter(p=>p.cat_id===c.id).map(p=>p.title).join(', ');
-    const attrs = c.attr_ids.map(id=>DB.attrs.get(id)?.name).filter(Boolean).join(', ');
-    html = `<b>Categoría:</b> ${h(c.name)}
-      <br><small>Padre: ${dad?h(dad.name):'ninguno'} · Subcategorías: ${subs||'ninguna'}</small>
-      <br><small>Atributos: ${attrs||'ninguno'} · Productos: ${prods||'ninguno'}</small>`;
-  } else if (type === 'prod') {
-    const p = DB.prods.get(eid);
-    if (!p) return;
-    const cat = p.cat_id ? DB.cats.get(p.cat_id) : null;
-    const vars = [...DB.vars.values()].filter(v=>v.prod_id===p.id).length;
-    html = `<b>Producto:</b> ${h(p.title)} <span class="badge bg-warning text-dark" style="font-size:10px">${h(p.code)}</span>
-      <br><small>Marca: ${h(p.brand||'—')} · Precio: $${p.price} · Categoría: ${cat?h(cat.name):'—'} · Variantes: ${vars}</small>
-      ${p.description?`<br><small>${h(p.description)}</small>`:''}`;
-  } else if (type === 'var') {
-    const v = DB.vars.get(eid);
-    if (!v) return;
-    const prod = v.prod_id ? DB.prods.get(v.prod_id) : null;
-    const impls = Object.entries(v.impls||{}).map(([aid,val]) => {
-      const a = DB.attrs.get(parseInt(aid));
-      return `${a?h(a.name):aid} = <b>${h(String(val))}</b>`;
-    }).join(' · ');
-    html = `<b>Variante #${v.id}</b> → ${prod?h(prod.title):'—'}
-      <br><small>${impls||'Sin implementaciones'}</small>`;
-  }
-
-  // Fade unrelated nodes
-  cy.elements().removeClass('faded');
-  const node = cy.getElementById(data.id);
-  const neighborhood = node.closedNeighborhood();
-  cy.elements().not(neighborhood).not('.hidden').addClass('faded');
-
-  document.getElementById('detail-body').innerHTML = html;
-  document.getElementById('detail').style.display = 'block';
-}
-
-function hideDetail() {
-  document.getElementById('detail').style.display = 'none';
-  if (cy) cy.elements().removeClass('faded');
-}
-
-// ─── Sample data ──────────────────────────────────────────────────────────────
-function loadSample() {
-  DB.attrs.set(1, { id:1, key:'color',    name:'Color',      data_type:'enum',    is_static:false, enum_values:['rojo','azul','negro','blanco'] });
-  DB.attrs.set(2, { id:2, key:'talle',    name:'Talle',      data_type:'enum',    is_static:false, enum_values:['S','M','L','XL'] });
-  DB.attrs.set(3, { id:3, key:'material', name:'Material',   data_type:'text',    is_static:true,  enum_values:[] });
-  DB.attrs.set(4, { id:4, key:'peso',     name:'Peso (kg)',  data_type:'number',  is_static:true,  enum_values:[] });
-  DB.attrs.set(5, { id:5, key:'visible',  name:'Visible',    data_type:'boolean', is_static:true,  enum_values:[] });
-
-  DB.cats.set(6,  { id:6,  name:'Indumentaria', father_id:null, attr_ids:[1,2] });
-  DB.cats.set(7,  { id:7,  name:'Remeras',      father_id:6,    attr_ids:[3] });
-  DB.cats.set(8,  { id:8,  name:'Pantalones',   father_id:6,    attr_ids:[4] });
-  DB.cats.set(9,  { id:9,  name:'Electrónica',  father_id:null, attr_ids:[4,5] });
-
-  DB.prods.set(10, { id:10, code:'REM-001', title:'Remera Básica',  price:2500, description:'Algodón 100%', brand:'LosMacoS',  cat_id:7, attr_ids:[] });
-  DB.prods.set(11, { id:11, code:'PAN-001', title:'Pantalón Chino', price:5500, description:'Slim fit',     brand:'LosMacoS',  cat_id:8, attr_ids:[] });
-  DB.prods.set(12, { id:12, code:'AUR-001', title:'Auriculares BT', price:8900, description:'Bluetooth 5', brand:'TechBrand', cat_id:9, attr_ids:[3] });
-
-  DB.vars.set(13, { id:13, prod_id:10, impls:{1:'rojo',  2:'M'} });
-  DB.vars.set(14, { id:14, prod_id:10, impls:{1:'azul',  2:'L'} });
-  DB.vars.set(15, { id:15, prod_id:11, impls:{1:'negro', 2:'XL'} });
-
-  _uid = 20;
-}
-
-// ─── Utils ────────────────────────────────────────────────────────────────────
-const h  = s => String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const ea = s => String(s??'').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-</script>
+<script type="module" src="client.js"></script>
 </body>
 </html>
