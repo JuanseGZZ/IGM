@@ -1,0 +1,37 @@
+voy a hacer una version 2 dado que la 1 me parece que esta mal planteada y hice mucho repet. y mucho delirio de abarque y faltas severas de consistencia en lo que estaba armando.
+
+eventos:
+
+- categoria agrega un padre
+
+Categoria tiene que ver todos los atributos del padre y de toda la acendencia.
+Recorrer todas sus ramas (de la categoria que agregamos padre) decendientes de categorias eliminando de esa lista cacheada por rama todos aquellos attributos que encuentre en el camino de categorias hijas hasta que llegue a las hojas (productos).
+
+es decir, para cada camino de caida va a haber una lista distinta, porque cada camino puede tener distintos attributos, y al final de cada caida, si llegas a la ultima categoria (la que ya tiene productos) hay que de alguna manera guardar que esos productos se ven afectados o impactados por los attributos con los que llegamos hasta ese punto, para todos los puntos.
+
+- categoria cambia de padre
+>lo mismo pero verifica la sacada tanto como la ponida. lo que se va y lo que viene se miran igual, al final son impactos.
+
+- categoria elimina el padre
+>lo mismo pero para sacada
+
+- categoria agrega un attibuto
+>lo mismo solo que solo con un attributo no una lista, y donde muere no sigue para abajo buscando, mira que productos tienen impacto
+
+- categoria elimina un attributo
+>lo mismo solo que solo con un attributo no una lista, y donde muere no sigue para abajo buscando,mira que productos tienen impacto
+
+que voy a hacer:
+
+voy a minimizar concepto categoria, attributo, producto y variante y voy a hacer que claude arme los algoridmos con esas clases reducidad, porque a la fine no necesita saber que otras cosas tiene, y luego si implementar bien el front.
+
+
+reglas de negocio clave:
+
+attributos (estaticos>producto / dinamicos>variante) 
+
+categorias, pueden tener de hijo a porductos o categorias pero no a la vez, ademas no pueden ser ciclicas.
+
+productos, solo implementan attributos estaticos heredados y tienen variantes.
+
+variante, solo implementa attributos dinamicos heredados, de hecho son combinacion unica de todas esos attributos que heredaron. es decir que no pueden haber dos variantes iguales
