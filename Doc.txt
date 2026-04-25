@@ -1,2 +1,0 @@
-Primero trabajar todo con el core ignorando totalemente los modulos.
-Luego integramos los modulos como deberian ir con el core.

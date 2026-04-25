@@ -26,6 +26,9 @@ voy a minimizar concepto categoria, attributo, producto y variante y voy a hacer
 - producto cambia de categoria
 > recolecta todo los atributos que tiene implementado, y los compara con la nueva erencia, si hay de mas hay que implementar si hay de menos hay que eliminar.
 
+- producto agrega y quita variantes
+> mira ancestros y implementa necesaridades.
+
 reglas de negocio clave:
 
 attributos (estaticos>producto / dinamicos>variante) 
@@ -34,4 +37,17 @@ categorias, pueden tener de hijo a porductos o categorias pero no a la vez, adem
 
 productos, solo implementan attributos estaticos heredados y tienen variantes.
 
-variante, solo implementa attributos dinamicos heredados, de hecho son combinacion unica de todas esos attributos que heredaron. es decir que no pueden haber dos variantes iguales
+variante, solo implementa attributos dinamicos heredados, de hecho son combinacion unica de todas esos attributos que heredaron. es decir que no pueden haber dos variantes iguales.
+
+
+-- to do
+
+. Hacer el models correctamente en el front.
+. Hacer el gestor de models con avisos y graficas.
+. Hacer que se vea desde modo usuario[
+    . Pantalla de producto.
+    . Pantalla de busqueda con filtros{
+        . busqueda por categoria.
+        . busqueda por filtros de categoria automaticos. ( pusiste que categoria querias y te aparecieron los filtros en base a los attributos que tiene esa categoria ) NOTA: tambien estaria bueno hacerlo global, y directamente hago un algoridmo que desde donde estoy posicionado busque la coleccion de attributos que hay hasta las hojas y printee todos los filtros posibles.
+    }
+]
