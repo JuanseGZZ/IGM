@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Category Manager</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    body { background: #f4f6fb; }
+
+    /* Árbol */
+    .tree-item {
+      cursor: pointer;
+      font-size: .9rem;
+      transition: background .15s;
+      user-select: none;
+    }
+    .tree-item:hover  { background: rgba(0,0,0,.06); }
+    .tree-item.active { background: #fff3cd; font-weight: 600; }
+    .tree-attrs       { font-size: .72rem; color: #888; }
+    .tree-attr        { margin-right: 2px; }
+    .tree-children    { border-left: 2px solid #dee2e6; }
+
+    /* Animaciones */
+    @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .fade-in { animation: fadeIn .2s ease; }
+
+    @keyframes flash { 0%,100%{background:transparent} 50%{background:#fff3cd} }
+    .impact-flash { animation: flash .6s ease 2; }
+
+    /* Spinner overlay */
+    #global-spinner {
+      position: fixed; inset: 0; background: rgba(255,255,255,.55);
+      display: flex; align-items: center; justify-content: center; z-index: 9998;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-dark shadow-sm">
+  <div class="container-fluid">
+    <span class="navbar-brand fw-bold">
+      <i class="bi bi-diagram-3-fill me-2 text-warning"></i>Category Manager
+    </span>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-warning btn-sm" onclick="Events.openCreateCategory()">
+        <i class="bi bi-folder-plus"></i> Categoría
+      </button>
+      <button class="btn btn-outline-info btn-sm" onclick="Events.openCreateAttribute()">
+        <i class="bi bi-tag-plus"></i> Atributo
+      </button>
+      <button class="btn btn-outline-success btn-sm" onclick="Events.openCreateProduct()">
+        <i class="bi bi-box-seam"></i> Producto
+      </button>
+      <button class="btn btn-outline-light btn-sm" onclick="Events.refresh()">
+        <i class="bi bi-arrow-clockwise"></i>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<!-- Layout principal -->
+<div class="container-fluid py-3">
+  <div class="row g-3">
+
+    <!-- Panel izquierdo: árbol -->
+    <div class="col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white fw-semibold small text-muted">
+          <i class="bi bi-diagram-3 me-1"></i>ÁRBOL DE CATEGORÍAS
+        </div>
+        <div class="card-body p-2 overflow-auto" style="max-height:80vh" id="tree-container">
+          <div class="text-muted small p-2">Cargando...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel derecho: detalle -->
+    <div class="col-md-9">
+      <div id="detail-panel">
+        <div class="text-center text-muted mt-5">
+          <i class="bi bi-diagram-3 fs-1 d-block mb-3"></i>
+          <p>Seleccioná una categoría o producto del árbol</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Modal: impacto (E1-E5) ─────────────────────────────────────────────── -->
+<div class="modal fade" id="impact-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-warning bg-opacity-25">
+        <h5 class="modal-title">
+          <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Impacto detectado
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="impact-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="impact-cancel-btn" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-warning" id="impact-confirm-btn">
+          <i class="bi bi-check-lg me-1"></i>Confirmar y ejecutar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: cambio de categoría (E6) ───────────────────────────────────── -->
+<div class="modal fade" id="e6-modal" tabindex="-1">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header bg-info bg-opacity-25">
+        <h5 class="modal-title">
+          <i class="bi bi-arrow-left-right text-info me-2"></i>Resolver cambio de categoría
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="e6-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="e6-cancel-btn" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-info text-white" id="e6-confirm-btn">
+          <i class="bi bi-check-lg me-1"></i>Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: formularios genéricos ──────────────────────────────────────── -->
+<div class="modal fade" id="form-modal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="form-modal-title">Formulario</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" id="form-modal-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button class="btn btn-primary" id="form-confirm-btn">
+          <i class="bi bi-check-lg me-1"></i>Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Spinner overlay ────────────────────────────────────────────────────── -->
+<div id="global-spinner" class="d-none">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Cargando...</span>
+  </div>
+</div>
+
+<!-- ── Toast de notificaciones ───────────────────────────────────────────── -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="app-toast" class="toast align-items-center border-0 shadow" role="alert">
+    <div class="d-flex">
+      <div class="toast-body d-flex align-items-center">
+        <i id="toast-icon" class="bi me-2"></i>
+        <span id="toast-body"></span>
+      </div>
+      <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast"></button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="animations.js"></script>
+<script src="api.js"></script>
+<script src="render.js"></script>
+<script src="service.js"></script>
+<script src="events.js"></script>
+</body>
+</html>

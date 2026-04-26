@@ -1,18 +1,130 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from app import store
-from app.models import AttributeImplementation, Variant
+from app.models import Attribute, AttributeImplementation, Category, Product, Variant
 from app.schemas import (
     ImpactResponse, SuccessResponse,
     ChangeFatherRequest,
     AddAttributeRequest, RemoveAttributeRequest,
     ChangeCategoryRequest, ChangeCategoryImpactResponse,
     AddVariantRequest,
+    AttributeOut, CategoryOut, ProductOut,
+    CreateCategoryRequest, CreateAttributeRequest, CreateProductRequest,
 )
+from app.serializers import attr_out, cat_out, product_out
 from app.services import CategoryService, ProductService
 
 router = APIRouter()
 cat_svc  = CategoryService()
 prod_svc = ProductService()
+
+
+# ── GET — listados ────────────────────────────────────────────────────────────
+
+@router.get("/categories", response_model=list[CategoryOut])
+def list_categories():
+    tree = store.load_category_tree()
+    return [cat_out(c) for c in tree.values()]
+
+@router.get("/attributes", response_model=list[AttributeOut])
+def list_attributes():
+    return [attr_out(a) for a in store.list_attributes()]
+
+@router.get("/products", response_model=list[ProductOut])
+def list_products(category_id: int | None = Query(default=None)):
+    if category_id is not None:
+        prods = store.list_products_by_category(category_id)
+    else:
+        prods = store.list_products()
+    return [product_out(p) for p in prods]
+
+@router.get("/products/{prod_id}", response_model=ProductOut)
+def get_product(prod_id: int):
+    prod = store.get_product(prod_id)
+    if prod is None:
+        raise HTTPException(status_code=404, detail=f"Producto {prod_id} no encontrado.")
+    return product_out(prod)
+
+
+# ── POST — crear entidades ────────────────────────────────────────────────────
+
+@router.post("/categories", response_model=CategoryOut)
+def create_category(body: CreateCategoryRequest):
+    father = None
+    if body.father_id is not None:
+        father = store.get_category(body.father_id)
+        if father is None:
+            raise HTTPException(status_code=404, detail=f"Categoria padre {body.father_id} no encontrada.")
+
+    attrs = []
+    for aid in body.attribute_ids:
+        a = store.get_attribute(aid)
+        if a is None:
+            raise HTTPException(status_code=404, detail=f"Atributo {aid} no encontrado.")
+        attrs.append(a)
+
+    cat = Category(name=body.name, father_categorie=father, attributes=attrs)
+    if father:
+        try:
+            father._check_exclusive_children('subcategory')
+            father._check_no_cycle(cat)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        father.subcategories.append(cat)
+
+    store.save_category(cat)
+    return cat_out(cat)
+
+@router.post("/attributes", response_model=AttributeOut)
+def create_attribute(body: CreateAttributeRequest):
+    attr = Attribute(
+        key=body.key, name=body.name,
+        data_type=body.data_type, is_static=body.is_static,
+    )
+    attr.enum_values = list(body.enum_values)
+    store.save_attribute(attr)
+    return attr_out(attr)
+
+@router.post("/products", response_model=ProductOut)
+def create_product(body: CreateProductRequest):
+    cat = store.get_category(body.category_id)
+    if cat is None:
+        raise HTTPException(status_code=404, detail=f"Categoria {body.category_id} no encontrada.")
+    try:
+        cat._check_exclusive_children('product')
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    prod = Product(
+        code=body.code, title=body.title, price=body.price,
+        description=body.description, brand=body.brand, category=cat,
+    )
+    cat.products.append(prod)
+    store.save_product(prod)
+    return product_out(prod)
+
+
+# ── DELETE — eliminar entidades ───────────────────────────────────────────────
+
+@router.delete("/categories/{cat_id}", response_model=SuccessResponse)
+def delete_category(cat_id: int):
+    if store.get_category(cat_id) is None:
+        raise HTTPException(status_code=404, detail=f"Categoria {cat_id} no encontrada.")
+    store.delete_category(cat_id)
+    return SuccessResponse()
+
+@router.delete("/attributes/{attr_id}", response_model=SuccessResponse)
+def delete_attribute(attr_id: int):
+    if store.get_attribute(attr_id) is None:
+        raise HTTPException(status_code=404, detail=f"Atributo {attr_id} no encontrado.")
+    store.delete_attribute(attr_id)
+    return SuccessResponse()
+
+@router.delete("/products/{prod_id}", response_model=SuccessResponse)
+def delete_product_endpoint(prod_id: int):
+    if store.get_product(prod_id) is None:
+        raise HTTPException(status_code=404, detail=f"Producto {prod_id} no encontrado.")
+    store.delete_product(prod_id)
+    return SuccessResponse()
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────

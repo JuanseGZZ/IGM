@@ -116,3 +116,63 @@ class AddVariantRequest(BaseModel):
 # ── E7b — producto quita variante ─────────────────────────────────────────────
 # DELETE /products/{id}/variants/{variant_id}
 # Sin two-phase: solo elimina, 404 si no existe.
+
+
+# ── Output schemas (respuestas GET) ───────────────────────────────────────────
+
+class AttributeOut(BaseModel):
+    id:          int
+    key:         str
+    name:        str
+    data_type:   str
+    is_static:   bool
+    enum_values: list[str] = []
+
+class CategoryOut(BaseModel):
+    id:         int
+    name:       str
+    father_id:  int | None = None
+    attributes: list[AttributeOut] = []
+
+class ImplOut(BaseModel):
+    id:        int | None = None
+    attribute: AttributeOut
+    value:     str
+
+class VariantOut(BaseModel):
+    id:                       int | None = None
+    attribute_implementations: list[ImplOut] = []
+
+class ProductOut(BaseModel):
+    id:                       int
+    code:                     str
+    title:                    str
+    price:                    float
+    description:              str | None = None
+    brand:                    str | None = None
+    category_id:              int
+    attributes_implementations: list[ImplOut] = []
+    variants:                 list[VariantOut] = []
+
+
+# ── CRUD request schemas ───────────────────────────────────────────────────────
+
+class CreateCategoryRequest(BaseModel):
+    name:          str
+    father_id:     int | None = None
+    attribute_ids: list[int] = []
+
+class CreateAttributeRequest(BaseModel):
+    key:          str
+    name:         str
+    data_type:    str
+    is_static:    bool
+    enum_values:  list[str] = []
+
+class CreateProductRequest(BaseModel):
+    code:        str
+    title:       str
+    price:       float
+    description: str = ""
+    brand:       str = ""
+    category_id: int
