@@ -1,0 +1,15 @@
+Vamos a hacerlo de otra manera.
+
+vamos a transpilar el codigo de models a js, vamos a hacer que se gestione el arbol de ahi, y cuando apriete guardar que se envie al back.
+
+el back va a hacer 3 cosas, 
+- va a darme el arbol entero en json para gestionarlo.
+- va a recibir un state del arbol modificado y va a validar que cumpla con las reglas
+> el arbol no tiene que tener ciclos.
+> todos los atributos heredados tienen que estar implementados.
+> no se puede tener hijos productos y categorias a la vez
+> no pueden haber variantes repetidas en un mismo producto.
+> no puede haber dos implementaciones de un mismo atributo en un mismo producto.
+...
+
+- como tercer cosa va a responder a clientes con los filtros y los productos, esta es la vision ya para el que consume el arbol no para el gestor.

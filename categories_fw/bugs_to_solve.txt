@@ -1,0 +1,5 @@
+
+
+- cuando agrego, me dice impacto detectado, y me tira tanto para eliminar como para agregar las opciones de eliminar o heredar, pero si estoy agregando y hay impacto me tiene que traer todo lo que debo darle un valor antes de agregar y me tiene que generar todos los imputs para que los vaya rellenadno. ( este error perciste, estoy queriendo agregar algo y me dice que detecto impacto que si quiero eliminar o heredar, cuando me tendria que decir en donde detecto impacto y que variables tengo que rellenar dado el nuevo attributo que quiero implementar) tampoco es cierto que elimine en el caso de que quiera eliminar un atributo no esta eliminando las variantes 
+
+lee el reglas que esta al lado de models.py en app/ ahi dice lo que deberia hacer, aparte lee la documentacion.

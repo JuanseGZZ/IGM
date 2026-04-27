@@ -147,9 +147,32 @@ Crea un nuevo producto (sin implementaciones ni variantes).
 
 ---
 
+## PATCH /attributes/{id}
+
+Modifica un atributo existente.
+
+**Body:** `UpdateAttributeRequest`
+```json
+{
+  "key": "talle",
+  "name": "Talle",
+  "data_type": "enum",
+  "is_static": false,
+  "enum_values": ["S", "M", "L", "XL"]
+}
+```
+
+- Mismos campos que `CreateAttributeRequest`.
+- `enum_values` solo se usa si `data_type == "enum"`; ignorado en otro caso.
+
+**Response:** `AttributeOut`  
+**Errores:** 404 si el atributo no existe.
+
+---
+
 ## DELETE /categories/{id}
 
-Elimina una categoría y todas sus relaciones (cascade en DB).
+Elimina una categoría, sus productos y todas sus relaciones. Las subcategorías quedan como raíces (su `father_id` pasa a `null`).
 
 **Response:** `{ "status": "ok" }`  
 **Errores:** 404 si no existe.

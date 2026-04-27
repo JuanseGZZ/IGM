@@ -22,12 +22,13 @@ const API = {
   product:       (id)     => API._req('GET',    `/products/${id}`),
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
-  createCategory:  (body) => API._req('POST',   '/categories',       body),
-  createAttribute: (body) => API._req('POST',   '/attributes',       body),
-  createProduct:   (body) => API._req('POST',   '/products',         body),
-  deleteCategory:  (id)   => API._req('DELETE', `/categories/${id}`, null),
-  deleteAttribute: (id)   => API._req('DELETE', `/attributes/${id}`, null),
-  deleteProduct:   (id)   => API._req('DELETE', `/products/${id}`,   null),
+  createCategory:   (body)    => API._req('POST',   '/categories',         body),
+  createAttribute:  (body)    => API._req('POST',   '/attributes',         body),
+  updateAttribute:  (id, body) => API._req('PATCH',  `/attributes/${id}`,   body),
+  createProduct:    (body)    => API._req('POST',   '/products',           body),
+  deleteCategory:   (id)      => API._req('DELETE', `/categories/${id}`,   null),
+  deleteAttribute:  (id)      => API._req('DELETE', `/attributes/${id}`,   null),
+  deleteProduct:    (id)      => API._req('DELETE', `/products/${id}`,     null),
 
   // ── Eventos de categoria ──────────────────────────────────────────────────
   changeFather:       (catId, body)         => API._req('PATCH',  `/categories/${catId}/father`,              body),

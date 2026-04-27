@@ -58,6 +58,7 @@ API.BASE = 'http://localhost:8000'
 | `product(id)` | GET | `/products/{id}` |
 | `createCategory(body)` | POST | `/categories` |
 | `createAttribute(body)` | POST | `/attributes` |
+| `updateAttribute(id, body)` | PATCH | `/attributes/{id}` |
 | `createProduct(body)` | POST | `/products` |
 | `deleteCategory(id)` | DELETE | `/categories/{id}` |
 | `deleteAttribute(id)` | DELETE | `/attributes/{id}` |
@@ -124,6 +125,7 @@ Renderiza HTML en el DOM. No hace llamadas HTTP.
 |---|---|
 | `tree()` | Renderiza el árbol completo en `#tree-container` |
 | `_treeNode(cat)` | Genera el HTML recursivo de un nodo |
+| `attributeList()` | Renderiza el panel derecho con la tabla de todos los atributos (editar/eliminar) |
 | `categoryDetail(cat)` | Renderiza el panel derecho con detalle de categoría |
 | `categoryChildren(cat, products)` | Completa la sección de hijos/productos en el detalle |
 | `productDetail(prod)` | Renderiza el panel derecho con detalle de producto |
@@ -167,7 +169,10 @@ document.addEventListener('DOMContentLoaded', () => Events.init());
 | `openAddVariant(prodId)` | Botón "Agregar variante" |
 | `removeVariant(prodId, varId)` | Botón "quitar" en tarjeta de variante |
 | `openCreateCategory()` | Botón navbar |
-| `openCreateAttribute()` | Botón navbar |
+| `openAttributeList()` | Botón "Atributos" en navbar — muestra panel de gestión |
+| `openCreateAttribute()` | Botón "+ Nuevo atributo" dentro del panel de atributos |
+| `editAttribute(attrId)` | Botón ✏ en fila de atributo — abre form modal prefillado |
+| `deleteAttribute(attrId)` | Botón 🗑 en fila de atributo — pide confirmación y elimina |
 | `openCreateProduct(preCatId?)` | Botón navbar o botón en lista de productos |
 | `deleteCategory(catId)` | Botón papelera en detalle de categoría |
 | `deleteProduct(prodId)` | Botón papelera en detalle de producto |

@@ -30,6 +30,59 @@ const Render = {
       </div>`;
   },
 
+  // ── Lista de atributos ────────────────────────────────────────────────────
+  attributeList() {
+    const typeColor = { text: 'secondary', number: 'primary', boolean: 'dark', enum: 'purple' };
+    const rows = State.attributes.map(a => `
+      <tr>
+        <td><code>${a.key}</code></td>
+        <td>${a.name}</td>
+        <td>${badge(a.is_static ? 'estático' : 'dinámico', a.is_static ? 'success' : 'info')}</td>
+        <td>
+          ${badge(a.data_type, typeColor[a.data_type] || 'secondary')}
+          ${a.data_type === 'enum' && a.enum_values.length
+            ? `<small class="text-muted ms-1">${a.enum_values.join(', ')}</small>`
+            : ''}
+        </td>
+        <td class="text-end">
+          <button class="btn btn-sm btn-outline-secondary me-1"
+                  onclick="Events.editAttribute(${a.id})" title="Editar">
+            ${icon('pencil')}
+          </button>
+          <button class="btn btn-sm btn-outline-danger"
+                  onclick="Events.deleteAttribute(${a.id})" title="Eliminar">
+            ${icon('trash')}
+          </button>
+        </td>
+      </tr>`).join('');
+
+    document.getElementById('detail-panel').innerHTML = `
+      <div class="card shadow-sm fade-in">
+        <div class="card-header d-flex justify-content-between align-items-center bg-info bg-opacity-10">
+          <h5 class="mb-0">${icon('tags', 'text-info me-2')}Atributos (${State.attributes.length})</h5>
+          <button class="btn btn-sm btn-outline-info" onclick="Events.openCreateAttribute()">
+            ${icon('plus')} Nuevo atributo
+          </button>
+        </div>
+        <div class="card-body p-0">
+          ${State.attributes.length ? `
+            <table class="table table-hover table-sm mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Key</th><th>Nombre</th><th>Tipo uso</th><th>Tipo dato</th><th></th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>` : `
+            <div class="text-center text-muted py-5">
+              ${icon('tags', 'fs-1 d-block mb-2')}
+              <p>No hay atributos creados aún.</p>
+            </div>`}
+        </div>
+      </div>`;
+    Animations.fadeIn(document.getElementById('detail-panel'));
+  },
+
   // ── Detalle de categoria ───────────────────────────────────────────────────
   categoryDetail(cat) {
     const parent = cat.father_id ? (State.catById[cat.father_id]?.name || `#${cat.father_id}`) : '—';
@@ -217,12 +270,49 @@ const Render = {
   },
 
   // ── Modal: impacto (E1-E5) ────────────────────────────────────────────────
-  impactModal(impact, msg = null) {
+  impactModal(impact, msg = null, context = null) {
     return new Promise(resolve => {
-      document.getElementById('impact-modal-body').innerHTML = `
-        ${msg ? `<div class="alert alert-warning py-2">${msg}</div>` : ''}
-        <p class="text-muted small">Elegí qué hacer con cada grupo antes de confirmar.</p>
-        ${impact.map((g, i) => `
+      let bodyHtml = msg ? `<div class="alert alert-warning py-2">${msg}</div>` : '';
+
+      if (context === 'add_static_attr') {
+        bodyHtml += `<p class="text-muted small">Completá el valor del nuevo atributo para cada producto afectado.</p>`;
+        bodyHtml += impact.map((g, gi) => `
+          <div class="card mb-3">
+            <div class="card-header py-2">
+              <strong>Atributo nuevo:</strong> ${g.attrs.map(a => badge(a.key, 'success')).join(' ')}
+            </div>
+            <div class="card-body py-2">
+              ${g.products.map(p => `
+                <div class="mb-2">
+                  <label class="form-label small mb-1 fw-semibold">${p.title}
+                    <small class="text-muted">${p.code}</small>
+                  </label>
+                  <input class="form-control form-control-sm" id="imp-val-${gi}-${p.id}"
+                         placeholder="Valor para ${g.attrs[0]?.key || 'atributo'}">
+                </div>`).join('')}
+            </div>
+          </div>`).join('');
+
+      } else if (context === 'add_dynamic_attr') {
+        bodyHtml += `
+          <div class="alert alert-warning py-2">
+            <strong>Atención:</strong> Los productos afectados tienen variantes existentes que quedarán
+            incompletas (les falta el nuevo atributo dinámico). Al confirmar, esas variantes serán eliminadas.
+          </div>`;
+        bodyHtml += impact.map(g => `
+          <div class="card mb-3">
+            <div class="card-header py-2">
+              <strong>Atributo nuevo:</strong> ${g.attrs.map(a => badge(a.key, 'info')).join(' ')}
+            </div>
+            <div class="card-body py-2 small">
+              <strong>Productos con variantes afectadas:</strong>
+              ${g.products.map(p => `<span class="me-2 text-secondary">${p.title} <span class="text-muted">(${p.code})</span></span>`).join('')}
+            </div>
+          </div>`).join('');
+
+      } else {
+        bodyHtml += `<p class="text-muted small">Elegí qué hacer con cada grupo antes de confirmar.</p>`;
+        bodyHtml += impact.map((g, i) => `
           <div class="card mb-3">
             <div class="card-header py-2">
               <strong>Atributos:</strong>
@@ -241,18 +331,42 @@ const Render = {
                 </select>
               </div>
             </div>
-          </div>`).join('')}`;
+          </div>`).join('');
+      }
+
+      document.getElementById('impact-modal-body').innerHTML = bodyHtml;
 
       const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('impact-modal'));
       modal.show();
 
       const confirmBtn = document.getElementById('impact-confirm-btn');
       confirmBtn.onclick = () => {
-        const resolution = impact.map((g, i) => ({
-          attr_ids:    g.attrs.map(a => a.id),
-          product_ids: g.products.map(p => p.id),
-          action:      document.getElementById(`imp-action-${i}`).value,
-        }));
+        let resolution;
+        if (context === 'add_static_attr') {
+          resolution = [];
+          impact.forEach((g, gi) => {
+            g.products.forEach(p => {
+              resolution.push({
+                attr_ids:    g.attrs.map(a => a.id),
+                product_ids: [p.id],
+                action:      'asignar',
+                value:       document.getElementById(`imp-val-${gi}-${p.id}`)?.value || '',
+              });
+            });
+          });
+        } else if (context === 'add_dynamic_attr') {
+          resolution = impact.map(g => ({
+            attr_ids:    g.attrs.map(a => a.id),
+            product_ids: g.products.map(p => p.id),
+            action:      'eliminar',
+          }));
+        } else {
+          resolution = impact.map((g, i) => ({
+            attr_ids:    g.attrs.map(a => a.id),
+            product_ids: g.products.map(p => p.id),
+            action:      document.getElementById(`imp-action-${i}`).value,
+          }));
+        }
         modal.hide();
         resolve(resolution);
       };

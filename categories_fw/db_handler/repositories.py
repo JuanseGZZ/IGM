@@ -112,6 +112,9 @@ class CategoryRepo:
             JOIN attribute a ON a.id = ca.attribute_id
         """).fetchall()
         enum_rows = conn.execute("SELECT * FROM enum_value").fetchall()
+        prod_rows = conn.execute(
+            "SELECT id, code, title, price, description, brand, category_id FROM product"
+        ).fetchall()
         conn.close()
 
         # Construir atributos (sin duplicar por id)
@@ -151,10 +154,25 @@ class CategoryRepo:
                 child.father_categorie = parent
                 parent.subcategories.append(child)
 
+        # Poblar productos (stubs) para que _descend_impact y _check_exclusive_children funcionen
+        for r in prod_rows:
+            cat = cats.get(r["category_id"])
+            if cat:
+                stub = Product(
+                    id=r["id"], code=r["code"], title=r["title"],
+                    price=r["price"],
+                    description=r["description"] or "",
+                    brand=r["brand"] or "",
+                    category=cat,
+                )
+                cat.products.append(stub)
+                cat._product_codes.add(r["code"])
+
         return cats
 
     def delete(self, cat_id: int) -> None:
         conn = get_connection()
+        conn.execute("DELETE FROM product WHERE category_id=?", (cat_id,))
         conn.execute("DELETE FROM category WHERE id=?", (cat_id,))
         conn.commit()
         conn.close()

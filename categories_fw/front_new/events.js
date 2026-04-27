@@ -36,8 +36,18 @@ const Events = {
 
   openChangeFather(catId) {
     const cat = State.catById[catId];
+
+    // Construir el set de todos los descendientes para evitar ciclos
+    const descendants = new Set();
+    const queue = [...(State.catById[catId]?._children || [])];
+    while (queue.length) {
+      const node = queue.shift();
+      descendants.add(node.id);
+      for (const child of (node._children || [])) queue.push(child);
+    }
+
     const options = State.categories
-      .filter(c => c.id !== catId && c.father_id !== catId)
+      .filter(c => c.id !== catId && !descendants.has(c.id))
       .map(c => `<option value="${c.id}" ${c.id === cat.father_id ? 'selected' : ''}>${c.name}</option>`)
       .join('');
 
@@ -89,7 +99,7 @@ const Events = {
   // ── Producto — cambio de categoria ────────────────────────────────────────
 
   openChangeCategory(prodId) {
-    const leafCats = State.categories.filter(c => !c._children?.length);
+    const leafCats = State.categories.filter(c => !State.catById[c.id]?._children?.length);
     const options  = leafCats.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
     Render.formModal('Cambiar categoría del producto', `
       <div class="mb-3">
@@ -114,8 +124,19 @@ const Events = {
   async openAddVariant(prodId) {
     const prod = await API.product(prodId).catch(() => null);
     if (!prod) return;
-    // Los attrs dinamicos requeridos los saca el backend; en el front usamos los de la cat
-    const catAttrs = (State.catById[prod.category_id]?.attributes || []).filter(a => !a.is_static);
+    // Recolectar atributos dinámicos de la categoría y todos sus ancestros
+    const catAttrs = [];
+    const seen = new Set();
+    let node = State.catById[prod.category_id];
+    while (node) {
+      for (const a of (node.attributes || [])) {
+        if (!a.is_static && !seen.has(a.id)) {
+          seen.add(a.id);
+          catAttrs.push(a);
+        }
+      }
+      node = node.father_id ? State.catById[node.father_id] : null;
+    }
     if (!catAttrs.length) { Animations.toast('Esta categoría no tiene atributos dinámicos.', 'info'); return; }
 
     const inputs = catAttrs.map(a => `
@@ -152,6 +173,78 @@ const Events = {
       await Service.removeVariant(prodId, varId);
       Animations.toast('Variante eliminada.', 'success');
       await this.selectProduct(prodId);
+    } catch(e) { Animations.toast(e.message, 'danger'); }
+  },
+
+  // ── Atributos — gestión ───────────────────────────────────────────────────
+
+  openAttributeList() {
+    Render.attributeList();
+  },
+
+  editAttribute(attrId) {
+    const a = State.attributes.find(x => x.id === attrId);
+    if (!a) return;
+    Render.formModal('Editar atributo', `
+      <div class="mb-3">
+        <label class="form-label">Key (identificador único) <span class="text-danger">*</span></label>
+        <input class="form-control" id="ea-key" value="${a.key}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Nombre visible <span class="text-danger">*</span></label>
+        <input class="form-control" id="ea-name" value="${a.name}">
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Tipo de dato</label>
+        <select class="form-select" id="ea-type" onchange="Events._onEditAttrTypeChange()">
+          <option value="text"    ${a.data_type==='text'    ?'selected':''}>text</option>
+          <option value="number"  ${a.data_type==='number'  ?'selected':''}>number</option>
+          <option value="boolean" ${a.data_type==='boolean' ?'selected':''}>boolean</option>
+          <option value="enum"    ${a.data_type==='enum'    ?'selected':''}>enum</option>
+        </select>
+      </div>
+      <div class="mb-3" id="ea-enum-section" style="${a.data_type==='enum' ? '' : 'display:none'}">
+        <label class="form-label">Valores posibles (uno por línea)</label>
+        <textarea class="form-control" id="ea-enum-vals" rows="3">${(a.enum_values||[]).join('\n')}</textarea>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" id="ea-static" ${a.is_static?'checked':''}>
+        <label class="form-check-label" for="ea-static">Estático (info de producto)</label>
+        <small class="d-block text-muted">Dinámico = opción de variante</small>
+      </div>`, () => {
+        const key  = document.getElementById('ea-key').value.trim();
+        const name = document.getElementById('ea-name').value.trim();
+        if (!key || !name) { Animations.toast('Key y nombre son requeridos.', 'warning'); return false; }
+        const data_type   = document.getElementById('ea-type').value;
+        const is_static   = document.getElementById('ea-static').checked;
+        const enumRaw     = document.getElementById('ea-enum-vals')?.value || '';
+        const enum_values = data_type === 'enum' ? enumRaw.split('\n').map(v => v.trim()).filter(Boolean) : [];
+        Events._doEditAttribute(attrId, { key, name, data_type, is_static, enum_values });
+        return true;
+    });
+  },
+
+  _onEditAttrTypeChange() {
+    const t = document.getElementById('ea-type').value;
+    document.getElementById('ea-enum-section').style.display = t === 'enum' ? '' : 'none';
+  },
+
+  async _doEditAttribute(attrId, body) {
+    try {
+      await API.updateAttribute(attrId, body);
+      Animations.toast('Atributo actualizado.', 'success');
+      await this.refresh();
+      Render.attributeList();
+    } catch(e) { Animations.toast(e.message, 'danger'); }
+  },
+
+  async deleteAttribute(attrId) {
+    if (!confirm('¿Eliminar este atributo? Se eliminará de todas las categorías que lo usen.')) return;
+    try {
+      await Service.deleteAttribute(attrId);
+      Animations.toast('Atributo eliminado.', 'success');
+      await this.refresh();
+      Render.attributeList();
     } catch(e) { Animations.toast(e.message, 'danger'); }
   },
 
@@ -247,11 +340,12 @@ const Events = {
       await Service.createAttribute(body);
       Animations.toast('Atributo creado.', 'success');
       await this.refresh();
+      Render.attributeList();
     } catch(e) { Animations.toast(e.message, 'danger'); }
   },
 
   openCreateProduct(preCatId = null) {
-    const leafCats = State.categories.filter(c => !c._children?.length);
+    const leafCats = State.categories.filter(c => !State.catById[c.id]?._children?.length);
     const options  = leafCats.map(c =>
       `<option value="${c.id}" ${c.id === preCatId ? 'selected' : ''}>${c.name}</option>`
     ).join('');
@@ -278,25 +372,73 @@ const Events = {
         </div>
         <div class="col-md-6">
           <label class="form-label">Categoría <span class="text-danger">*</span></label>
-          <select class="form-select" id="cp-cat">${options}</select>
+          <select class="form-select" id="cp-cat" onchange="Events._updateProductAttrFields()">${options}</select>
         </div>
       </div>
       <div class="mb-3">
         <label class="form-label">Descripción</label>
         <textarea class="form-control" id="cp-desc" rows="2"></textarea>
-      </div>`, () => {
+      </div>
+      <div id="cp-impl-fields"></div>`, () => {
         const code  = document.getElementById('cp-code').value.trim();
         const title = document.getElementById('cp-title').value.trim();
         const price = parseFloat(document.getElementById('cp-price').value);
         if (!code || !title || isNaN(price)) { Animations.toast('Código, título y precio son requeridos.', 'warning'); return false; }
+        const catId = parseInt(document.getElementById('cp-cat').value);
+        const staticAttrs = Events._getStaticAttrs(catId);
+        const implementations = staticAttrs.map(a => ({
+          attr_id: a.id,
+          value:   document.getElementById(`cp-impl-${a.id}`)?.value || '',
+        }));
         Events._doCreateProduct({
           code, title, price,
-          brand:       document.getElementById('cp-brand').value.trim(),
-          description: document.getElementById('cp-desc').value.trim(),
-          category_id: parseInt(document.getElementById('cp-cat').value),
+          brand:           document.getElementById('cp-brand').value.trim(),
+          description:     document.getElementById('cp-desc').value.trim(),
+          category_id:     catId,
+          implementations,
         });
         return true;
     });
+    // Renderizar los campos de atributos para la categoría preseleccionada
+    setTimeout(() => Events._updateProductAttrFields(), 0);
+  },
+
+  _getStaticAttrs(catId) {
+    const attrs = [];
+    const seen  = new Set();
+    let node = State.catById[catId];
+    while (node) {
+      for (const a of (node.attributes || [])) {
+        if (a.is_static && !seen.has(a.id)) {
+          seen.add(a.id);
+          attrs.push(a);
+        }
+      }
+      node = node.father_id ? State.catById[node.father_id] : null;
+    }
+    return attrs;
+  },
+
+  _updateProductAttrFields() {
+    const sel = document.getElementById('cp-cat');
+    const container = document.getElementById('cp-impl-fields');
+    if (!sel || !container) return;
+    const catId = parseInt(sel.value);
+    const staticAttrs = Events._getStaticAttrs(catId);
+    if (!staticAttrs.length) { container.innerHTML = ''; return; }
+    container.innerHTML = `
+      <hr class="my-2">
+      <label class="form-label fw-semibold text-muted small">ATRIBUTOS REQUERIDOS</label>
+      ${staticAttrs.map(a => `
+        <div class="mb-2">
+          <label class="form-label small mb-1">${a.name} <span class="text-muted">[${a.key}]</span></label>
+          ${a.data_type === 'enum'
+            ? `<select class="form-select form-select-sm" id="cp-impl-${a.id}">
+                ${(a.enum_values || []).map(v => `<option>${v}</option>`).join('')}
+               </select>`
+            : `<input type="${a.data_type === 'number' ? 'number' : 'text'}"
+                      class="form-control form-control-sm" id="cp-impl-${a.id}" placeholder="${a.name}">`}
+        </div>`).join('')}`;
   },
 
   async _doCreateProduct(body) {

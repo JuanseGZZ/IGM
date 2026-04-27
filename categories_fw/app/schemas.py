@@ -27,12 +27,14 @@ class ImpactGroup(BaseModel):
 class ResolutionAction(str, Enum):
     eliminar = "eliminar"   # quitar las implementaciones de esos attrs en esos productos
     heredar  = "heredar"    # mantener las implementaciones tal como estan (no hacer nada)
+    asignar  = "asignar"    # crear una implementacion nueva con el valor indicado (para E4 estatico)
 
 class ResolutionGroup(BaseModel):
     """Decision del llamador sobre un grupo de impacto."""
     attr_ids:    list[int]
     product_ids: list[int]
     action:      ResolutionAction
+    value:       str | None = None  # usado cuando action == "asignar"
 
 
 # ── Respuestas comunes ────────────────────────────────────────────────────────
@@ -42,6 +44,7 @@ class ImpactResponse(BaseModel):
     status:  Literal["impact_pending"] = "impact_pending"
     impact:  list[ImpactGroup]
     message: str | None = None
+    context: str | None = None  # "add_static_attr" | "add_dynamic_attr" | None
 
 class SuccessResponse(BaseModel):
     """Fase 2: directiva ejecutada correctamente."""
@@ -170,9 +173,17 @@ class CreateAttributeRequest(BaseModel):
     enum_values:  list[str] = []
 
 class CreateProductRequest(BaseModel):
-    code:        str
-    title:       str
-    price:       float
-    description: str = ""
-    brand:       str = ""
-    category_id: int
+    code:            str
+    title:           str
+    price:           float
+    description:     str = ""
+    brand:           str = ""
+    category_id:     int
+    implementations: list[NewImplementation] = []
+
+class UpdateAttributeRequest(BaseModel):
+    key:         str
+    name:        str
+    data_type:   str
+    is_static:   bool
+    enum_values: list[str] = []

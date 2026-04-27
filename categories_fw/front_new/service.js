@@ -22,7 +22,7 @@ async function _withImpact(phase1Call, phase2Call) {
   const data = await phase1Call();
   if (data.status !== 'impact_pending') return data;
 
-  const resolution = await Render.impactModal(data.impact, data.message);
+  const resolution = await Render.impactModal(data.impact, data.message, data.context);
   if (!resolution) return null;
 
   const data2 = await phase2Call(resolution);

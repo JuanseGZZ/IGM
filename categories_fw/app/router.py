@@ -9,6 +9,7 @@ from app.schemas import (
     AddVariantRequest,
     AttributeOut, CategoryOut, ProductOut,
     CreateCategoryRequest, CreateAttributeRequest, CreateProductRequest,
+    UpdateAttributeRequest,
 )
 from app.serializers import attr_out, cat_out, product_out
 from app.services import CategoryService, ProductService
@@ -86,18 +87,31 @@ def create_attribute(body: CreateAttributeRequest):
 
 @router.post("/products", response_model=ProductOut)
 def create_product(body: CreateProductRequest):
-    cat = store.get_category(body.category_id)
-    if cat is None:
-        raise HTTPException(status_code=404, detail=f"Categoria {body.category_id} no encontrada.")
+    cat = _get_category(body.category_id)
     try:
         cat._check_exclusive_children('product')
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+    # Validar que se implementen todos los atributos estaticos requeridos por la categoria y ancestros
+    required_static = {a for a in cat.get_full_attr_set() if a.is_static}
+    provided_ids    = {impl.attr_id for impl in body.implementations}
+    missing         = {a for a in required_static if a.id not in provided_ids}
+    if missing:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Faltan implementaciones para: {', '.join(sorted(a.key for a in missing))}",
+        )
+
     prod = Product(
         code=body.code, title=body.title, price=body.price,
         description=body.description, brand=body.brand, category=cat,
     )
+    for impl in body.implementations:
+        attr = _get_attribute(impl.attr_id)
+        prod.attributes_implementations.append(
+            AttributeImplementation(attribute=attr, value=impl.value)
+        )
     cat.products.append(prod)
     store.save_product(prod)
     return product_out(prod)
@@ -111,6 +125,17 @@ def delete_category(cat_id: int):
         raise HTTPException(status_code=404, detail=f"Categoria {cat_id} no encontrada.")
     store.delete_category(cat_id)
     return SuccessResponse()
+
+@router.patch("/attributes/{attr_id}", response_model=AttributeOut)
+def update_attribute(attr_id: int, body: UpdateAttributeRequest):
+    attr = _get_attribute(attr_id)
+    attr.key        = body.key
+    attr.name       = body.name
+    attr.data_type  = body.data_type
+    attr.is_static  = body.is_static
+    attr.enum_values = list(body.enum_values)
+    store.save_attribute(attr)
+    return attr_out(attr)
 
 @router.delete("/attributes/{attr_id}", response_model=SuccessResponse)
 def delete_attribute(attr_id: int):
@@ -188,7 +213,12 @@ def change_father(cat_id: int, body: ChangeFatherRequest):
 
     try:
         products_by_id = store.get_products_by_ids(_all_product_ids(body.resolution))
-        return cat_svc.change_father(category, new_father, body.resolution, products_by_id)
+        result = cat_svc.change_father(category, new_father, body.resolution, products_by_id)
+        if isinstance(result, SuccessResponse):
+            store.save_category(category)
+            for prod in products_by_id.values():
+                store.save_product(prod)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -215,7 +245,19 @@ def add_attribute(cat_id: int, attr_id: int, body: AddAttributeRequest = AddAttr
 
     try:
         products_by_id = store.get_products_by_ids(_all_product_ids(body.resolution))
-        return cat_svc.add_attribute(category, attr, body.resolution, products_by_id)
+        variant_ids_before = {pid: {v.id for v in prod.variants} for pid, prod in products_by_id.items()}
+
+        result = cat_svc.add_attribute(category, attr, body.resolution, products_by_id)
+        if isinstance(result, SuccessResponse):
+            store.save_category(category)
+            for prod in products_by_id.values():
+                store.save_product(prod)
+            for prod_id, prod in products_by_id.items():
+                ids_before = variant_ids_before.get(prod_id, set())
+                ids_after  = {v.id for v in prod.variants if v.id is not None}
+                for deleted_id in ids_before - ids_after:
+                    store.delete_variant(deleted_id)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -236,7 +278,19 @@ def remove_attribute(cat_id: int, attr_id: int, body: RemoveAttributeRequest = R
 
     try:
         products_by_id = store.get_products_by_ids(_all_product_ids(body.resolution))
-        return cat_svc.remove_attribute(category, attr, body.resolution, products_by_id)
+        variant_ids_before = {pid: {v.id for v in prod.variants} for pid, prod in products_by_id.items()}
+
+        result = cat_svc.remove_attribute(category, attr, body.resolution, products_by_id)
+        if isinstance(result, SuccessResponse):
+            store.save_category(category)
+            for prod in products_by_id.values():
+                store.save_product(prod)
+            for prod_id, prod in products_by_id.items():
+                ids_before = variant_ids_before.get(prod_id, set())
+                ids_after  = {v.id for v in prod.variants if v.id is not None}
+                for deleted_id in ids_before - ids_after:
+                    store.delete_variant(deleted_id)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -277,7 +331,10 @@ def change_category(prod_id: int, new_cat_id: int, body: ChangeCategoryRequest =
     attributes_by_id = {aid: _get_attribute(aid) for aid in attr_ids_needed}
 
     try:
-        return prod_svc.change_category(product, new_category, body.resolution, attributes_by_id)
+        result = prod_svc.change_category(product, new_category, body.resolution, attributes_by_id)
+        if isinstance(result, SuccessResponse):
+            store.save_product(product)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -295,6 +352,8 @@ def change_category(prod_id: int, new_cat_id: int, body: ChangeCategoryRequest =
 @router.post("/products/{prod_id}/variants", response_model=SuccessResponse)
 def add_variant(prod_id: int, body: AddVariantRequest):
     product = _get_product(prod_id)
+    # Reemplazar la categoria stub por la completa para que la validacion use los attrs heredados
+    product.category = _get_category(product.category.id)
     impls   = []
     for item in body.attribute_implementations:
         attr = _get_attribute(item.attr_id)
@@ -302,7 +361,9 @@ def add_variant(prod_id: int, body: AddVariantRequest):
     variant = Variant(attribute_implementations=impls)
 
     try:
-        return prod_svc.add_variant(product, variant)
+        result = prod_svc.add_variant(product, variant)
+        store.save_variant(variant, prod_id)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -317,9 +378,13 @@ def add_variant(prod_id: int, body: AddVariantRequest):
 @router.delete("/products/{prod_id}/variants/{var_id}", response_model=SuccessResponse)
 def remove_variant(prod_id: int, var_id: int):
     product = _get_product(prod_id)
-    variant = _get_variant(var_id)
+    variant = next((v for v in product.variants if v.id == var_id), None)
+    if variant is None:
+        raise HTTPException(status_code=404, detail=f"Variante {var_id} no encontrada en el producto {prod_id}.")
 
     try:
-        return prod_svc.remove_variant(product, variant)
+        result = prod_svc.remove_variant(product, variant)
+        store.delete_variant(var_id)
+        return result
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

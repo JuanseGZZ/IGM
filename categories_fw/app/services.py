@@ -59,6 +59,33 @@ def _apply_resolution(
             ]
             prod._impl_keys = {i.attribute.key for i in prod.attributes_implementations}
 
+def _apply_add_static_resolution(
+    resolution: list[ResolutionGroup],
+    products_by_id: dict[int, Product],
+    attr: Attribute,
+) -> None:
+    for g in resolution:
+        if g.action != ResolutionAction.asignar:
+            continue
+        for prod_id in g.product_ids:
+            prod = products_by_id.get(prod_id)
+            if prod is not None and g.value is not None:
+                prod.attributes_implementations.append(
+                    AttributeImplementation(attribute=attr, value=g.value)
+                )
+                prod._impl_keys = {i.attribute.key for i in prod.attributes_implementations}
+
+def _apply_add_dynamic_resolution(
+    resolution: list[ResolutionGroup],
+    products_by_id: dict[int, Product],
+) -> None:
+    for g in resolution:
+        if g.action == ResolutionAction.eliminar:
+            for prod_id in g.product_ids:
+                prod = products_by_id.get(prod_id)
+                if prod is not None:
+                    prod.variants = []
+
 
 # ── CategoryService ───────────────────────────────────────────────────────────
 
@@ -72,6 +99,9 @@ class CategoryService:
         products_by_id:  dict[int, Product],
     ) -> ImpactResponse | SuccessResponse:
         """E1/E2/E3 segun el estado actual de category.father_categorie y new_father."""
+
+        if new_father is not None:
+            new_father._check_exclusive_children('subcategory')
 
         if new_father is None:
             pairs = category.impact_on_remove_father()
@@ -115,21 +145,26 @@ class CategoryService:
     ) -> ImpactResponse | SuccessResponse:
         """E4."""
         pairs = category.impact_on_add_attribute(attr)
+        context = "add_static_attr" if attr.is_static else "add_dynamic_attr"
 
         if not pairs:
             category.attributes.append(attr)
             return SuccessResponse()
 
         if resolution is None:
-            return ImpactResponse(impact=_build_impact(pairs))
+            return ImpactResponse(impact=_build_impact(pairs), context=context)
 
         if not _resolution_covers(resolution, pairs):
             return ImpactResponse(
                 impact=_build_impact(pairs),
+                context=context,
                 message="La resolucion no cubre todos los productos impactados.",
             )
 
-        _apply_resolution(resolution, products_by_id)
+        if attr.is_static:
+            _apply_add_static_resolution(resolution, products_by_id, attr)
+        else:
+            _apply_add_dynamic_resolution(resolution, products_by_id)
         category.attributes.append(attr)
         return SuccessResponse()
 
@@ -142,22 +177,28 @@ class CategoryService:
     ) -> ImpactResponse | SuccessResponse:
         """E5."""
         pairs = category.impact_on_remove_attribute(attr)
+        context = "remove_static_attr" if attr.is_static else "remove_dynamic_attr"
 
         if not pairs:
-            category.attributes = [a for a in category.attributes if a is not attr]
+            category.attributes = [a for a in category.attributes if a.id != attr.id]
             return SuccessResponse()
 
         if resolution is None:
-            return ImpactResponse(impact=_build_impact(pairs))
+            return ImpactResponse(impact=_build_impact(pairs), context=context)
 
         if not _resolution_covers(resolution, pairs):
             return ImpactResponse(
                 impact=_build_impact(pairs),
+                context=context,
                 message="La resolucion no cubre todos los productos impactados.",
             )
 
-        _apply_resolution(resolution, products_by_id)
-        category.attributes = [a for a in category.attributes if a is not attr]
+        if attr.is_static:
+            _apply_resolution(resolution, products_by_id)
+        else:
+            _apply_add_dynamic_resolution(resolution, products_by_id)
+
+        category.attributes = [a for a in category.attributes if a.id != attr.id]
         return SuccessResponse()
 
 
