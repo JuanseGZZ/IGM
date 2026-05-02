@@ -425,6 +425,9 @@ function openAttrPicker() {
       });
       pendingAttrs = [...pickerSelection];
       refreshAttrList();
+      if (editingChart?.model) editingChart.model.attributes = [...pendingAttrs];
+      handler.treeToMax();
+      handler.render({ container: "#igm-board" });
     };
 
     if (allInputs.length > 0 || allDeletions.length > 0) {

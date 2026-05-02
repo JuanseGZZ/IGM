@@ -33,6 +33,10 @@ export function showGestorDialog({
   onCancel,
 }) {
   const overlay    = document.getElementById("igm-gestor-overlay");
+  // Mover al final de body garantiza que quede por encima de cualquier otro overlay,
+  // independientemente del orden de creación.
+  document.body.appendChild(overlay);
+
   const titleEl    = document.getElementById("igm-gestor-title");
   const descEl     = document.getElementById("igm-gestor-desc");
   const deletionEl = document.getElementById("igm-gestor-deletions");
