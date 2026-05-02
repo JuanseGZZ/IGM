@@ -1,0 +1,502 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background:  #0e0e10;
+  color:       #e4e4e7;
+  height:      100vh;
+  display:     flex;
+  flex-direction: column;
+  overflow:    hidden;
+}
+
+/* ─── Variables ──────────────────────────────────────────────────────────── */
+
+:root {
+  --igm-cell-w:     210px;
+  --igm-edge-color: #3f3f46;
+  --igm-edge-size:  2px;
+  --igm-pad-top:    20px;
+  --igm-pad-bottom: 20px;
+
+  --bg-base:        #0e0e10;
+  --bg-surface:     #18181b;
+  --bg-elevated:    #27272a;
+  --bg-hover:       #3f3f46;
+  --border:         #3f3f46;
+  --text-primary:   #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted:     #71717a;
+  --accent:         #3b82f6;
+  --accent-hover:   #2563eb;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+
+#navbar {
+  height:      48px;
+  background:  var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  display:     flex;
+  align-items: center;
+  padding:     0 16px;
+  gap:         12px;
+  flex-shrink: 0;
+  z-index:     100;
+}
+#navbar .brand {
+  color:          #f97316;
+  font-weight:    700;
+  font-size:      15px;
+  letter-spacing: .3px;
+  margin-right:   auto;
+}
+#navbar button {
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border);
+  color:         var(--text-primary);
+  padding:       5px 12px;
+  border-radius: 6px;
+  cursor:        pointer;
+  font-size:     13px;
+  transition:    background .12s;
+}
+#navbar button:hover { background: var(--bg-hover); }
+#navbar .sep { width: 1px; height: 20px; background: var(--border); }
+
+/* ─── Board container ────────────────────────────────────────────────────── */
+
+#igm-board-container {
+  flex:             1;
+  overflow:         auto;
+  position:         relative;
+  background-image: radial-gradient(circle, #2e2e32 1px, transparent 1px);
+  background-size:  28px 28px;
+  background-color: var(--bg-base);
+}
+
+#igm-board {
+  display:  inline-grid;
+  position: relative;
+}
+
+/* ─── Board / organigram ─────────────────────────────────────────────────── */
+
+.igm-board {
+  display:  inline-grid;
+  padding:  2000px;
+  position: relative;
+}
+
+/* ─── Celdas ─────────────────────────────────────────────────────────────── */
+
+.igm-cell {
+  position:       relative;
+  width:          var(--igm-cell-w);
+  padding-top:    var(--igm-pad-top);
+  padding-bottom: var(--igm-pad-bottom);
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  box-sizing:     border-box;
+}
+
+/* ─── Conectores ─────────────────────────────────────────────────────────── */
+
+.igm-edge {
+  position:       absolute;
+  pointer-events: none;
+  background:     var(--igm-edge-color);
+}
+.igm-edge-up {
+  top:       0;
+  left:      50%;
+  transform: translateX(-50%);
+  width:     var(--igm-edge-size);
+  height:    var(--igm-pad-top);
+}
+.igm-edge-down {
+  bottom:    0;
+  left:      50%;
+  transform: translateX(-50%);
+  width:     var(--igm-edge-size);
+  height:    var(--igm-pad-bottom);
+}
+.igm-edge-left {
+  top:    0;
+  left:   0;
+  width:  50%;
+  height: var(--igm-edge-size);
+}
+.igm-edge-right {
+  top:    0;
+  right:  0;
+  width:  50%;
+  height: var(--igm-edge-size);
+}
+.igm-wire-top {
+  position:   absolute;
+  top:        0;
+  left:       0;
+  right:      0;
+  height:     var(--igm-edge-size);
+  background: var(--igm-edge-color);
+}
+
+/* ─── Box ────────────────────────────────────────────────────────────────── */
+
+.igm-box {
+  position:      relative;
+  width:         186px;
+  background:    var(--bg-surface);
+  border-radius: 10px;
+  box-shadow:    0 2px 12px rgba(0,0,0,.4);
+  overflow:      hidden;
+  cursor:        grab;
+  border:        1px solid var(--border);
+  transition:    box-shadow .15s, border-color .15s;
+}
+.igm-box:hover {
+  box-shadow:   0 4px 20px rgba(0,0,0,.55);
+  border-color: #52525b;
+}
+
+.igm-box-header {
+  display:     flex;
+  align-items: center;
+  padding:     6px 8px;
+  gap:         4px;
+  color:       white;
+}
+.igm-type-badge {
+  flex:           1;
+  font-size:      10px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  opacity:        .9;
+}
+.igm-btn {
+  background:    transparent;
+  border:        none;
+  color:         rgba(255,255,255,.8);
+  cursor:        pointer;
+  font-size:     13px;
+  padding:       2px 5px;
+  border-radius: 4px;
+  line-height:   1;
+  transition:    background .12s;
+}
+.igm-btn:hover { background: rgba(0,0,0,.3); }
+
+.igm-box-title {
+  padding:       8px 10px;
+  font-weight:   600;
+  font-size:     13px;
+  color:         var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  word-break:    break-word;
+}
+
+.igm-box-body {
+  padding:    8px 10px;
+  display:    flex;
+  flex-wrap:  wrap;
+  gap:        4px;
+  min-height: 28px;
+}
+.igm-collapsed .igm-box-body { display: none; }
+
+/* ─── Pills ──────────────────────────────────────────────────────────────── */
+
+.igm-pill {
+  display:       inline-block;
+  padding:       2px 8px;
+  border-radius: 10px;
+  font-size:     11px;
+}
+.igm-pill-static  { background: #1e3a5f; color: #93c5fd; }
+.igm-pill-dynamic { background: #4a1942; color: #f0abfc; }
+.igm-pill-impl    { background: #2e1d5e; color: #c4b5fd; }
+.igm-body-empty   { font-size: 11px; color: var(--text-muted); font-style: italic; }
+
+/* ─── Campos producto ────────────────────────────────────────────────────── */
+
+.igm-field-row   { display: flex; gap: 6px; font-size: 11px; color: var(--text-secondary); width: 100%; }
+.igm-field-label { font-weight: 600; color: var(--text-muted); min-width: 42px; }
+
+/* ─── Botones "+" ────────────────────────────────────────────────────────── */
+
+.igm-add-btn {
+  position:        absolute;
+  background:      var(--bg-elevated);
+  border:          1px solid var(--border);
+  border-radius:   50%;
+  width:           22px;
+  height:          22px;
+  cursor:          pointer;
+  font-size:       16px;
+  font-weight:     600;
+  line-height:     1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  color:           var(--text-secondary);
+  transition:      background .12s, color .12s;
+  z-index:         2;
+}
+.igm-add-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.igm-add-down  { bottom: 4px; left: 50%; transform: translateX(-50%); }
+.igm-add-right { right: -11px; top: 50%; transform: translateY(-50%); }
+
+/* ─── Drag & drop ────────────────────────────────────────────────────────── */
+
+.igm-box.drop-child   { outline: 2px solid var(--accent); box-shadow: 0 0 0 4px rgba(59,130,246,.25); }
+.igm-box.drop-sibling { border-right: 3px solid var(--accent); }
+
+/* ─── Menú flotante ──────────────────────────────────────────────────────── */
+
+.igm-menu-dropdown {
+  position:      fixed;
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border);
+  border-radius: 8px;
+  box-shadow:    0 6px 20px rgba(0,0,0,.5);
+  list-style:    none;
+  padding:       4px;
+  margin:        0;
+  z-index:       99999;
+  min-width:     140px;
+  display:       none;
+}
+.igm-menu-dropdown.igm-floating-menu { display: block; }
+.igm-menu-dropdown li button {
+  display:       block;
+  width:         100%;
+  text-align:    left;
+  background:    none;
+  border:        none;
+  color:         var(--text-primary);
+  padding:       8px 12px;
+  cursor:        pointer;
+  border-radius: 4px;
+  font-size:     13px;
+}
+.igm-menu-dropdown li button:hover { background: var(--bg-hover); }
+
+/* ─── Modal ──────────────────────────────────────────────────────────────── */
+
+.igm-modal-overlay {
+  position:        fixed;
+  inset:           0;
+  background:      rgba(0,0,0,.6);
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  z-index:         10000;
+}
+.igm-modal-overlay.igm-hidden { display: none; }
+
+.igm-modal {
+  background:    var(--bg-surface);
+  border:        1px solid var(--border);
+  border-radius: 14px;
+  padding:       24px;
+  width:         460px;
+  max-width:     95vw;
+  max-height:    85vh;
+  overflow-y:    auto;
+  box-shadow:    0 12px 48px rgba(0,0,0,.6);
+}
+.igm-modal h3 { margin: 0 0 18px; font-size: 17px; color: var(--text-primary); }
+.igm-modal label {
+  display:     block;
+  font-size:   12px;
+  color:       var(--text-secondary);
+  margin:      12px 0 4px;
+  font-weight: 600;
+}
+.igm-modal input[type=text],
+.igm-modal input[type=number],
+.igm-modal textarea,
+.igm-modal select {
+  width:            100%;
+  padding:          8px 10px;
+  background:       var(--bg-elevated);
+  border:           1px solid var(--border);
+  border-radius:    6px;
+  font-size:        14px;
+  color:            var(--text-primary);
+  box-sizing:       border-box;
+  outline:          none;
+  transition:       border-color .12s;
+}
+.igm-modal input::placeholder,
+.igm-modal textarea::placeholder { color: var(--text-muted); }
+.igm-modal input:focus,
+.igm-modal select:focus,
+.igm-modal textarea:focus { border-color: var(--accent); }
+
+.igm-modal-section            { display: none; }
+.igm-modal-section.igm-active { display: block; }
+
+.igm-modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+.igm-btn-primary {
+  background:    var(--accent);
+  color:         white;
+  border:        none;
+  padding:       8px 22px;
+  border-radius: 7px;
+  cursor:        pointer;
+  font-size:     14px;
+  font-weight:   600;
+  transition:    background .12s;
+}
+.igm-btn-primary:hover { background: var(--accent-hover); }
+
+.igm-btn-secondary {
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border);
+  color:         var(--text-primary);
+  padding:       8px 22px;
+  border-radius: 7px;
+  cursor:        pointer;
+  font-size:     14px;
+  transition:    background .12s;
+}
+.igm-btn-secondary:hover { background: var(--bg-hover); }
+
+/* ─── Gestor de atributos ────────────────────────────────────────────────── */
+
+.igm-attr-manager    { margin-top: 14px; }
+.igm-attr-manager h4 { margin: 0 0 8px; font-size: 13px; color: var(--text-secondary); font-weight: 700; }
+
+.igm-attr-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+  margin-bottom:  12px;
+  min-height:     32px;
+}
+.igm-attr-item {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       7px 10px;
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border);
+  border-radius: 7px;
+  font-size:     12px;
+}
+.igm-attr-item-info { flex: 1; }
+.igm-attr-item-key  { font-weight: 700; color: var(--text-primary); }
+.igm-attr-item-meta { color: var(--text-muted); font-size: 11px; margin-left: 6px; }
+.igm-attr-item-type {
+  background:    #1e2d5a;
+  color:         #93c5fd;
+  border-radius: 4px;
+  padding:       1px 6px;
+  font-size:     10px;
+  font-weight:   600;
+  margin-left:   4px;
+}
+.igm-attr-item-static { background: #1e3a5f; color: #93c5fd; }
+.igm-attr-remove {
+  background:    transparent;
+  border:        none;
+  color:         var(--text-muted);
+  cursor:        pointer;
+  font-size:     15px;
+  padding:       1px 5px;
+  border-radius: 4px;
+  transition:    background .12s, color .12s;
+}
+.igm-attr-remove:hover { background: #3b1111; color: #f87171; }
+
+.igm-attr-add-form {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   8px;
+  padding:               12px;
+  background:            #18182a;
+  border-radius:         8px;
+  border:                1px dashed #3b3b6b;
+}
+.igm-attr-add-full { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }
+.igm-attr-add-full label { margin: 0; }
+.igm-attr-add-btn {
+  margin-left:   auto;
+  background:    #059669;
+  color:         white;
+  border:        none;
+  padding:       7px 16px;
+  border-radius: 6px;
+  cursor:        pointer;
+  font-size:     13px;
+  font-weight:   600;
+  transition:    background .12s;
+}
+.igm-attr-add-btn:hover { background: #047857; }
+
+/* ─── Gestor dialog ──────────────────────────────────────────────────────── */
+
+.igm-gestor-desc {
+  font-size:     13px;
+  color:         var(--text-secondary);
+  margin-bottom: 14px;
+  line-height:   1.5;
+}
+
+.igm-gestor-section { margin-bottom: 14px; }
+
+.igm-gestor-del-list {
+  list-style:     none;
+  padding:        0;
+  margin:         0;
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+.igm-gestor-del-list li {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       7px 10px 7px 12px;
+  background:    rgba(239, 68, 68, .08);
+  border:        1px solid rgba(239, 68, 68, .2);
+  border-radius: 6px;
+  font-size:     12px;
+  color:         #fca5a5;
+}
+.igm-gestor-del-list li::before { content: "•"; color: #f87171; }
+
+.igm-gestor-input-group { margin-bottom: 10px; }
+.igm-gestor-input-group label {
+  display:     block;
+  font-size:   12px;
+  color:       var(--text-secondary);
+  margin:      0 0 4px;
+  font-weight: 600;
+}
+.igm-gestor-input-group input[type=text],
+.igm-gestor-input-group input[type=number],
+.igm-gestor-input-group select {
+  width:         100%;
+  padding:       8px 10px;
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border);
+  border-radius: 6px;
+  font-size:     13px;
+  color:         var(--text-primary);
+  box-sizing:    border-box;
+  outline:       none;
+  transition:    border-color .12s;
+}
+.igm-gestor-input-group input:focus,
+.igm-gestor-input-group select:focus { border-color: var(--accent); }
+.igm-gestor-input-group input[type=checkbox] {
+  width: auto;
+  cursor: pointer;
+  accent-color: var(--accent);
+}

@@ -1,0 +1,326 @@
+import { Category, Product, Variant, Attribute, AttributeSet } from "./models.js";
+import { Handler } from "./Handler.js";
+import { CHART_TYPE } from "./charts.js";
+
+// Gestor mantiene un árbol espejo de objetos de dominio y valida/analiza
+// cada operación visual antes de que llegue al Handler.
+//
+// Cada método analyze* devuelve:
+//   { ok, blocked, reason?, flow, inputs?, deletions? }
+//
+//   flow: "none" | "additive" | "destructive" | "mixed" | "blocked"
+//   inputs:    [{ attr, label, dataType, options, hint, productId? }]
+//   deletions: [{ label }]
+
+export class Gestor {
+  constructor(handler) {
+    this.handler = handler;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MIRROR — construye instancias de dominio desde el árbol de charts
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  buildMirror() {
+    const cats     = new Map(); // chartId → Category
+    const prods    = new Map(); // chartId → Product
+    const vars     = new Map(); // chartId → Variant
+    const catToId  = new Map(); // Category instance → chartId
+    const prodToId = new Map(); // Product  instance → chartId
+
+    const toAttr = (a) => a instanceof Attribute
+      ? a
+      : new Attribute({ key: a.key, name: a.name, data_type: a.data_type, is_static: a.is_static ?? false, id: a.id ?? null });
+
+    const walk = (chart, parentCat, parentProd) => {
+      if (chart.chartType === "root") {
+        chart.listaHijos.forEach(c => walk(c, null, null));
+        return;
+      }
+
+      if (chart.chartType === CHART_TYPE.CATEGORY) {
+        const attrs = (chart.model?.attributes ?? []).map(toAttr);
+        const cat   = new Category({ name: chart.model?.name ?? "", id: chart.model?.id ?? null, attributes: attrs });
+        if (parentCat) { cat.father_categorie = parentCat; parentCat.subcategories.push(cat); }
+        cats.set(chart.id, cat);
+        catToId.set(cat, chart.id);
+        chart.listaHijos.forEach(c => walk(c, cat, null));
+
+      } else if (chart.chartType === CHART_TYPE.PRODUCT) {
+        if (!parentCat) return;
+        const m    = chart.model ?? {};
+        const prod = new Product({
+          code:                       m.code        ?? `SKU-${chart.id}`,
+          title:                      m.title       ?? "",
+          price:                      m.price       ?? 0,
+          description:                m.description ?? "",
+          brand:                      m.brand       ?? "",
+          id:                         m.id          ?? null,
+          category:                   parentCat,
+          attributes_implementations: m.attributes_implementations ?? [],
+        });
+        prods.set(chart.id, prod);
+        prodToId.set(prod, chart.id);
+        parentCat.products.push(prod);
+        chart.listaHijos.forEach(c => walk(c, parentCat, prod));
+
+      } else if (chart.chartType === CHART_TYPE.VARIANT) {
+        if (!parentProd) return;
+        const m    = chart.model ?? {};
+        const vart = new Variant({ id: m.id ?? null, attribute_implementations: m.attribute_implementations ?? [] });
+        vars.set(chart.id, vart);
+        parentProd.variants.push(vart);
+      }
+    };
+
+    walk(this.handler.root, null, null);
+    return { cats, prods, vars, catToId, prodToId };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // VALIDACIÓN ESTRUCTURAL
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  checkAdd(parentChartId, chartType) {
+    const parent = Handler.findNode(this.handler.root, parentChartId);
+    if (!parent) return { ok: false, blocked: true, reason: "Nodo padre no encontrado." };
+
+    if (chartType === CHART_TYPE.CATEGORY) {
+      if (parent.chartType !== "root" && parent.chartType !== CHART_TYPE.CATEGORY)
+        return { ok: false, blocked: true, reason: "Una categoría solo puede ser hija de otra categoría." };
+      if (parent.listaHijos.some(c => c.chartType === CHART_TYPE.PRODUCT))
+        return { ok: false, blocked: true, reason: `"${parent.label}" ya tiene productos. No puede tener subcategorías y productos a la vez.` };
+    }
+
+    if (chartType === CHART_TYPE.PRODUCT) {
+      if (parent.chartType !== CHART_TYPE.CATEGORY)
+        return { ok: false, blocked: true, reason: "Un producto solo puede ser hijo de una categoría." };
+      if (parent.listaHijos.some(c => c.chartType === CHART_TYPE.CATEGORY))
+        return { ok: false, blocked: true, reason: `"${parent.label}" ya tiene subcategorías. No puede tener subcategorías y productos a la vez.` };
+    }
+
+    if (chartType === CHART_TYPE.VARIANT) {
+      if (parent.chartType !== CHART_TYPE.PRODUCT)
+        return { ok: false, blocked: true, reason: "Una variante solo puede ser hija de un producto." };
+    }
+
+    return { ok: true, blocked: false };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ANÁLISIS DE IMPACTO
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // Analiza agregar un producto a una categoría.
+  // Retorna los atributos estáticos heredados que el producto debe implementar.
+  analyzeAddProduct(parentCategoryChartId) {
+    const structural = this.checkAdd(parentCategoryChartId, CHART_TYPE.PRODUCT);
+    if (!structural.ok) return { ...structural, flow: "blocked" };
+
+    const { cats } = this.buildMirror();
+    const cat = cats.get(parentCategoryChartId);
+    if (!cat) return { ok: true, blocked: false, flow: "none", inputs: [] };
+
+    const staticAttrs = [...cat.get_full_attr_set().values()].filter(a => a.is_static);
+    if (staticAttrs.length === 0) return { ok: true, blocked: false, flow: "none", inputs: [] };
+
+    const inputs = staticAttrs.map(a => ({
+      attr:     a,
+      label:    a.name,
+      dataType: a.data_type,
+      options:  a.enum_values ?? [],
+      hint:     a.key,
+    }));
+    return { ok: true, blocked: false, flow: "additive", inputs };
+  }
+
+  // Analiza agregar una variante a un producto.
+  // Retorna los atributos dinámicos heredados que la variante debe implementar.
+  analyzeAddVariant(parentProductChartId) {
+    const structural = this.checkAdd(parentProductChartId, CHART_TYPE.VARIANT);
+    if (!structural.ok) return { ...structural, flow: "blocked" };
+
+    const { prods } = this.buildMirror();
+    const prod = prods.get(parentProductChartId);
+    if (!prod) return { ok: true, blocked: false, flow: "none", inputs: [] };
+
+    const dynAttrs = [...prod.category.get_full_attr_set().values()].filter(a => !a.is_static);
+    if (dynAttrs.length === 0) return { ok: true, blocked: false, flow: "none", inputs: [] };
+
+    const inputs = dynAttrs.map(a => ({
+      attr:     a,
+      label:    a.name,
+      dataType: a.data_type,
+      options:  a.enum_values ?? [],
+      hint:     a.key,
+    }));
+    return { ok: true, blocked: false, flow: "additive", inputs };
+  }
+
+  // Analiza agregar un atributo a una categoría (desde el modal).
+  // Retorna qué productos en el subárbol necesitan implementarlo.
+  analyzeAddAttribute(categoryChartId, attrPlain) {
+    const { cats, prodToId } = this.buildMirror();
+    const cat = cats.get(categoryChartId);
+    if (!cat) return { ok: true, blocked: false, flow: "none", affected: [], inputs: [] };
+
+    const attr = new Attribute({
+      key:       attrPlain.key,
+      name:      attrPlain.name,
+      data_type: attrPlain.data_type,
+      is_static: attrPlain.is_static ?? false,
+      id:        attrPlain.id ?? null,
+    });
+
+    const impacts = cat.impact_on_add_attribute(attr);
+    if (impacts.length === 0) return { ok: true, blocked: false, flow: "none", affected: [], inputs: [] };
+
+    const affected = [];
+    const inputs   = [];
+    for (const [, products] of impacts) {
+      for (const prod of products) {
+        const cid   = prodToId.get(prod);
+        const chart = cid != null ? Handler.findNode(this.handler.root, cid) : null;
+        const label = chart?.label ?? prod.title ?? prod.code;
+        affected.push({ chartId: cid, label });
+        inputs.push({ attr, label: `${label}: ${attr.name}`, dataType: attr.data_type, options: attr.enum_values ?? [], hint: attr.key, productId: cid });
+      }
+    }
+
+    if (affected.length === 0) return { ok: true, blocked: false, flow: "none", affected: [], inputs: [] };
+    return { ok: true, blocked: false, flow: "additive", affected, inputs };
+  }
+
+  // Analiza quitar un atributo de una categoría (desde el modal).
+  // Retorna qué productos perderán su implementación.
+  analyzeRemoveAttribute(categoryChartId, attrPlain) {
+    const attrKey  = attrPlain.key;
+    const affected = [];
+
+    const catChart = Handler.findNode(this.handler.root, categoryChartId);
+    if (!catChart) return { ok: true, blocked: false, flow: "none", affected: [], deletions: [] };
+
+    this._walkProductCharts(catChart, (prodChart) => {
+      const impls = prodChart.model?.attributes_implementations ?? [];
+      if (impls.some(i => (i.attribute?.key ?? i.key) === attrKey))
+        affected.push({ id: prodChart.id, label: prodChart.label });
+    });
+
+    const deletions = affected.map(p => ({ label: `Implementación de "${attrPlain.name}" en ${p.label}` }));
+    return {
+      ok:       true,
+      blocked:  false,
+      flow:     affected.length > 0 ? "destructive" : "none",
+      affected,
+      deletions,
+    };
+  }
+
+  // Analiza eliminar un nodo: retorna todo lo que se borrará en cascada.
+  analyzeDelete(chartId) {
+    const chart = Handler.findNode(this.handler.root, chartId);
+    if (!chart) return { ok: false, blocked: true, reason: "Nodo no encontrado." };
+
+    const deletions = [];
+    this._collectDeletions(chart, deletions);
+    return { ok: true, blocked: false, flow: "destructive", deletions };
+  }
+
+  // Analiza mover un nodo: chequea estructura y calcula delta de atributos.
+  analyzeMove(fromChartId, toChartId, mode) {
+    const fromChart = Handler.findNode(this.handler.root, fromChartId);
+    const toChart   = Handler.findNode(this.handler.root, toChartId);
+    if (!fromChart || !toChart) return { ok: false, blocked: true, reason: "Nodo no encontrado." };
+
+    if (mode === "child" && Handler.findNode(fromChart, toChartId))
+      return { ok: false, blocked: true, reason: "No se puede mover una carta dentro de sí misma o de uno de sus descendientes." };
+
+    const effectiveParentId = mode === "child" ? toChartId : toChart.idParent;
+    const structural = this.checkAdd(effectiveParentId, fromChart.chartType);
+    if (!structural.ok) return { ...structural, flow: "blocked" };
+
+    if (fromChart.chartType === CHART_TYPE.CATEGORY)
+      return this._analyzeMoveCategory(fromChartId, effectiveParentId);
+
+    if (fromChart.chartType === CHART_TYPE.PRODUCT)
+      return this._analyzeMoveProduct(fromChartId, effectiveParentId);
+
+    return { ok: true, blocked: false, flow: "none" };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PRIVADOS
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  _walkProductCharts(chart, cb) {
+    if (chart.chartType === CHART_TYPE.PRODUCT) { cb(chart); return; }
+    chart.listaHijos.forEach(c => this._walkProductCharts(c, cb));
+  }
+
+  _collectDeletions(chart, list) {
+    if (chart.chartType !== "root")
+      list.push({ label: chart.label, type: chart.chartType, id: chart.id });
+    chart.listaHijos.forEach(c => this._collectDeletions(c, list));
+  }
+
+  _analyzeMoveCategory(fromChartId, newParentChartId) {
+    const { cats, prodToId } = this.buildMirror();
+    const cat       = cats.get(fromChartId);
+    if (!cat) return { ok: true, blocked: false, flow: "none" };
+    const newParent = cats.get(newParentChartId) ?? null;
+
+    let rawAdd = [], rawRem = [];
+    try {
+      if (!cat.father_categorie && newParent) {
+        rawAdd = cat.impact_on_add_father(newParent);
+      } else if (cat.father_categorie && !newParent) {
+        rawRem = cat.impact_on_remove_father();
+      } else if (cat.father_categorie && newParent) {
+        [rawRem, rawAdd] = cat.impact_on_change_father(newParent);
+      }
+    } catch (e) {
+      return { ok: false, blocked: true, reason: e.message };
+    }
+
+    const flatten = (raw) => raw.flatMap(([attrs, products]) =>
+      [...attrs.values()].flatMap(attr =>
+        products.map(prod => {
+          const cid   = prodToId.get(prod);
+          const chart = cid != null ? Handler.findNode(this.handler.root, cid) : null;
+          return { attr, productLabel: chart?.label ?? prod.title, productId: cid };
+        })
+      )
+    );
+
+    const gains  = flatten(rawAdd);
+    const losses = flatten(rawRem);
+
+    const inputs    = gains.map(x => ({ attr: x.attr, label: `${x.productLabel}: ${x.attr.name}`, dataType: x.attr.data_type, options: x.attr.enum_values ?? [], hint: x.attr.key, productId: x.productId }));
+    const deletions = losses.map(x => ({ label: `"${x.attr.name}" en ${x.productLabel}`, productId: x.productId, attrKey: x.attr.key }));
+
+    const flow = inputs.length > 0 && deletions.length > 0 ? "mixed"
+               : inputs.length > 0                         ? "additive"
+               : deletions.length > 0                      ? "destructive"
+               : "none";
+
+    return { ok: true, blocked: false, flow, inputs, deletions };
+  }
+
+  _analyzeMoveProduct(fromChartId, newParentCatChartId) {
+    const { cats, prods } = this.buildMirror();
+    const prod   = prods.get(fromChartId);
+    const newCat = cats.get(newParentCatChartId);
+    if (!prod || !newCat) return { ok: true, blocked: false, flow: "none" };
+
+    const [toAdd, toRemove] = prod.impact_on_change_category(newCat);
+    const inputs    = [...toAdd.values()].map(a => ({ attr: a, label: a.name, dataType: a.data_type, options: a.enum_values ?? [], hint: a.key }));
+    const deletions = [...toRemove.values()].map(a => ({ label: `Implementación de "${a.name}" eliminada`, attrKey: a.key }));
+
+    const flow = inputs.length > 0 && deletions.length > 0 ? "mixed"
+               : inputs.length > 0                         ? "additive"
+               : deletions.length > 0                      ? "destructive"
+               : "none";
+
+    return { ok: true, blocked: false, flow, inputs, deletions };
+  }
+}
