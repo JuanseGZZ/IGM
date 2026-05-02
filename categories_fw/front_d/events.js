@@ -188,28 +188,42 @@ function _openNewVarModal(onReady) {
 
 function applyAdditiveFilled(filled) {
   filled.forEach(f => {
-    if (!f.productId) return;
-    const prodChart = Handler.findNode(handler.root, f.productId);
-    if (!prodChart?.model) return;
-    if (!prodChart.model.attributes_implementations) prodChart.model.attributes_implementations = [];
-    const already = prodChart.model.attributes_implementations.some(i => (i.attribute?.key ?? i.key) === f.attr.key);
-    if (!already) prodChart.model.attributes_implementations.push({ attribute: f.attr, value: f.value, id: null });
+    if (f.variantId != null) {
+      const varChart = Handler.findNode(handler.root, f.variantId);
+      if (!varChart?.model) return;
+      if (!varChart.model.attribute_implementations) varChart.model.attribute_implementations = [];
+      const already = varChart.model.attribute_implementations.some(i => (i.attribute?.key ?? i.key) === f.attr.key);
+      if (!already) varChart.model.attribute_implementations.push({ attribute: f.attr, value: f.value, id: null });
+    } else if (f.productId != null) {
+      const prodChart = Handler.findNode(handler.root, f.productId);
+      if (!prodChart?.model) return;
+      if (!prodChart.model.attributes_implementations) prodChart.model.attributes_implementations = [];
+      const already = prodChart.model.attributes_implementations.some(i => (i.attribute?.key ?? i.key) === f.attr.key);
+      if (!already) prodChart.model.attributes_implementations.push({ attribute: f.attr, value: f.value, id: null });
+    }
   });
 }
 
 function applyDestructiveDeletions(deletions) {
   deletions.forEach(d => {
-    if (!d.productId || !d.attrKey) return;
-    const prodChart = Handler.findNode(handler.root, d.productId);
-    if (!prodChart?.model?.attributes_implementations) return;
-    prodChart.model.attributes_implementations = prodChart.model.attributes_implementations
-      .filter(i => (i.attribute?.key ?? i.key) !== d.attrKey);
+    if (!d.attrKey) return;
+    if (d.variantId != null) {
+      const varChart = Handler.findNode(handler.root, d.variantId);
+      if (!varChart?.model?.attribute_implementations) return;
+      varChart.model.attribute_implementations = varChart.model.attribute_implementations
+        .filter(i => (i.attribute?.key ?? i.key) !== d.attrKey);
+    } else if (d.productId != null) {
+      const prodChart = Handler.findNode(handler.root, d.productId);
+      if (!prodChart?.model?.attributes_implementations) return;
+      prodChart.model.attributes_implementations = prodChart.model.attributes_implementations
+        .filter(i => (i.attribute?.key ?? i.key) !== d.attrKey);
+    }
   });
 }
 
 function moveMsgFor(flow) {
-  if (flow === "additive")    return "Mover esta carta incorpora atributos que los productos deben implementar:";
-  if (flow === "destructive") return "Mover esta carta elimina atributos que los productos tenían implementados:";
+  if (flow === "additive")    return "Mover esta carta incorpora atributos que deben implementarse:";
+  if (flow === "destructive") return "Mover esta carta elimina implementaciones de atributos existentes:";
   return "Este movimiento impacta en las implementaciones de atributos:";
 }
 
@@ -387,12 +401,19 @@ function openAttrPicker() {
 
     const applyChanges = (filled = []) => {
       filled.forEach(f => {
-        if (!f.productId) return;
-        const prodChart = Handler.findNode(handler.root, f.productId);
-        if (!prodChart?.model) return;
-        if (!prodChart.model.attributes_implementations) prodChart.model.attributes_implementations = [];
-        const already = prodChart.model.attributes_implementations.some(i => (i.attribute?.key ?? i.key) === f.attr.key);
-        if (!already) prodChart.model.attributes_implementations.push({ attribute: f.attr, value: f.value, id: null });
+        if (f.variantId != null) {
+          const varChart = Handler.findNode(handler.root, f.variantId);
+          if (!varChart?.model) return;
+          if (!varChart.model.attribute_implementations) varChart.model.attribute_implementations = [];
+          const already = varChart.model.attribute_implementations.some(i => (i.attribute?.key ?? i.key) === f.attr.key);
+          if (!already) varChart.model.attribute_implementations.push({ attribute: f.attr, value: f.value, id: null });
+        } else if (f.productId != null) {
+          const prodChart = Handler.findNode(handler.root, f.productId);
+          if (!prodChart?.model) return;
+          if (!prodChart.model.attributes_implementations) prodChart.model.attributes_implementations = [];
+          const already = prodChart.model.attributes_implementations.some(i => (i.attribute?.key ?? i.key) === f.attr.key);
+          if (!already) prodChart.model.attributes_implementations.push({ attribute: f.attr, value: f.value, id: null });
+        }
       });
       affectedRemovals.forEach(({ attr, affected }) => {
         affected.forEach(({ id: prodChartId }) => {
@@ -409,7 +430,7 @@ function openAttrPicker() {
     if (allInputs.length > 0 || allDeletions.length > 0) {
       showGestorDialog({
         title:       "Impacto de los cambios",
-        description: "Los atributos modificados afectan a los siguientes productos:",
+        description: "Los atributos modificados requieren actualizar los siguientes elementos:",
         inputs:      allInputs,
         deletions:   allDeletions,
         onConfirm:   applyChanges,

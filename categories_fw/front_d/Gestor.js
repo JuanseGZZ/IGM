@@ -28,9 +28,12 @@ export class Gestor {
     const catToId  = new Map(); // Category instance → chartId
     const prodToId = new Map(); // Product  instance → chartId
 
-    const toAttr = (a) => a instanceof Attribute
-      ? a
-      : new Attribute({ key: a.key, name: a.name, data_type: a.data_type, is_static: a.is_static ?? false, id: a.id ?? null });
+    const toAttr = (a) => {
+      if (a instanceof Attribute) return a;
+      const attr = new Attribute({ key: a.key, name: a.name, data_type: a.data_type, is_static: a.is_static ?? false, id: a.id ?? null });
+      attr.enum_values = [...(a.enum_values ?? [])];
+      return attr;
+    };
 
     const walk = (chart, parentCat, parentProd) => {
       if (chart.chartType === "root") {
@@ -178,6 +181,31 @@ export class Gestor {
       is_static: attrPlain.is_static ?? false,
       id:        attrPlain.id ?? null,
     });
+    attr.enum_values = [...(attrPlain.enum_values ?? [])];
+
+    // Atributos dinámicos: no impactan productos pero sí variantes ya existentes.
+    // Cada variante en el subárbol necesita implementar el nuevo attr.
+    if (!attr.is_static) {
+      const catChart = Handler.findNode(this.handler.root, categoryChartId);
+      const variantInputs = [];
+      if (catChart) {
+        this._walkProductCharts(catChart, (prodChart) => {
+          for (const varChart of prodChart.listaHijos) {
+            if (varChart.chartType !== CHART_TYPE.VARIANT) continue;
+            variantInputs.push({
+              attr,
+              label:     `Variante #${varChart.id} (${prodChart.label}): ${attr.name}`,
+              dataType:  attr.data_type,
+              options:   attr.enum_values ?? [],
+              hint:      attr.key,
+              variantId: varChart.id,
+            });
+          }
+        });
+      }
+      if (variantInputs.length === 0) return { ok: true, blocked: false, flow: "none", affected: [], inputs: [] };
+      return { ok: true, blocked: false, flow: "additive", affected: [], inputs: variantInputs };
+    }
 
     const impacts = cat.impact_on_add_attribute(attr);
     if (impacts.length === 0) return { ok: true, blocked: false, flow: "none", affected: [], inputs: [] };
@@ -319,9 +347,59 @@ export class Gestor {
     const newCat = cats.get(newParentCatChartId);
     if (!prod || !newCat) return { ok: true, blocked: false, flow: "none" };
 
+    // ── Atributos estáticos (implementaciones a nivel de producto) ────────────
     const [toAdd, toRemove] = prod.impact_on_change_category(newCat);
-    const inputs    = [...toAdd.values()].map(a => ({ attr: a, label: a.name, dataType: a.data_type, options: a.enum_values ?? [], hint: a.key }));
-    const deletions = [...toRemove.values()].map(a => ({ label: `Implementación de "${a.name}" eliminada`, attrKey: a.key }));
+    const inputs    = [...toAdd.values()].map(a => ({
+      attr: a, label: a.name, dataType: a.data_type, options: a.enum_values ?? [], hint: a.key,
+    }));
+    const deletions = [...toRemove.values()].map(a => ({
+      label: `Implementación de "${a.name}" eliminada del producto`, attrKey: a.key,
+    }));
+
+    // ── Atributos dinámicos (implementaciones a nivel de variante) ────────────
+    // Comparamos por key porque las instancias de Attribute vienen de mirrors distintos.
+    const currentDynKeys = new Set(
+      [...prod.category.get_full_attr_set().values()].filter(a => !a.is_static).map(a => a.key)
+    );
+    const newDynAttrs = [...newCat.get_full_attr_set().values()].filter(a => !a.is_static);
+    const newDynKeys  = new Set(newDynAttrs.map(a => a.key));
+
+    const dynKeysLost   = [...currentDynKeys].filter(k => !newDynKeys.has(k));
+    const dynAttrsGained = newDynAttrs.filter(a => !currentDynKeys.has(a.key));
+
+    const prodChart = Handler.findNode(this.handler.root, fromChartId);
+    if (prodChart) {
+      const variantCharts = prodChart.listaHijos.filter(c => c.chartType === CHART_TYPE.VARIANT);
+
+      // Destructivo: implementaciones de variante que quedan huérfanas en la nueva categoría
+      for (const varChart of variantCharts) {
+        const impls = varChart.model?.attribute_implementations ?? [];
+        for (const key of dynKeysLost) {
+          if (impls.some(i => (i.attribute?.key ?? i.key) === key)) {
+            const name = impls.find(i => (i.attribute?.key ?? i.key) === key)?.attribute?.name ?? key;
+            deletions.push({
+              label:     `Implementación de "${name}" en Variante #${varChart.id}`,
+              variantId: varChart.id,
+              attrKey:   key,
+            });
+          }
+        }
+      }
+
+      // Aditivo: variantes existentes que quedan incompletas por attrs nuevos requeridos
+      for (const varChart of variantCharts) {
+        for (const attr of dynAttrsGained) {
+          inputs.push({
+            attr,
+            label:     `Variante #${varChart.id} — ${attr.name}`,
+            dataType:  attr.data_type,
+            options:   attr.enum_values ?? [],
+            hint:      attr.key,
+            variantId: varChart.id,
+          });
+        }
+      }
+    }
 
     const flow = inputs.length > 0 && deletions.length > 0 ? "mixed"
                : inputs.length > 0                         ? "additive"

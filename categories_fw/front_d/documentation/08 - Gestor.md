@@ -47,6 +47,17 @@ chartType === "variant"   → new Variant(); si no hay parentProd, skip
 
 El espejo refleja el estado actual aunque viole reglas (ej.: una categoría con subcats y productos a la vez). Los métodos de impacto operan sobre lo que existe, no sobre lo que debería existir.
 
+### `toAttr` — reconstrucción de Attribute desde objeto plano
+
+El constructor de `Attribute` inicializa siempre `enum_values = []` y no acepta ese campo como parámetro. `toAttr` lo restaura manualmente después de construir la instancia:
+
+```js
+const attr = new Attribute({ key, name, data_type, is_static, id });
+attr.enum_values = [...(a.enum_values ?? [])];
+```
+
+Esto es necesario para que `analyzeAddProduct`, `analyzeAddVariant` y `analyzeAddAttribute` puedan incluir correctamente las opciones del enum en los `inputs` del dialog.
+
 ---
 
 ## Formato de respuesta
@@ -136,11 +147,15 @@ Los atributos dinámicos vienen de `product.category.get_full_attr_set()` filtra
 
 Analiza agregar un atributo a una categoría (llamado desde el modal de edición, antes de confirmar).
 
-Usa `category.impact_on_add_attribute(attr)` que desciende el subárbol buscando qué productos serán alcanzados por el atributo nuevo (respetando que los subárboles que ya tienen ese atributo propio no se ven afectados).
+**La lógica difiere según el tipo del atributo:**
+
+- `is_static = true` (atributo de **producto**): usa `category.impact_on_add_attribute(attr)` para encontrar qué productos del subárbol deben implementar el valor ahora. Retorna `flow: "additive"` con un input por producto afectado.
+- `is_static = false` (atributo de **variante**): busca variantes ya existentes en el subárbol. Si hay, retorna `flow: "additive"` con un input por variante (campo `variantId`). Si no hay variantes todavía, retorna `flow: "none"` — cuando el usuario cree una variante más adelante, `analyzeAddVariant` le pedirá los valores.
 
 ```
-flow: "none"     → el atributo no llega a ningún producto
-flow: "additive" → N productos afectados → inputs: uno por producto
+flow: "none"     → atributo estático sin productos, o dinámico sin variantes en el subárbol
+flow: "additive" → atributo estático: inputs con productId, uno por producto afectado
+                   atributo dinámico: inputs con variantId, uno por variante existente
 ```
 
 Cada input incluye `productId` para que el confirm handler pueda guardar la implementación directamente en el modelo del chart producto.
@@ -189,18 +204,44 @@ mode: "sibling" → fromChart pasará a ser hijo del padre de toChart
 | Tipo del nodo movido | Método de análisis |
 |---|---|
 | `category` | `_analyzeMoveCategory` → `impact_on_add/remove/change_father` |
-| `product` | `_analyzeMoveProduct` → `impact_on_change_category` |
+| `product` | `_analyzeMoveProduct` → ver abajo |
 | `variant` | Sin impacto (`flow: "none"`) |
+
+**`_analyzeMoveProduct` — doble análisis**:
+
+Cuando se mueve un producto a una nueva categoría se analizan dos capas por separado:
+
+1. **Atributos estáticos** (implementaciones del producto) — vía `impact_on_change_category`:
+   - Attrs estáticos que la nueva categoría requiere y el producto no tiene → `inputs` (aditivo)
+   - Attrs estáticos que el producto tiene y la nueva categoría no requiere → `deletions` (destructivo)
+
+2. **Atributos dinámicos** (implementaciones de las variantes hijas) — comparación por `key` entre los attrs dinámicos de la categoría actual y la nueva:
+   - Keys dinámicos que las variantes implementan pero la nueva categoría no requiere → `deletions` con `variantId` (destructivo)
+   - Attrs dinámicos que la nueva categoría requiere y las variantes actuales no tienen → `inputs` con `variantId` (aditivo)
+
+La comparación dinámica se hace por `key` (no por identidad de `AttributeSet`) porque las instancias de `Attribute` vienen de dos mirrors distintos y sin `id` asignado no son comparables por referencia.
 
 **Flows posibles**:
 
 ```
 "none"        → sin impacto en atributos
-"additive"    → el movimiento incorpora attrs nuevos que los productos deben implementar
-"destructive" → el movimiento hace perder attrs que los productos ya implementaban
+"additive"    → attrs nuevos que producto/variantes deben implementar
+"destructive" → implementaciones de producto/variante que se pierden
 "mixed"       → ambos (ej: categoría cambia de padre, pierde unos attrs y gana otros)
 "blocked"     → la operación no es válida estructuralmente
 ```
+
+**Campos de `inputs` y `deletions` extendidos**:
+
+```js
+// Input de variante (nuevo campo variantId en vez de productId)
+{ attr, label, dataType, options, hint, variantId: number }
+
+// Deletion de variante
+{ label, attrKey, variantId: number }
+```
+
+`applyAdditiveFilled` y `applyDestructiveDeletions` en `events.js` distinguen entre `productId` y `variantId` para aplicar el cambio en el nodo correcto.
 
 ---
 
@@ -225,9 +266,9 @@ showGestorDialog({
 
 **Dónde ocurre**:
 - Agregar producto a categoría con atributos estáticos
-- Agregar variante a producto con atributos dinámicos
-- Agregar atributo estático/dinámico a una categoría con productos en el subárbol
-- Mover categoría/producto a nueva posición que incorpora atributos
+- Agregar variante a producto con atributos dinámicos (de variante)
+- Agregar atributo **estático** a una categoría con productos en el subárbol
+- Mover categoría/producto a nueva posición que incorpora atributos estáticos
 
 ---
 
