@@ -22,7 +22,7 @@ export function renderAttrList(container, attrs, onRemove) {
       `<span class="igm-attr-item-type">${attr.data_type}</span>` +
       (attr.is_static
         ? `<span class="igm-attr-item-type igm-attr-item-static">producto</span>`
-        : `<span class="igm-attr-item-type igm-attr-item-dyn">categoría</span>`);
+        : `<span class="igm-attr-item-type igm-attr-item-dyn">variante</span>`);
 
     const removeBtn = document.createElement("button");
     removeBtn.className   = "igm-attr-remove";

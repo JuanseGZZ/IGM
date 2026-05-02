@@ -96,7 +96,7 @@ Cada ítem:
     <span class="igm-attr-item-meta">{name}</span>
     <span class="igm-attr-item-type">{data_type}</span>
     <span class="igm-attr-item-type igm-attr-item-static|igm-attr-item-dyn">
-      producto | categoría
+      producto | variante
     </span>
   </div>
   <button class="igm-attr-remove">×</button>
@@ -136,7 +136,7 @@ renderAttrRows(
 );
 ```
 
-Cada fila es un `.igm-attr-row` con key, nombre, tipo, badge producto/categoría, hint de opciones enum, y botón ×.
+Cada fila es un `.igm-attr-row` con key, nombre, tipo, badge producto/variante, hint de opciones enum, y botón ×.
 
 Si `attrs` está vacío → `p.igm-body-empty` con instrucción.
 

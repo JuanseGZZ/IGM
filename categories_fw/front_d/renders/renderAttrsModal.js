@@ -19,7 +19,7 @@ export function renderAttrRows(listEl, attrs, onRemove) {
       `<span class="igm-attr-item-key">${attr.key}</span>` +
       `<span class="igm-attr-item-meta">${attr.name}</span>` +
       `<span class="igm-attr-item-type">${attr.data_type}</span>` +
-      `<span class="igm-attr-item-type ${attr.is_static ? "igm-attr-item-static" : "igm-attr-item-dyn"}">${attr.is_static ? "producto" : "categoría"}</span>` +
+      `<span class="igm-attr-item-type ${attr.is_static ? "igm-attr-item-static" : "igm-attr-item-dyn"}">${attr.is_static ? "producto" : "variante"}</span>` +
       (attr.data_type === "enum" && attr.enum_values.length > 0
         ? `<span class="igm-attr-enum-hint">[${attr.enum_values.join(", ")}]</span>`
         : "");

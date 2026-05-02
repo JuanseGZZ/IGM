@@ -511,8 +511,8 @@ board.addEventListener("igm-add-chart", (ev) => {
         if (analysis.blocked) { alert(analysis.reason); return; }
         if (analysis.flow === "additive") {
           showGestorDialog({
-            title:        "Implementar atributos dinámicos",
-            description:  "Esta variante debe implementar todos los atributos dinámicos de la categoría:",
+            title:        "Implementar atributos de variante",
+            description:  "Esta variante debe implementar los atributos dinámicos requeridos por su categoría:",
             inputs:       analysis.inputs,
             confirmLabel: "Crear variante",
             onConfirm: (filled) => {

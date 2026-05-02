@@ -239,7 +239,7 @@ function createAttrsModal() {
         <div>
           <label for="igm-na-static">Aplica a</label>
           <select id="igm-na-static">
-            <option value="false">Categoría (dinámico)</option>
+            <option value="false">Variante (dinámico)</option>
             <option value="true">Producto (estático)</option>
           </select>
         </div>
@@ -287,7 +287,7 @@ function createAttrPickerModal() {
           <div id="igm-picker-have-static"  class="igm-picker-list"></div>
         </div>
         <div class="igm-picker-group">
-          <h5 class="igm-picker-group-title igm-picker-title-category">Categoría (los tuyos)</h5>
+          <h5 class="igm-picker-group-title igm-picker-title-category">Variante (los tuyos)</h5>
           <div id="igm-picker-have-dynamic" class="igm-picker-list"></div>
         </div>
       </div>
@@ -298,7 +298,7 @@ function createAttrPickerModal() {
           <div id="igm-picker-all-static"   class="igm-picker-list"></div>
         </div>
         <div class="igm-picker-group">
-          <h5 class="igm-picker-group-title igm-picker-title-category">Categoría (todos)</h5>
+          <h5 class="igm-picker-group-title igm-picker-title-category">Variante (todos)</h5>
           <div id="igm-picker-all-dynamic"  class="igm-picker-list"></div>
         </div>
       </div>
