@@ -161,6 +161,20 @@ class Category {
     }
   }
 
+  // Predicados de consulta (sin throw, sin mutación) — para que el Gestor
+  // pueda preguntar antes de actuar sin necesidad de capturar excepciones.
+  can_add_subcategory() {
+    if (this.products.length > 0)
+      return `"${this.name}" ya tiene productos, no puede tener subcategorías.`;
+    return null;
+  }
+
+  can_add_product() {
+    if (this.subcategories.length > 0)
+      return `"${this.name}" ya tiene subcategorías, no puede tener productos.`;
+    return null;
+  }
+
   add_subcategory(cat) {
     this._check_exclusive_children("subcategory");
     this._check_no_cycle(cat);

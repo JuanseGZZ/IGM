@@ -93,13 +93,15 @@ Todos los métodos `analyze*` y `checkAdd` retornan:
 
 Verifica si el tipo de chart puede agregarse bajo ese padre **antes** de crear el modelo.
 
-| Regla | Blocked si... |
-|---|---|
-| `category` | El padre no es `root` ni `category` |
-| `category` | El padre ya tiene hijos `product` |
-| `product` | El padre no es `category` |
-| `product` | El padre ya tiene hijos `category` |
-| `variant` | El padre no es `product` |
+| Regla | Blocked si... | Fuente |
+|---|---|---|
+| `category` | El padre no es `root` ni `category` | Gestor (topología visual) |
+| `category` | El padre ya tiene hijos `product` | Dominio: `cat.can_add_subcategory()` |
+| `product` | El padre no es `category` | Gestor (topología visual) |
+| `product` | El padre ya tiene hijos `category` | Dominio: `cat.can_add_product()` |
+| `variant` | El padre no es `product` | Gestor (topología visual) |
+
+Las reglas topológicas las evalúa el Gestor directamente (son reglas del árbol visual, no del modelo de negocio). Las reglas de exclusividad se delegan al dominio mediante los predicados `can_add_subcategory()` / `can_add_product()` que retornan `string|null` sin lanzar excepciones.
 
 ---
 
@@ -292,10 +294,11 @@ drag & drop
   → showGestorDialog (si flow !== "none")
   → layoutActors.moveToChild/Sibling(...)
 
-attrAddBtn (modal categoría)
-  → gestor.analyzeAddAttribute(editingChart.id, newAttr)
+picker Confirmar (modal categoría)
+  → diff added/removed entre pickerSelection y pendingAttrs
+  → gestor.analyzeAddAttribute(editingChart.id, attr) por cada attr agregado
   → showGestorDialog (si flow === "additive")
-  → pendingAttrs.push(newAttr)
+  → pendingAttrs.push(attr)
 
 attr × button (modal categoría)
   → gestor.analyzeRemoveAttribute(editingChart.id, attr)

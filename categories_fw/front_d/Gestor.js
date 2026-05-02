@@ -85,23 +85,30 @@ export class Gestor {
     const parent = Handler.findNode(this.handler.root, parentChartId);
     if (!parent) return { ok: false, blocked: true, reason: "Nodo padre no encontrado." };
 
+    // Topología del árbol visual (reglas de estructura, no de negocio)
     if (chartType === CHART_TYPE.CATEGORY) {
       if (parent.chartType !== "root" && parent.chartType !== CHART_TYPE.CATEGORY)
         return { ok: false, blocked: true, reason: "Una categoría solo puede ser hija de otra categoría." };
-      if (parent.listaHijos.some(c => c.chartType === CHART_TYPE.PRODUCT))
-        return { ok: false, blocked: true, reason: `"${parent.label}" ya tiene productos. No puede tener subcategorías y productos a la vez.` };
     }
-
     if (chartType === CHART_TYPE.PRODUCT) {
       if (parent.chartType !== CHART_TYPE.CATEGORY)
         return { ok: false, blocked: true, reason: "Un producto solo puede ser hijo de una categoría." };
-      if (parent.listaHijos.some(c => c.chartType === CHART_TYPE.CATEGORY))
-        return { ok: false, blocked: true, reason: `"${parent.label}" ya tiene subcategorías. No puede tener subcategorías y productos a la vez.` };
     }
-
     if (chartType === CHART_TYPE.VARIANT) {
       if (parent.chartType !== CHART_TYPE.PRODUCT)
         return { ok: false, blocked: true, reason: "Una variante solo puede ser hija de un producto." };
+    }
+
+    // Hijos exclusivos — delegado al dominio
+    if (parent.chartType === CHART_TYPE.CATEGORY) {
+      const { cats } = this.buildMirror();
+      const cat = cats.get(parent.id);
+      if (cat) {
+        const reason = chartType === CHART_TYPE.CATEGORY ? cat.can_add_subcategory()
+                     : chartType === CHART_TYPE.PRODUCT  ? cat.can_add_product()
+                     : null;
+        if (reason) return { ok: false, blocked: true, reason };
+      }
     }
 
     return { ok: true, blocked: false };

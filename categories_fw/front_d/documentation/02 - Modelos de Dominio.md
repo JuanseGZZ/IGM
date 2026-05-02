@@ -89,6 +89,15 @@ Nodo del árbol de categorías. Puede tener subcategorías **o** productos, nunc
 new Category({ name, id, attributes, subcategories, father_categorie, products })
 ```
 
+### Predicados de consulta (sin throw, sin mutación)
+
+Usados por el Gestor para preguntar antes de actuar.
+
+| Método | Retorna | Descripción |
+|---|---|---|
+| `can_add_subcategory()` | `string\|null` | Error legible si ya tiene productos; `null` si se puede |
+| `can_add_product()` | `string\|null` | Error legible si ya tiene subcategorías; `null` si se puede |
+
 ### Mutaciones seguras
 
 | Método | Descripción |

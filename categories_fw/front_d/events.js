@@ -77,26 +77,111 @@ const layoutActors = {
 
 const currentLayout = "organigram";
 
-// ── Crear modelo por tipo ──────────────────────────────────────────────────────
+// ── Crear modelo por tipo (abre el modal correspondiente) ──────────────────────
 
-function createModel(chartType) {
-  if (chartType === CHART_TYPE.CATEGORY) {
-    const name = (prompt("Nombre de la categoría:", "") ?? "").trim();
-    if (!name) return null;
-    return { name, id: null, attributes: [] };
-  }
-  if (chartType === CHART_TYPE.PRODUCT) {
-    const title = (prompt("Título del producto:", "") ?? "").trim();
-    if (!title) return null;
-    const code  = (prompt("Código SKU:", "") ?? "").trim() || `SKU-${Date.now()}`;
-    const price = parseFloat(prompt("Precio:", "0") || "0");
-    const brand = (prompt("Marca:", "") ?? "").trim();
-    return { title, code, price, brand, description: "", id: null, attributes_implementations: [] };
-  }
-  if (chartType === CHART_TYPE.VARIANT) {
-    return { id: null, attribute_implementations: [] };
-  }
-  return null;
+function createModel(chartType, onReady) {
+  if (chartType === CHART_TYPE.CATEGORY) _openNewCatModal(onReady);
+  else if (chartType === CHART_TYPE.PRODUCT) _openNewProdModal(onReady);
+  else if (chartType === CHART_TYPE.VARIANT) _openNewVarModal(onReady);
+  else onReady(null);
+}
+
+function _openNewCatModal(onReady) {
+  const overlay   = document.getElementById("igm-new-cat-overlay");
+  const nameInput = document.getElementById("igm-new-cat-name");
+  nameInput.value = "";
+
+  const newOk     = document.getElementById("igm-new-cat-ok").cloneNode(true);
+  const newCancel = document.getElementById("igm-new-cat-cancel").cloneNode(true);
+  document.getElementById("igm-new-cat-ok").replaceWith(newOk);
+  document.getElementById("igm-new-cat-cancel").replaceWith(newCancel);
+
+  const ac  = new AbortController();
+  const sig = { signal: ac.signal };
+
+  const close = (model) => {
+    ac.abort();
+    overlay.classList.add("igm-hidden");
+    onReady(model);
+  };
+
+  newOk.addEventListener("click", () => {
+    const name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+    close({ name, id: null, attributes: [] });
+  }, sig);
+  newCancel.addEventListener("click", () => close(null), sig);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); }, sig);
+  nameInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); newOk.click(); }
+    if (e.key === "Escape") close(null);
+  }, sig);
+
+  overlay.classList.remove("igm-hidden");
+  nameInput.focus();
+}
+
+function _openNewProdModal(onReady) {
+  const overlay    = document.getElementById("igm-new-prod-overlay");
+  const titleInput = document.getElementById("igm-new-prod-title");
+  const codeInput  = document.getElementById("igm-new-prod-code");
+  const priceInput = document.getElementById("igm-new-prod-price");
+  const brandInput = document.getElementById("igm-new-prod-brand");
+  titleInput.value = codeInput.value = priceInput.value = brandInput.value = "";
+
+  const newOk     = document.getElementById("igm-new-prod-ok").cloneNode(true);
+  const newCancel = document.getElementById("igm-new-prod-cancel").cloneNode(true);
+  document.getElementById("igm-new-prod-ok").replaceWith(newOk);
+  document.getElementById("igm-new-prod-cancel").replaceWith(newCancel);
+
+  const ac  = new AbortController();
+  const sig = { signal: ac.signal };
+
+  const close = (model) => {
+    ac.abort();
+    overlay.classList.add("igm-hidden");
+    onReady(model);
+  };
+
+  newOk.addEventListener("click", () => {
+    const title = titleInput.value.trim();
+    if (!title) { titleInput.focus(); return; }
+    const code  = codeInput.value.trim() || `SKU-${Date.now()}`;
+    const price = parseFloat(priceInput.value) || 0;
+    const brand = brandInput.value.trim();
+    close({ title, code, price, brand, description: "", id: null, attributes_implementations: [] });
+  }, sig);
+  newCancel.addEventListener("click", () => close(null), sig);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); }, sig);
+  titleInput.addEventListener("keydown", (e) => { if (e.key === "Escape") close(null); }, sig);
+
+  overlay.classList.remove("igm-hidden");
+  titleInput.focus();
+}
+
+function _openNewVarModal(onReady) {
+  const overlay = document.getElementById("igm-new-var-overlay");
+
+  const newOk     = document.getElementById("igm-new-var-ok").cloneNode(true);
+  const newCancel = document.getElementById("igm-new-var-cancel").cloneNode(true);
+  document.getElementById("igm-new-var-ok").replaceWith(newOk);
+  document.getElementById("igm-new-var-cancel").replaceWith(newCancel);
+
+  const ac  = new AbortController();
+  const sig = { signal: ac.signal };
+
+  const close = (model) => {
+    ac.abort();
+    overlay.classList.add("igm-hidden");
+    onReady(model);
+  };
+
+  newOk.addEventListener("click", () => close({ id: null, attribute_implementations: [] }), sig);
+  newCancel.addEventListener("click", () => close(null), sig);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(null); }, sig);
+
+  overlay.classList.remove("igm-hidden");
+  newOk.focus();
 }
 
 // ── Helpers de impacto para movimientos ───────────────────────────────────────
@@ -355,68 +440,101 @@ board.addEventListener("igm-collapse", () => {
 
 // ── Agregar carta ─────────────────────────────────────────────────────────────
 
-const CHART_OPCIONES = [
-  { value: CHART_TYPE.CATEGORY, label: "Categoría" },
-  { value: CHART_TYPE.PRODUCT,  label: "Producto"  },
-  { value: CHART_TYPE.VARIANT,  label: "Variante"  },
-];
+const LABEL = {
+  [CHART_TYPE.CATEGORY]: "Categoría",
+  [CHART_TYPE.PRODUCT]:  "Producto",
+  [CHART_TYPE.VARIANT]:  "Variante",
+};
+
+/**
+ * Devuelve las opciones válidas para el menú "+" según el nodo y dirección.
+ *
+ * - down en product   → solo Variante
+ * - down en category  → Category y/o Product según hijos existentes
+ * - right en cualquiera → mismo tipo que el nodo
+ */
+function getMenuOptions(base, dir) {
+  const opt = (type) => ({ value: type, label: LABEL[type] });
+
+  if (dir === "right") return [opt(base.chartType)];
+
+  // dir === "down"
+  if (base.chartType === CHART_TYPE.PRODUCT) return [opt(CHART_TYPE.VARIANT)];
+
+  if (base.chartType === CHART_TYPE.CATEGORY) {
+    const firstChildType = base.listaHijos[0]?.chartType;
+    if (firstChildType === CHART_TYPE.PRODUCT)  return [opt(CHART_TYPE.PRODUCT)];
+    if (firstChildType === CHART_TYPE.CATEGORY) return [opt(CHART_TYPE.CATEGORY)];
+    return [opt(CHART_TYPE.CATEGORY), opt(CHART_TYPE.PRODUCT)];
+  }
+
+  return [];
+}
 
 board.addEventListener("igm-add-chart", (ev) => {
   const { fromId, dir } = ev.detail;
   const base = Handler.findNode(handler.root, fromId);
   if (!base) return;
 
-  const btn = board.querySelector(`.igm-add-${dir}[data-id="${fromId}"]`);
-  if (!btn) return;
+  const opts = getMenuOptions(base, dir);
+  if (opts.length === 0) return;
 
-  showMenu(btn, CHART_OPCIONES, (chartType) => {
+  const doAdd = (chartType) => {
     const parentId = dir === "down" ? base.id : base.idParent;
 
     const check = gestor.checkAdd(parentId, chartType);
     if (!check.ok) { alert(check.reason); return; }
 
-    const model = createModel(chartType);
-    if (!model) return;
+    createModel(chartType, (model) => {
+      if (!model) return;
 
-    if (chartType === CHART_TYPE.PRODUCT) {
-      const analysis = gestor.analyzeAddProduct(parentId);
-      if (analysis.flow === "additive") {
-        showGestorDialog({
-          title:        "Implementar atributos",
-          description:  "Este producto hereda atributos estáticos de su categoría. Completá los valores:",
-          inputs:       analysis.inputs,
-          confirmLabel: "Crear producto",
-          onConfirm: (filled) => {
-            model.attributes_implementations = filled.map(f => ({ attribute: f.attr, value: f.value, id: null }));
-            layoutActors[currentLayout].add(base, dir, chartType, model);
-          },
-          onCancel: () => {},
-        });
-        return;
+      if (chartType === CHART_TYPE.PRODUCT) {
+        const analysis = gestor.analyzeAddProduct(parentId);
+        if (analysis.flow === "additive") {
+          showGestorDialog({
+            title:        "Implementar atributos",
+            description:  "Este producto hereda atributos estáticos de su categoría. Completá los valores:",
+            inputs:       analysis.inputs,
+            confirmLabel: "Crear producto",
+            onConfirm: (filled) => {
+              model.attributes_implementations = filled.map(f => ({ attribute: f.attr, value: f.value, id: null }));
+              layoutActors[currentLayout].add(base, dir, chartType, model);
+            },
+            onCancel: () => {},
+          });
+          return;
+        }
       }
-    }
 
-    if (chartType === CHART_TYPE.VARIANT) {
-      const analysis = gestor.analyzeAddVariant(parentId);
-      if (analysis.blocked) { alert(analysis.reason); return; }
-      if (analysis.flow === "additive") {
-        showGestorDialog({
-          title:        "Implementar atributos dinámicos",
-          description:  "Esta variante debe implementar todos los atributos dinámicos de la categoría:",
-          inputs:       analysis.inputs,
-          confirmLabel: "Crear variante",
-          onConfirm: (filled) => {
-            model.attribute_implementations = filled.map(f => ({ attribute: f.attr, value: f.value, id: null }));
-            layoutActors[currentLayout].add(base, dir, chartType, model);
-          },
-          onCancel: () => {},
-        });
-        return;
+      if (chartType === CHART_TYPE.VARIANT) {
+        const analysis = gestor.analyzeAddVariant(parentId);
+        if (analysis.blocked) { alert(analysis.reason); return; }
+        if (analysis.flow === "additive") {
+          showGestorDialog({
+            title:        "Implementar atributos dinámicos",
+            description:  "Esta variante debe implementar todos los atributos dinámicos de la categoría:",
+            inputs:       analysis.inputs,
+            confirmLabel: "Crear variante",
+            onConfirm: (filled) => {
+              model.attribute_implementations = filled.map(f => ({ attribute: f.attr, value: f.value, id: null }));
+              layoutActors[currentLayout].add(base, dir, chartType, model);
+            },
+            onCancel: () => {},
+          });
+          return;
+        }
       }
-    }
 
-    layoutActors[currentLayout].add(base, dir, chartType, model);
-  });
+      layoutActors[currentLayout].add(base, dir, chartType, model);
+    });
+  };
+
+  // Si solo hay una opción válida, no mostramos el menú
+  if (opts.length === 1) { doAdd(opts[0].value); return; }
+
+  const btn = board.querySelector(`.igm-add-${dir}[data-id="${fromId}"]`);
+  if (!btn) return;
+  showMenu(btn, opts, doAdd);
 });
 
 // ── Eliminar carta ────────────────────────────────────────────────────────────
@@ -466,9 +584,10 @@ if (addRootBtn) {
     showMenu(addRootBtn, CHART_OPCIONES, (chartType) => {
       const check = gestor.checkAdd(0, chartType);
       if (!check.ok) { alert(check.reason); return; }
-      const model = createModel(chartType);
-      if (!model) return;
-      layoutActors[currentLayout].addRoot(chartType, model);
+      createModel(chartType, (model) => {
+        if (!model) return;
+        layoutActors[currentLayout].addRoot(chartType, model);
+      });
     });
   });
 }

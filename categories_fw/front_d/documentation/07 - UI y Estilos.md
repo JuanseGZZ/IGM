@@ -6,11 +6,18 @@ Archivos: `ui.js`, `styles.css`
 
 ## `ui.js`
 
-Tres responsabilidades: crear el modal de edición, crear el dialog del Gestor y exponer `showMenu` + `showGestorDialog`.
+Tres responsabilidades: crear los modales, crear el dialog del Gestor y exponer `showMenu` + `showGestorDialog`.
 
 ### `initUI()`
 
-Llamada al inicio de `events.js`. Crea ambos overlays (`createGestorModal` + `createModal`) y los inyecta en `document.body`. No toca estilos (el CSS está en `styles.css`).
+Llamada al inicio de `events.js`. Crea los cuatro overlays e inyecta todos en `document.body`. No toca estilos (el CSS está en `styles.css`).
+
+| Función de creación | Overlay generado | Propósito |
+|---|---|---|
+| `createGestorModal()` | `#igm-gestor-overlay` | Dialog de análisis de impacto |
+| `createModal()` | `#igm-modal-overlay` | Modal de edición de nodos (doble click) |
+| `createAttrsModal()` | `#igm-attrs-modal-overlay` | CRUD global de atributos (botón "Atributos") |
+| `createAttrPickerModal()` | `#igm-picker-overlay` | Picker de atributos del store para categorías |
 
 ### `createModal()` (privada)
 

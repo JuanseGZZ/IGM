@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "07 - UI y Estilos.md",
+                "file": "10 - Renders.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "07 - UI y Estilos"
+              "title": "10 - Renders"
             }
           }
         ]
@@ -185,6 +185,9 @@
   },
   "active": "1d9151b5a2374dcd",
   "lastOpenFiles": [
+    "09 - Stores.md",
+    "10 - Renders.md",
+    "07 - UI y Estilos.md",
     "08 - Gestor.md",
     "06 - Sistema de Eventos.md",
     "05 - Handler.md",

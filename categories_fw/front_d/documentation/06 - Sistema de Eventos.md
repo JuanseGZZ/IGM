@@ -104,12 +104,8 @@ El modal tiene tres **secciones** que se muestran/ocultan según el `chartType` 
 | Campo | ID | Descripción |
 |---|---|---|
 | Nombre | `#igm-cat-name` | Nombre de la categoría |
-| Lista de atributos | `#igm-attr-list` | Muestra los atributos con botón × para quitar |
-| Key | `#igm-attr-key` | Key del nuevo atributo |
-| Nombre | `#igm-attr-name-inp` | Nombre visible del nuevo atributo |
-| Tipo | `#igm-attr-dtype` | `text / number / boolean / enum` |
-| Estático | `#igm-attr-static` | Si es de producto o de variante |
-| Botón agregar | `#igm-attr-add-btn` | Analiza impacto con Gestor y agrega a `pendingAttrs` |
+| Lista de atributos | `#igm-attr-list` | Muestra los atributos pendientes con botón × para quitar |
+| Botón picker | `#igm-attr-picker-btn` | Abre el picker de atributos del store global |
 
 **Flujo del botón × (quitar atributo)**:
 ```
@@ -118,12 +114,19 @@ gestor.analyzeRemoveAttribute(editingChart.id, attr)
   → flow "none"         → quitar directamente de pendingAttrs
 ```
 
-**Flujo del botón "Agregar atributo"**:
+**Flujo del picker (agregar atributos)**:
+
+El picker (`openAttrPicker`) muestra todos los atributos del `attrStore` divididos en cuatro listas: estáticos/dinámicos seleccionados (izquierda) y estáticos/dinámicos disponibles (derecha). Al confirmar:
+
 ```
-gestor.analyzeAddAttribute(editingChart.id, newAttr)
-  → flow "additive"     → showGestorDialog con un input por cada producto afectado
-                          onConfirm aplica implementaciones en model de cada producto
-  → flow "none"         → agregar directamente a pendingAttrs
+diff entre pickerSelection y pendingAttrs
+  → por cada attr agregado:
+      gestor.analyzeAddAttribute(editingChart.id, attr)
+        → flow "additive"  → showGestorDialog con un input por cada producto afectado
+                             onConfirm aplica implementaciones en model de cada producto
+        → flow "none"      → agregar directamente a pendingAttrs
+  → por cada attr removido (ya estaba en pendingAttrs pero no en pickerSelection):
+      tratar igual que botón × (analyzeRemoveAttribute)
 ```
 
 Los cambios se acumulan en `pendingAttrs[]` y solo se aplican al `chart.model` al hacer click en **Guardar**.

@@ -27,6 +27,52 @@
     <div id="igm-board"></div>
   </div>
 
+  <!-- Modal: Nueva Categoría -->
+  <div id="igm-new-cat-overlay" class="igm-modal-overlay igm-hidden">
+    <div class="igm-modal">
+      <h3>Nueva Categoría</h3>
+      <label for="igm-new-cat-name">Nombre</label>
+      <input id="igm-new-cat-name" type="text" placeholder="Nombre de la categoría" />
+      <div class="igm-modal-actions">
+        <button id="igm-new-cat-cancel" class="igm-btn-secondary">Cancelar</button>
+        <button id="igm-new-cat-ok" class="igm-btn-primary">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nuevo Producto -->
+  <div id="igm-new-prod-overlay" class="igm-modal-overlay igm-hidden">
+    <div class="igm-modal">
+      <h3>Nuevo Producto</h3>
+      <label for="igm-new-prod-title">Título</label>
+      <input id="igm-new-prod-title" type="text" placeholder="Nombre del producto" />
+      <label for="igm-new-prod-code">Código SKU</label>
+      <input id="igm-new-prod-code" type="text" placeholder="ABC-001" />
+      <label for="igm-new-prod-price">Precio</label>
+      <input id="igm-new-prod-price" type="number" placeholder="0.00" min="0" step="0.01" />
+      <label for="igm-new-prod-brand">Marca</label>
+      <input id="igm-new-prod-brand" type="text" placeholder="Marca" />
+      <div class="igm-modal-actions">
+        <button id="igm-new-prod-cancel" class="igm-btn-secondary">Cancelar</button>
+        <button id="igm-new-prod-ok" class="igm-btn-primary">Crear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Nueva Variante -->
+  <div id="igm-new-var-overlay" class="igm-modal-overlay igm-hidden">
+    <div class="igm-modal">
+      <h3>Nueva Variante</h3>
+      <p style="font-size:13px;color:var(--text-muted);margin:0 0 16px;">
+        Los atributos dinámicos se configurarán en el siguiente paso.
+      </p>
+      <div class="igm-modal-actions">
+        <button id="igm-new-var-cancel" class="igm-btn-secondary">Cancelar</button>
+        <button id="igm-new-var-ok" class="igm-btn-primary">Crear</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="./events.js"></script>
 </body>
 </html>
