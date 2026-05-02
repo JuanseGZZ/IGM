@@ -2,7 +2,7 @@
 
 Archivo: `events.js`
 
-Entry point de toda la lógica interactiva. Conecta la UI con `Handler` siguiendo el patrón **layout actors** de Diagramer.
+Entry point de toda la lógica interactiva. Conecta la UI con `Gestor` y `Handler` siguiendo el patrón **layout actors** de Diagramer. El Gestor actúa como capa intermedia: todas las operaciones que modifican el árbol pasan por él antes de llegar al Handler.
 
 ---
 
@@ -44,15 +44,15 @@ Llama `handler.moveNodeAfter(fromId, afterId)` + refresh.
 
 ---
 
-## Crear modelo por tipo — `createModel(chartType, parentChart)`
+## Crear modelo por tipo — `createModel(chartType)`
 
 Prompt nativo por tipo:
 
-| Tipo | Prompts |
-|---|---|
-| `category` | nombre |
-| `product` | título, código SKU, precio, marca |
-| `variant` | ninguno — se edita luego desde el modal |
+| Tipo | Prompts | Nota |
+|---|---|---|
+| `category` | nombre | — |
+| `product` | título, código SKU, precio, marca | `attributes_implementations: []` incluido en el modelo para que el Gestor pueda rellenarlo |
+| `variant` | ninguno | Las implementaciones se rellenan vía dialog del Gestor si hay atributos dinámicos |
 
 Retorna `null` si el usuario cancela o deja el campo obligatorio vacío.
 
@@ -62,16 +62,14 @@ Retorna `null` si el usuario cancela o deja el campo obligatorio vacío.
 
 ### `igm-add-chart`
 
-Disparado por los botones `+` del render. Muestra el menú de tipos y llama al actor.
+Disparado por los botones `+` del render. Flujo completo:
 
-```js
-board.addEventListener("igm-add-chart", (ev) => {
-  const { fromId, dir } = ev.detail;
-  showMenu(btn, CHART_OPCIONES, (chartType) => {
-    const model = createModel(chartType, base);
-    layoutActors.organigram.add(base, dir, chartType, model);
-  });
-});
+```
+1. gestor.checkAdd(parentId, chartType)   → blocked? alert y cortar
+2. createModel(chartType)                 → prompts básicos
+3. gestor.analyzeAddProduct/Variant()     → atributos faltantes?
+4. showGestorDialog (si flow !== "none")  → usuario completa implementaciones
+5. layoutActors.organigram.add(...)       → Handler + render
 ```
 
 ### `igm-collapse`
@@ -80,11 +78,11 @@ Guardado en localStorage sin re-renderizar.
 
 ### Click en `.igm-btn-del`
 
-```js
-board.addEventListener("click", (ev) => {
-  const del = ev.target.closest(".igm-btn-del");
-  // → confirm → layoutActors.organigram.deleteNode(id)
-});
+```
+1. gestor.analyzeDelete(id)
+2a. Si solo 1 nodo → confirm() simple
+2b. Si hay cascade  → showGestorDialog con lista de deletions
+3. layoutActors.organigram.deleteNode(id)
 ```
 
 ### Doble click en `.igm-box`
@@ -93,7 +91,7 @@ Abre el modal de edición del nodo.
 
 ### `#igm-add-root`
 
-Muestra el menú de tipos y llama a `addRoot`.
+Muestra el menú de tipos, aplica `gestor.checkAdd(0, chartType)` y llama a `addRoot`.
 
 ---
 
@@ -111,7 +109,22 @@ El modal tiene tres **secciones** que se muestran/ocultan según el `chartType` 
 | Nombre | `#igm-attr-name-inp` | Nombre visible del nuevo atributo |
 | Tipo | `#igm-attr-dtype` | `text / number / boolean / enum` |
 | Estático | `#igm-attr-static` | Si es de producto o de variante |
-| Botón agregar | `#igm-attr-add-btn` | Agrega el atributo a `pendingAttrs` |
+| Botón agregar | `#igm-attr-add-btn` | Analiza impacto con Gestor y agrega a `pendingAttrs` |
+
+**Flujo del botón × (quitar atributo)**:
+```
+gestor.analyzeRemoveAttribute(editingChart.id, attr)
+  → flow "destructive"  → showGestorDialog con lista de productos afectados
+  → flow "none"         → quitar directamente de pendingAttrs
+```
+
+**Flujo del botón "Agregar atributo"**:
+```
+gestor.analyzeAddAttribute(editingChart.id, newAttr)
+  → flow "additive"     → showGestorDialog con un input por cada producto afectado
+                          onConfirm aplica implementaciones en model de cada producto
+  → flow "none"         → agregar directamente a pendingAttrs
+```
 
 Los cambios se acumulan en `pendingAttrs[]` y solo se aplican al `chart.model` al hacer click en **Guardar**.
 
@@ -146,7 +159,10 @@ dragstart en .igm-box  → guarda dragId
 dragover  en .igm-box  → calcula relX
   relX > 0.65          → drop-sibling highlight
   relX ≤ 0.65          → drop-child highlight
-drop                   → moveToSibling | moveToChild
+drop                   → gestor.analyzeMove(fromId, toId, mode)
+                           → blocked?        alert(reason)
+                           → flow !== "none" → showGestorDialog → moveToSibling | moveToChild
+                           → flow "none"     → moveToSibling | moveToChild directamente
 dragend                → limpia estado
 ```
 
@@ -206,11 +222,15 @@ boardContainer.scrollTop  = 2000 - 80;
 
 ## Persistencia
 
-El estado se guarda en `localStorage("igm-catalog")` automáticamente en cada `render()`. Al iniciar, se intenta restaurar:
+La gestión de localStorage está delegada a los stores en `stores/`:
 
 ```js
-const saved = localStorage.getItem("igm-catalog");
-if (saved) {
-  try { handler.fromJson(saved); } catch (e) { ... }
-}
+// auto-save en cada render
+handler.render = (opts) => { _render(opts); catalogStore.save(handler); };
+
+// al iniciar
+catalogStore.load(handler);  // árbol del catálogo
+attrStore.load();            // atributos globales
 ```
+
+Ver [Stores](09%20-%20Stores.md) para la API completa de cada store.

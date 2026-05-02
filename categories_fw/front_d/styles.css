@@ -500,3 +500,236 @@ body {
   cursor: pointer;
   accent-color: var(--accent);
 }
+
+/* ─── Modal global de atributos (CRUD) ───────────────────────────────────── */
+
+.igm-attrs-modal { width: 600px; }
+
+.igm-attrs-existing-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+  margin-bottom:  18px;
+  max-height:     260px;
+  overflow-y:     auto;
+}
+
+.igm-attr-row {
+  display:       flex;
+  align-items:   center;
+  gap:           10px;
+  padding:       8px 12px;
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border);
+  border-radius: 8px;
+  font-size:     13px;
+}
+.igm-attr-row-info { flex: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+.igm-attr-enum-hint {
+  display:    block;
+  font-size:  11px;
+  color:      var(--text-muted);
+  margin-top: 2px;
+  font-style: italic;
+}
+
+.igm-attr-item-dyn .igm-attr-item-type {
+  background: #2e1042;
+  color:      #e879f9;
+}
+
+/* ─── Sección nuevo atributo ─────────────────────────────────────────────── */
+
+.igm-na-section {
+  padding:       16px;
+  background:    rgba(255,255,255,.03);
+  border:        1px dashed #3f3f56;
+  border-radius: 10px;
+  margin-top:    4px;
+}
+.igm-na-heading {
+  margin:      0 0 12px;
+  font-size:   13px;
+  color:       var(--text-secondary);
+  font-weight: 700;
+}
+.igm-na-form-grid {
+  display:               grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap:                   10px;
+  align-items:           end;
+}
+.igm-na-form-grid label {
+  display:     block;
+  font-size:   11px;
+  color:       var(--text-secondary);
+  margin:      0 0 4px;
+  font-weight: 600;
+}
+
+/* ─── Sección enum ───────────────────────────────────────────────────────── */
+
+.igm-enum-section { margin-top: 12px; }
+.igm-enum-section label { font-size: 12px; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; display: block; }
+
+.igm-enum-list {
+  display:        flex;
+  flex-wrap:      wrap;
+  gap:            6px;
+  margin-bottom:  8px;
+  min-height:     28px;
+}
+.igm-enum-item {
+  display:       flex;
+  align-items:   center;
+  gap:           5px;
+  background:    #1e2d1e;
+  border:        1px solid #2d5a2d;
+  border-radius: 20px;
+  padding:       2px 10px 2px 12px;
+  font-size:     12px;
+  color:         #86efac;
+}
+.igm-enum-item button {
+  background:    transparent;
+  border:        none;
+  color:         #86efac;
+  cursor:        pointer;
+  font-size:     13px;
+  padding:       0 2px;
+  line-height:   1;
+  opacity:       .7;
+  transition:    opacity .1s;
+}
+.igm-enum-item button:hover { opacity: 1; }
+
+.igm-enum-add-row {
+  display: flex;
+  gap:     8px;
+}
+.igm-enum-add-row input {
+  flex:          1;
+  padding:       7px 10px;
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border);
+  border-radius: 6px;
+  font-size:     13px;
+  color:         var(--text-primary);
+  outline:       none;
+  transition:    border-color .12s;
+}
+.igm-enum-add-row input:focus { border-color: var(--accent); }
+
+/* ─── Botón abrir picker (dentro del modal de categoría) ─────────────────── */
+
+.igm-attr-open-picker-btn {
+  background:    transparent;
+  border:        1px dashed var(--border);
+  color:         var(--text-secondary);
+  padding:       6px 14px;
+  border-radius: 7px;
+  cursor:        pointer;
+  font-size:     13px;
+  width:         100%;
+  text-align:    left;
+  transition:    background .12s, color .12s, border-color .12s;
+}
+.igm-attr-open-picker-btn:hover {
+  background:    var(--bg-elevated);
+  color:         var(--text-primary);
+  border-color:  var(--accent);
+}
+
+/* ─── Modal picker de atributos ──────────────────────────────────────────── */
+
+.igm-attr-picker-modal { width: 680px; }
+
+.igm-picker-grid {
+  display:               grid;
+  grid-template-columns: 1fr 1fr;
+  gap:                   16px;
+  margin-bottom:         4px;
+}
+.igm-picker-col {
+  display:        flex;
+  flex-direction: column;
+  gap:            14px;
+}
+.igm-picker-group {
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+}
+.igm-picker-group-title {
+  font-size:      11px;
+  font-weight:    700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  margin:         0 0 4px;
+  padding-bottom: 6px;
+  border-bottom:  1px solid var(--border);
+}
+.igm-picker-title-product  { color: #60a5fa; }
+.igm-picker-title-category { color: #e879f9; }
+
+.igm-picker-list {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+  min-height:     40px;
+  max-height:     180px;
+  overflow-y:     auto;
+}
+
+.igm-picker-item {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       7px 10px;
+  background:    var(--bg-elevated);
+  border:        1px solid var(--border);
+  border-radius: 7px;
+  font-size:     12px;
+  transition:    border-color .12s, background .12s;
+}
+.igm-picker-item-info { flex: 1; }
+.igm-picker-item-added {
+  background:   rgba(59, 130, 246, .08);
+  border-color: rgba(59, 130, 246, .35);
+}
+
+.igm-picker-added-badge {
+  font-size:     10px;
+  font-weight:   700;
+  color:         var(--accent);
+  padding:       1px 7px;
+  border-radius: 10px;
+  background:    rgba(59, 130, 246, .12);
+  white-space:   nowrap;
+}
+
+.igm-picker-add-btn {
+  background:    transparent;
+  border:        1px solid var(--border);
+  color:         var(--text-secondary);
+  padding:       2px 10px;
+  border-radius: 5px;
+  cursor:        pointer;
+  font-size:     12px;
+  white-space:   nowrap;
+  transition:    background .12s, color .12s, border-color .12s;
+}
+.igm-picker-add-btn:hover {
+  background:   rgba(59,130,246,.12);
+  color:        var(--accent);
+  border-color: var(--accent);
+}
+.igm-picker-add-btn.is-added {
+  color:        #f87171;
+  border-color: rgba(248,113,113,.35);
+}
+.igm-picker-add-btn.is-added:hover {
+  background:   rgba(248,113,113,.1);
+  border-color: #f87171;
+}

@@ -6,15 +6,15 @@ Archivos: `ui.js`, `styles.css`
 
 ## `ui.js`
 
-Dos responsabilidades: crear el modal en el DOM y exponer `showMenu`.
+Tres responsabilidades: crear el modal de edición, crear el dialog del Gestor y exponer `showMenu` + `showGestorDialog`.
 
 ### `initUI()`
 
-Llamada al inicio de `events.js`. Crea el modal y lo inyecta en `document.body`. No toca estilos (el CSS está en `styles.css`).
+Llamada al inicio de `events.js`. Crea ambos overlays (`createGestorModal` + `createModal`) y los inyecta en `document.body`. No toca estilos (el CSS está en `styles.css`).
 
 ### `createModal()` (privada)
 
-Crea dinámicamente el overlay + modal con tres secciones internas:
+Crea dinámicamente el overlay + modal de edición con tres secciones internas:
 
 ```
 #igm-modal-overlay
@@ -29,6 +29,43 @@ Crea dinámicamente el overlay + modal con tres secciones internas:
 ```
 
 Las secciones se muestran agregando/quitando la clase `.igm-active`.
+
+### `createGestorModal()` (privada)
+
+Crea el overlay del dialog del Gestor:
+
+```
+#igm-gestor-overlay
+  #igm-gestor-modal
+    #igm-gestor-title          ← título de la operación
+    #igm-gestor-desc           ← descripción del impacto
+    #igm-gestor-deletions      ← lista roja de cosas que se eliminarán (oculta si vacía)
+    #igm-gestor-inputs         ← campos para implementar atributos (ocultos si vacíos)
+    .igm-modal-actions
+      #igm-gestor-cancel
+      #igm-gestor-confirm      ← label dinámico según la operación
+```
+
+### `showGestorDialog({ title, description, inputs, deletions, confirmLabel, onConfirm, onCancel })`
+
+Muestra el dialog del Gestor con el contenido apropiado según el flujo:
+
+```js
+showGestorDialog({
+  title:        "Implementar atributos",
+  description:  "Este producto hereda atributos estáticos:",
+  inputs:       [{ attr, label, dataType, options, hint, productId }],
+  deletions:    [{ label }],
+  confirmLabel: "Crear producto",
+  onConfirm:    (filledValues) => { /* filledValues = [{ ...inputSpec, value }] */ },
+  onCancel:     () => {},
+});
+```
+
+- Renderiza un `<input>` o `<select>` por cada ítem de `inputs` según `dataType`.
+- La sección de `deletions` usa fondo rojo tenue para destacar lo que se pierde.
+- Los botones se clonan en cada apertura para limpiar listeners viejos.
+- Un flag interno `handled` evita que `onConfirm`/`onCancel` se llamen más de una vez.
 
 ### `showMenu(anchorEl, opciones, onSelect)`
 

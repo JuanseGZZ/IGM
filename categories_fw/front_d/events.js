@@ -1,35 +1,35 @@
-import { Handler }                                       from "./Handler.js";
-import { CHART_TYPE, CHART_BG }                          from "./charts.js";
-import { Category, Product, Variant, Attribute }         from "./models.js";
-import { initUI, showMenu, showGestorDialog }            from "./ui.js";
-import { Gestor }                                        from "./Gestor.js";
+import { Handler }                              from "./Handler.js";
+import { CHART_TYPE, CHART_BG }                from "./charts.js";
+import { Category, Product, Variant, Attribute } from "./models.js";
+import { initUI, showMenu, showGestorDialog }   from "./ui.js";
+import { Gestor }                               from "./Gestor.js";
+import { attrStore }                            from "./stores/attrStore.js";
+import { catalogStore }                         from "./stores/catalogStore.js";
+import { renderAttrList, renderVariantImpls }   from "./renders/renderEditModal.js";
+import { renderAttrRows, renderEnumValues }     from "./renders/renderAttrsModal.js";
+import { renderPicker as renderPickerView }     from "./renders/renderAttrPicker.js";
 
 // ── Inicialización ─────────────────────────────────────────────────────────────
 
 initUI();
+attrStore.load();
 
 const handler = new Handler();
 const gestor  = new Gestor(handler);
 
-// Wrap render para auto-guardado
 const _render = handler.render.bind(handler);
 handler.render = (opts) => {
   _render(opts);
-  localStorage.setItem("igm-catalog", handler.toJson());
+  catalogStore.save(handler);
 };
 
-const saved = localStorage.getItem("igm-catalog");
-if (saved) {
-  try { handler.fromJson(saved); } catch (e) { console.warn("Error al cargar estado:", e); }
-}
-
+catalogStore.load(handler);
 handler.treeToMax();
 handler.render({ container: "#igm-board" });
 
 // ── Canvas virtual ─────────────────────────────────────────────────────────────
 
 const CANVAS_PADDING = 2000;
-
 const boardContainer = document.querySelector("#igm-board-container");
 if (boardContainer) {
   requestAnimationFrame(() => {
@@ -38,7 +38,7 @@ if (boardContainer) {
   });
 }
 
-// ── Layout actors (solo organigram) ───────────────────────────────────────────
+// ── Layout actors ──────────────────────────────────────────────────────────────
 
 const layoutActors = {
   organigram: {
@@ -99,7 +99,7 @@ function createModel(chartType) {
   return null;
 }
 
-// ── Helpers para aplicar impactos tras un movimiento ──────────────────────────
+// ── Helpers de impacto para movimientos ───────────────────────────────────────
 
 function applyAdditiveFilled(filled) {
   filled.forEach(f => {
@@ -122,19 +122,235 @@ function applyDestructiveDeletions(deletions) {
   });
 }
 
-// Descripción del dialog para movimientos con impacto
 function moveMsgFor(flow) {
-  if (flow === "additive")    return "Mover esta carta incorpora atributos heredados que los productos afectados deben implementar:";
-  if (flow === "destructive") return "Mover esta carta elimina atributos que los productos afectados tenían implementados:";
-  return "Este movimiento tiene impacto en las implementaciones de atributos:";
+  if (flow === "additive")    return "Mover esta carta incorpora atributos que los productos deben implementar:";
+  if (flow === "destructive") return "Mover esta carta elimina atributos que los productos tenían implementados:";
+  return "Este movimiento impacta en las implementaciones de atributos:";
 }
 
-// ── Eventos del board ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// MODAL GLOBAL DE ATRIBUTOS (CRUD)
+// ══════════════════════════════════════════════════════════════════════════════
+
+let attrsModalReady  = false;
+let currentEnumValues = [];
+
+function openAttrsModal() {
+  const overlay = document.getElementById("igm-attrs-overlay");
+
+  const renderExistingList = () => {
+    renderAttrRows(
+      document.getElementById("igm-attrs-list"),
+      attrStore.attrs,
+      (attr) => {
+        if (!confirm(`¿Eliminar el atributo "${attr.name}" (${attr.key})?`)) return;
+        attrStore.remove(attr.id);
+        renderExistingList();
+      },
+    );
+  };
+
+  const refreshEnumValues = () => {
+    renderEnumValues(
+      document.getElementById("igm-na-enum-list"),
+      currentEnumValues,
+      (idx) => { currentEnumValues.splice(idx, 1); refreshEnumValues(); },
+    );
+  };
+
+  const resetForm = () => {
+    document.getElementById("igm-na-key").value    = "";
+    document.getElementById("igm-na-name").value   = "";
+    document.getElementById("igm-na-dtype").value  = "text";
+    document.getElementById("igm-na-static").value = "false";
+    currentEnumValues = [];
+    document.getElementById("igm-na-enum-section").classList.add("igm-hidden");
+    refreshEnumValues();
+  };
+
+  if (!attrsModalReady) {
+    attrsModalReady = true;
+
+    document.getElementById("igm-na-dtype").addEventListener("change", () => {
+      const isEnum = document.getElementById("igm-na-dtype").value === "enum";
+      document.getElementById("igm-na-enum-section").classList.toggle("igm-hidden", !isEnum);
+      if (!isEnum) { currentEnumValues = []; refreshEnumValues(); }
+    });
+
+    const addEnumValue = () => {
+      const input = document.getElementById("igm-na-enum-input");
+      const val   = input.value.trim();
+      if (!val || currentEnumValues.includes(val)) { input.focus(); return; }
+      currentEnumValues.push(val);
+      input.value = "";
+      refreshEnumValues();
+      input.focus();
+    };
+    document.getElementById("igm-na-enum-add").addEventListener("click", addEnumValue);
+    document.getElementById("igm-na-enum-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); addEnumValue(); }
+    });
+
+    document.getElementById("igm-na-create-btn").addEventListener("click", () => {
+      const key      = document.getElementById("igm-na-key").value.trim();
+      const name     = document.getElementById("igm-na-name").value.trim();
+      const dataType = document.getElementById("igm-na-dtype").value;
+      const isStatic = document.getElementById("igm-na-static").value === "true";
+
+      if (!key || !name) { document.getElementById("igm-na-key").focus(); return; }
+      if (attrStore.attrs.some(a => a.key === key)) {
+        alert(`Ya existe un atributo con key "${key}".`);
+        document.getElementById("igm-na-key").focus();
+        return;
+      }
+      if (dataType === "enum" && currentEnumValues.length === 0) {
+        alert("El atributo enum necesita al menos una opción.");
+        return;
+      }
+
+      attrStore.add({ key, name, data_type: dataType, is_static: isStatic, enum_values: currentEnumValues });
+      resetForm();
+      renderExistingList();
+    });
+
+    document.getElementById("igm-attrs-close").addEventListener("click", () => {
+      overlay.classList.add("igm-hidden");
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) overlay.classList.add("igm-hidden");
+    });
+  }
+
+  renderExistingList();
+  resetForm();
+  overlay.classList.remove("igm-hidden");
+  document.getElementById("igm-na-key").focus();
+}
+
+// ── Botón "Atributos" en navbar ───────────────────────────────────────────────
+
+const attrsMgrBtn = document.getElementById("igm-attrs-btn");
+if (attrsMgrBtn) attrsMgrBtn.addEventListener("click", openAttrsModal);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PICKER DE ATRIBUTOS (selector desde modal de categoría)
+// ══════════════════════════════════════════════════════════════════════════════
+
+function openAttrPicker() {
+  const overlay = document.getElementById("igm-attr-picker-overlay");
+
+  let pickerSelection = [...pendingAttrs];
+
+  const getContainers = () => ({
+    haveStatic:  document.getElementById("igm-picker-have-static"),
+    haveDynamic: document.getElementById("igm-picker-have-dynamic"),
+    allStatic:   document.getElementById("igm-picker-all-static"),
+    allDynamic:  document.getElementById("igm-picker-all-dynamic"),
+  });
+
+  const renderPicker = () => {
+    renderPickerView(pickerSelection, attrStore.attrs, getContainers(), {
+      onRemove: (attr) => {
+        pickerSelection = pickerSelection.filter(a => a.key !== attr.key);
+        renderPicker();
+      },
+      onAdd: (attr) => {
+        pickerSelection.push({ ...attr });
+        renderPicker();
+      },
+    });
+  };
+
+  renderPicker();
+
+  const actionsDiv = overlay.querySelector(".igm-modal-actions");
+  const oldConfirm = document.getElementById("igm-picker-confirm");
+  const oldCancel  = document.getElementById("igm-picker-cancel");
+  const newConfirm = oldConfirm.cloneNode(true);
+  const newCancel  = oldCancel.cloneNode(true);
+  actionsDiv.replaceChild(newConfirm, oldConfirm);
+  actionsDiv.replaceChild(newCancel,  oldCancel);
+
+  newCancel.addEventListener("click",  () => overlay.classList.add("igm-hidden"));
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.classList.add("igm-hidden");
+  }, { once: true });
+
+  newConfirm.addEventListener("click", () => {
+    overlay.classList.add("igm-hidden");
+
+    const added   = pickerSelection.filter(a => !pendingAttrs.some(p => p.key === a.key));
+    const removed = pendingAttrs.filter(a => !pickerSelection.some(p => p.key === a.key));
+
+    let allInputs        = [];
+    let allDeletions     = [];
+    let affectedRemovals = [];
+
+    if (editingChart) {
+      for (const attr of added) {
+        const an = gestor.analyzeAddAttribute(editingChart.id, attr);
+        if (an.flow === "additive") allInputs.push(...an.inputs);
+      }
+      for (const attr of removed) {
+        const an = gestor.analyzeRemoveAttribute(editingChart.id, attr);
+        if (an.flow === "destructive") {
+          allDeletions.push(...an.deletions);
+          affectedRemovals.push({ attr, affected: an.affected });
+        }
+      }
+    }
+
+    const applyChanges = (filled = []) => {
+      filled.forEach(f => {
+        if (!f.productId) return;
+        const prodChart = Handler.findNode(handler.root, f.productId);
+        if (!prodChart?.model) return;
+        if (!prodChart.model.attributes_implementations) prodChart.model.attributes_implementations = [];
+        const already = prodChart.model.attributes_implementations.some(i => (i.attribute?.key ?? i.key) === f.attr.key);
+        if (!already) prodChart.model.attributes_implementations.push({ attribute: f.attr, value: f.value, id: null });
+      });
+      affectedRemovals.forEach(({ attr, affected }) => {
+        affected.forEach(({ id: prodChartId }) => {
+          const prodChart = Handler.findNode(handler.root, prodChartId);
+          if (!prodChart?.model?.attributes_implementations) return;
+          prodChart.model.attributes_implementations = prodChart.model.attributes_implementations
+            .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
+        });
+      });
+      pendingAttrs = [...pickerSelection];
+      refreshAttrList();
+    };
+
+    if (allInputs.length > 0 || allDeletions.length > 0) {
+      showGestorDialog({
+        title:       "Impacto de los cambios",
+        description: "Los atributos modificados afectan a los siguientes productos:",
+        inputs:      allInputs,
+        deletions:   allDeletions,
+        onConfirm:   applyChanges,
+        onCancel:    () => {},
+      });
+    } else {
+      applyChanges();
+    }
+  });
+
+  overlay.classList.remove("igm-hidden");
+}
+
+// ── Botón "Agregar atributos" en el modal de categoría ────────────────────────
+
+const attrPickerBtn = document.getElementById("igm-attr-picker-btn");
+if (attrPickerBtn) attrPickerBtn.addEventListener("click", () => openAttrPicker());
+
+// ══════════════════════════════════════════════════════════════════════════════
+// EVENTOS DEL BOARD
+// ══════════════════════════════════════════════════════════════════════════════
 
 const board = document.querySelector("#igm-board");
 
 board.addEventListener("igm-collapse", () => {
-  localStorage.setItem("igm-catalog", handler.toJson());
+  catalogStore.save(handler);
 });
 
 // ── Agregar carta ─────────────────────────────────────────────────────────────
@@ -156,7 +372,6 @@ board.addEventListener("igm-add-chart", (ev) => {
   showMenu(btn, CHART_OPCIONES, (chartType) => {
     const parentId = dir === "down" ? base.id : base.idParent;
 
-    // Validación estructural antes de cualquier otra cosa
     const check = gestor.checkAdd(parentId, chartType);
     if (!check.ok) { alert(check.reason); return; }
 
@@ -216,14 +431,12 @@ board.addEventListener("click", (ev) => {
 
   const analysis = gestor.analyzeDelete(id);
 
-  // Caso simple: solo el propio nodo, sin hijos
   if (analysis.deletions.length <= 1) {
     if (!confirm(`¿Eliminar "${node.label}"?`)) return;
     layoutActors[currentLayout].deleteNode(id);
     return;
   }
 
-  // Caso con cascada: mostrar dialog con lista completa
   showGestorDialog({
     title:        `Eliminar "${node.label}"`,
     description:  `Se eliminarán ${analysis.deletions.length} elementos en total:`,
@@ -245,7 +458,7 @@ board.addEventListener("dblclick", (ev) => {
   openModal(node);
 });
 
-// ── Botón agregar al root ──────────────────────────────────────────────────────
+// ── Agregar al root ────────────────────────────────────────────────────────────
 
 const addRootBtn = document.getElementById("igm-add-root");
 if (addRootBtn) {
@@ -264,21 +477,16 @@ if (addRootBtn) {
 // MODAL DE EDICIÓN
 // ══════════════════════════════════════════════════════════════════════════════
 
-const overlay  = document.getElementById("igm-modal-overlay");
-const modalTitle = document.getElementById("igm-modal-title");
+const overlay     = document.getElementById("igm-modal-overlay");
+const modalTitle  = document.getElementById("igm-modal-title");
 
 const secCategory = document.getElementById("igm-sec-category");
 const secProduct  = document.getElementById("igm-sec-product");
 const secVariant  = document.getElementById("igm-sec-variant");
 const allSections = [secCategory, secProduct, secVariant];
 
-const catName     = document.getElementById("igm-cat-name");
-const attrList    = document.getElementById("igm-attr-list");
-const attrKey     = document.getElementById("igm-attr-key");
-const attrNameInp = document.getElementById("igm-attr-name-inp");
-const attrDtype   = document.getElementById("igm-attr-dtype");
-const attrStatic  = document.getElementById("igm-attr-static");
-const attrAddBtn  = document.getElementById("igm-attr-add-btn");
+const catName  = document.getElementById("igm-cat-name");
+const attrList = document.getElementById("igm-attr-list");
 
 const prodTitle = document.getElementById("igm-prod-title");
 const prodCode  = document.getElementById("igm-prod-code");
@@ -305,7 +513,7 @@ function openModal(chart) {
     secCategory.classList.add("igm-active");
     catName.value = chart.model?.name ?? "";
     pendingAttrs  = [...(chart.model?.attributes ?? [])].map(a => ({ ...a }));
-    renderAttrList();
+    refreshAttrList();
 
   } else if (chart.chartType === CHART_TYPE.PRODUCT) {
     secProduct.classList.add("igm-active");
@@ -318,7 +526,7 @@ function openModal(chart) {
 
   } else if (chart.chartType === CHART_TYPE.VARIANT) {
     secVariant.classList.add("igm-active");
-    renderVariantImpls(chart.model);
+    renderVariantImpls(document.getElementById("igm-var-impls"), chart.model);
   }
 
   overlay.classList.remove("igm-hidden");
@@ -332,135 +540,34 @@ function closeModal() {
   pendingAttrs = [];
 }
 
-function renderAttrList() {
-  attrList.innerHTML = "";
-  if (pendingAttrs.length === 0) {
-    const empty = document.createElement("span");
-    empty.className   = "igm-body-empty";
-    empty.textContent = "Sin atributos";
-    attrList.appendChild(empty);
-    return;
-  }
-  pendingAttrs.forEach((attr, idx) => {
-    const item = document.createElement("div");
-    item.className = "igm-attr-item";
-
-    const info = document.createElement("div");
-    info.className = "igm-attr-item-info";
-    info.innerHTML =
-      `<span class="igm-attr-item-key">${attr.key}</span>` +
-      `<span class="igm-attr-item-meta">${attr.name}</span>` +
-      `<span class="igm-attr-item-type">${attr.data_type}</span>` +
-      (attr.is_static ? `<span class="igm-attr-item-type igm-attr-item-static">estático</span>` : "");
-
-    const removeBtn = document.createElement("button");
-    removeBtn.className   = "igm-attr-remove";
-    removeBtn.textContent = "×";
-    removeBtn.title       = "Quitar atributo";
-    removeBtn.addEventListener("click", () => {
-      if (!editingChart) return;
-
-      const analysis = gestor.analyzeRemoveAttribute(editingChart.id, attr);
-      if (analysis.flow === "destructive" && analysis.deletions.length > 0) {
-        showGestorDialog({
-          title:        `Quitar atributo "${attr.name}"`,
-          description:  "Se eliminarán las siguientes implementaciones en los productos:",
-          deletions:    analysis.deletions,
-          confirmLabel: "Quitar atributo",
-          onConfirm: () => {
-            // Borrar implementaciones en los productos afectados
-            analysis.affected.forEach(({ id: prodChartId }) => {
-              const prodChart = Handler.findNode(handler.root, prodChartId);
-              if (!prodChart?.model?.attributes_implementations) return;
-              prodChart.model.attributes_implementations = prodChart.model.attributes_implementations
-                .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
-            });
-            pendingAttrs.splice(idx, 1);
-            renderAttrList();
-          },
-          onCancel: () => {},
-        });
-        return;
-      }
-
-      pendingAttrs.splice(idx, 1);
-      renderAttrList();
-    });
-
-    item.appendChild(info);
-    item.appendChild(removeBtn);
-    attrList.appendChild(item);
-  });
-}
-
-function renderVariantImpls(model) {
-  const container = document.getElementById("igm-var-impls");
-  if (!container) return;
-  container.innerHTML = "";
-  const impls = model?.attribute_implementations ?? [];
-  if (impls.length === 0) {
-    container.textContent = "Esta variante no tiene implementaciones.";
-    return;
-  }
-  impls.forEach(impl => {
-    const row = document.createElement("div");
-    row.className   = "igm-attr-item";
-    row.textContent = `${impl.attribute?.key ?? "?"}: ${impl.value}`;
-    container.appendChild(row);
-  });
-}
-
-// ── Agregar atributo (dentro del modal) ───────────────────────────────────────
-
-function resetAttrForm() {
-  attrKey.value = ""; attrNameInp.value = ""; attrDtype.value = "text"; attrStatic.value = "false";
-  attrKey.focus();
-}
-
-attrAddBtn.addEventListener("click", () => {
-  const key      = attrKey.value.trim();
-  const name     = attrNameInp.value.trim();
-  const dataType = attrDtype.value;
-  const isStatic = attrStatic.value === "true";
-
-  if (!key || !name) { attrKey.focus(); return; }
-  if (pendingAttrs.some(a => a.key === key)) {
-    alert(`Ya existe un atributo con key "${key}".`); attrKey.focus(); return;
-  }
-
-  const newAttr = { key, name, data_type: dataType, is_static: isStatic, enum_values: [], id: null };
-
-  if (editingChart) {
-    const analysis = gestor.analyzeAddAttribute(editingChart.id, newAttr);
-    if (analysis.flow === "additive" && analysis.inputs.length > 0) {
+function refreshAttrList() {
+  renderAttrList(attrList, pendingAttrs, (attr, idx) => {
+    if (!editingChart) return;
+    const analysis = gestor.analyzeRemoveAttribute(editingChart.id, attr);
+    if (analysis.flow === "destructive" && analysis.deletions.length > 0) {
       showGestorDialog({
-        title:       `Agregar atributo "${name}"`,
-        description: `Este atributo ${isStatic ? "estático" : "dinámico"} impacta en ${analysis.affected.length} producto(s). Ingresá un valor inicial para cada uno:`,
-        inputs:      analysis.inputs,
-        onConfirm: (filled) => {
-          // Aplicar implementación en cada producto afectado
-          filled.forEach(f => {
-            if (!f.productId) return;
-            const prodChart = Handler.findNode(handler.root, f.productId);
-            if (!prodChart?.model) return;
-            if (!prodChart.model.attributes_implementations) prodChart.model.attributes_implementations = [];
-            const already = prodChart.model.attributes_implementations.some(i => (i.attribute?.key ?? i.key) === key);
-            if (!already) prodChart.model.attributes_implementations.push({ attribute: newAttr, value: f.value, id: null });
+        title:        `Quitar atributo "${attr.name}"`,
+        description:  "Se eliminarán las siguientes implementaciones en los productos:",
+        deletions:    analysis.deletions,
+        confirmLabel: "Quitar atributo",
+        onConfirm: () => {
+          analysis.affected.forEach(({ id: prodChartId }) => {
+            const prodChart = Handler.findNode(handler.root, prodChartId);
+            if (!prodChart?.model?.attributes_implementations) return;
+            prodChart.model.attributes_implementations = prodChart.model.attributes_implementations
+              .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
           });
-          pendingAttrs.push(newAttr);
-          renderAttrList();
-          resetAttrForm();
+          pendingAttrs.splice(idx, 1);
+          refreshAttrList();
         },
         onCancel: () => {},
       });
       return;
     }
-  }
-
-  pendingAttrs.push(newAttr);
-  renderAttrList();
-  resetAttrForm();
-});
+    pendingAttrs.splice(idx, 1);
+    refreshAttrList();
+  });
+}
 
 // ── Guardar modal ─────────────────────────────────────────────────────────────
 
@@ -547,7 +654,7 @@ board.addEventListener("drop", (ev) => {
   const toId = parseInt(box.dataset.id, 10);
   if (!Number.isFinite(toId)) return;
 
-  const mode = dropZone === "sibling" ? "sibling" : "child";
+  const mode     = dropZone === "sibling" ? "sibling" : "child";
   const analysis = gestor.analyzeMove(fromId, toId, mode);
 
   if (analysis.blocked) { alert(analysis.reason); return; }
@@ -562,12 +669,8 @@ board.addEventListener("drop", (ev) => {
     }
   };
 
-  if (analysis.flow === "none") {
-    doMove();
-    return;
-  }
+  if (analysis.flow === "none") { doMove(); return; }
 
-  // Hay impacto — mostrar dialog para confirmar y/o rellenar
   showGestorDialog({
     title:        "Mover carta",
     description:  moveMsgFor(analysis.flow),
@@ -575,9 +678,7 @@ board.addEventListener("drop", (ev) => {
     deletions:    analysis.deletions ?? [],
     confirmLabel: "Mover",
     onConfirm: (filled) => {
-      // Aplicar implementaciones aditivas antes del movimiento
-      if (filled.length > 0) applyAdditiveFilled(filled);
-      // Limpiar implementaciones destructivas
+      if (filled.length > 0)              applyAdditiveFilled(filled);
       if (analysis.deletions?.length > 0) applyDestructiveDeletions(analysis.deletions);
       doMove();
     },
@@ -599,7 +700,7 @@ const ZOOM_MIN  = 0.2;
 const ZOOM_MAX  = 3.0;
 
 function applyZoom(z) {
-  zoomLevel      = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +z.toFixed(2)));
+  zoomLevel        = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +z.toFixed(2)));
   board.style.zoom = zoomLevel;
 }
 
@@ -659,7 +760,5 @@ if (boardContainer) {
     boardContainer.style.cursor = "";
   });
 }
-
-// ── Export ────────────────────────────────────────────────────────────────────
 
 export { handler, gestor };

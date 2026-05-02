@@ -13,49 +13,99 @@ front_d/
 ├── models.js        ← modelos de dominio (Category, Product, Variant, Attribute…)
 ├── charts.js        ← Chart + CHART_TYPE + CHART_BG + CHART_LABEL
 ├── btandvoid.js     ← Void, WireTop (marcadores de celda)
-├── organigram.js    ← Organigram: árbol → matriz + matriz → DOM
+├── organigram.js    ← Organigram: árbol → matriz 2D (solo layout)
 ├── Handler.js       ← CRUD + serialización
-├── ui.js            ← modal + showMenu
-└── events.js        ← entry point, wiring de todo
+├── Gestor.js        ← árbol espejo de dominio, validaciones, análisis de impacto
+├── ui.js            ← modal de edición, showMenu, showGestorDialog
+├── events.js        ← entry point, wiring de todo
+│
+├── stores/
+│   ├── attrStore.js    ← almacén global de atributos
+│   └── catalogStore.js ← persistencia del árbol
+│
+└── renders/
+    ├── renderBoard.js      ← DOM de cartas (extraído de organigram.js)
+    ├── renderEditModal.js  ← DOM modal de edición
+    ├── renderAttrsModal.js ← DOM modal CRUD de atributos
+    └── renderAttrPicker.js ← DOM picker de atributos
 ```
 
 ---
 
 ## Separación de responsabilidades
 
-| Capa | Archivo | Responsabilidad |
+| Capa | Archivo(s) | Responsabilidad |
 |---|---|---|
 | **Dominio** | `models.js` | Category, Product, Variant, Attribute con validaciones |
 | **Nodo visual** | `charts.js` | Chart: nodo del árbol visual con tipo, modelo y flags |
 | **Árbol** | `Handler.js` | CRUD sobre el árbol, serialización JSON |
-| **Layout** | `organigram.js` (primera mitad) | Árbol → Matriz 2D |
-| **Render** | `organigram.js` (segunda mitad) | Matriz 2D → DOM |
-| **Eventos** | `events.js` | Conectar UI con Handler |
-| **UI** | `ui.js` | Modal, menús flotantes |
+| **Reglas de negocio** | `Gestor.js` | Árbol espejo, validaciones estructurales, análisis de impacto |
+| **Layout** | `organigram.js` | Árbol → Matriz 2D |
+| **Render DOM** | `renders/` | Matriz/datos → DOM (sin lógica de negocio) |
+| **Persistencia** | `stores/` | Lectura/escritura en localStorage |
+| **Eventos** | `events.js` | Conectar UI con Gestor + Handler; provee callbacks a los renders |
+| **UI** | `ui.js` | Esqueletos de modales, menús flotantes, dialog del Gestor |
 | **Estilo** | `styles.css` | Visual completo, dark mode |
 
 ---
 
-## Flujo de vida de un render
+## Principio de separación renders / lógica
+
+Las funciones en `renders/` construyen DOM y reciben **callbacks** para cualquier acción que implique estado o negocio. Nunca importan `handler`, `gestor` ni `attrStore` directamente. Toda la lógica queda en `events.js`.
+
+```
+events.js                        renders/renderEditModal.js
+──────────                       ──────────────────────────
+renderAttrList(container,        ← export function renderAttrList(
+  pendingAttrs,                       container, attrs, onRemove)
+  (attr, idx) => {                {
+    // lógica Gestor aquí          // solo construye DOM
+    gestor.analyze...             }
+    pendingAttrs.splice(...)
+    refreshAttrList()
+  }
+)
+```
+
+---
+
+## Flujo de vida de una operación (con Gestor)
 
 ```
 Usuario interactúa
        ↓
 events.js captura el evento
        ↓
-layoutActors[organigram].acción()
-       ↓
-Handler modifica el árbol de Charts
-       ↓
-handler.treeToMax()
-  → organigram.toMatrix(root)   árbol → matriz 2D
-       ↓
-handler.render({ container })
-  → organigram.render()         matriz → DOM
-       ↓
-CSS Grid dibuja
-       ↓
-auto-save en localStorage
+gestor.checkAdd() / gestor.analyze*()
+  ↓ blocked          ↓ flow !== "none"       ↓ flow === "none"
+alert(reason)    showGestorDialog()      ──────────────────────────┐
+                   ↓ onConfirm                                     │
+                 (aplica implementaciones si additive)             │
+                        ↓                                          │
+              layoutActors[organigram].acción()  ←─────────────────┘
+                        ↓
+               Handler modifica el árbol de Charts
+                        ↓
+               handler.treeToMax()
+                 → organigram.toMatrix(root)   árbol → matriz 2D
+                        ↓
+               handler.render({ container })
+                 → organigram.render()
+                 → renderChart() (renders/renderBoard.js)   matriz → DOM
+                        ↓
+               CSS Grid dibuja
+                        ↓
+               catalogStore.save(handler)   auto-save
+```
+
+---
+
+## Flujo de vida de un render (sin cambios de estado)
+
+```
+handler.treeToMax()  →  organigram.toMatrix(root)  →  matriz 2D
+handler.render()     →  organigram.render()
+                     →  renderChart() por cada Chart  →  DOM
 ```
 
 ---
@@ -81,19 +131,19 @@ root (id:0, virtual)
 ## Inicialización (`events.js`)
 
 ```js
-initUI();                          // crea modal, inyecta nada (CSS ya está en styles.css)
+initUI();        // crea los 4 overlays de modales
+attrStore.load();  // carga atributos globales de localStorage
 
 const handler = new Handler();
+const gestor  = new Gestor(handler);
 
 // wrap render para auto-save
 handler.render = (opts) => {
   _render(opts);
-  localStorage.setItem("igm-catalog", handler.toJson());
+  catalogStore.save(handler);
 };
 
-// restaurar estado guardado
-const saved = localStorage.getItem("igm-catalog");
-if (saved) handler.fromJson(saved);
+catalogStore.load(handler);  // restaura árbol de localStorage si existe
 
 handler.treeToMax();
 handler.render({ container: "#igm-board" });
@@ -108,8 +158,9 @@ handler.render({ container: "#igm-board" });
   <div id="igm-board"></div>     <!-- grid del organigrama -->
 </div>
 
-<!-- botones opcionales del navbar -->
+<!-- botones del navbar -->
 <button id="igm-add-root">+ Agregar</button>
+<button id="igm-attrs-btn">Atributos</button>
 <button data-igm="zoom-out">−</button>
 <button data-igm="zoom-fit">fit</button>
 <button data-igm="zoom-in">+</button>

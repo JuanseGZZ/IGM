@@ -2,7 +2,7 @@
 
 Archivo: `organigram.js`
 
-Responsable de dos cosas: convertir el árbol de `Chart` en una **matriz 2D** (layout), y convertir esa matriz en **nodos del DOM** (render).
+Responsable exclusivamente de convertir el árbol de `Chart` en una **matriz 2D** (layout). La construcción DOM de cada carta fue extraída a `renders/renderBoard.js`.
 
 ---
 
@@ -130,63 +130,18 @@ right=1          left=1
 
 ## Render `organigram.render()` — matriz → DOM
 
-Para cada celda `(row, col)` de la matriz:
+Para cada celda `(row, col)` de la matriz delega en `renders/renderBoard.js`:
 
-```
-if (cell instanceof Chart)   → renderizar carta completa
+```js
+import { renderChart } from "./renders/renderBoard.js";
+
+// en render():
+if (cell instanceof Chart)   → renderChart(cellEl, cell, boardEl, has)
 if (cell instanceof WireTop) → <div class="igm-wire-top">
 if (cell instanceof Void)    → celda vacía (nada)
 ```
 
-### Estructura DOM de una carta
-
-```html
-<div class="igm-cell">
-  <div class="igm-box igm-box-{type}" data-id="{id}" draggable="true"
-       style="--chart-color: {color}">
-
-    <div class="igm-box-header" style="background-color: {color}">
-      <span class="igm-type-badge">Categoría</span>
-      <button class="igm-btn igm-btn-collapse">▲</button>
-      <button class="igm-btn igm-btn-del" data-id="{id}">×</button>
-    </div>
-
-    <div class="igm-box-title">{label}</div>
-
-    <div class="igm-box-body">
-      <!-- contenido según chartType -->
-    </div>
-
-  </div>
-
-  <!-- conectores (si corresponde) -->
-  <div class="igm-edge igm-edge-up"></div>
-  <div class="igm-edge igm-edge-down"></div>
-  <div class="igm-edge igm-edge-left"></div>
-  <div class="igm-edge igm-edge-right"></div>
-
-  <!-- botones + (si no hay edge down/right) -->
-  <button class="igm-add-btn igm-add-down"  data-id="{id}">+</button>
-  <button class="igm-add-btn igm-add-right" data-id="{id}">+</button>
-</div>
-```
-
-### Contenido del body por tipo
-
-| `chartType` | Muestra |
-|---|---|
-| `category` | Pills de atributos: `key: nombre` con color azul (estático) o rosa (dinámico) |
-| `product` | Filas `cod`, `marca`, `precio` |
-| `variant` | Pills de implementaciones: `key: valor` en violeta |
-
-### Eventos disparados desde el render
-
-| Evento | Cuándo | Detail |
-|---|---|---|
-| `igm-add-chart` | Click en botón `+` | `{ fromId, dir }` |
-| `igm-collapse` | Click en ▲/▼ | — |
-
-Ambos se emiten sobre el nodo `#igm-board` (burbujeo activado).
+Ver [Renders](10%20-%20Renders.md#renderboardjs) para la estructura DOM completa que produce `renderChart`.
 
 ---
 
@@ -195,7 +150,7 @@ Ambos se emiten sobre el nodo `#igm-board` (burbujeo activado).
 | Aspecto | Diagramer | front_d |
 |---|---|---|
 | Nodo del árbol | `Carta` | `Chart` con `chartType` + `model` |
-| Render separado | `renderOrganigram.js` | Integrado en `organigram.js` |
+| Render separado | `renderOrganigram.js` | `renders/renderBoard.js` |
 | Contenido de la carta | `TipoDescripcion`, `TipoVideo`… | Renderizado según `chartType` |
 | Colores | Libres por nodo | Fijo por tipo (naranja/azul/violeta) |
 | Color picker / shape picker | Sí | No (MVP) |

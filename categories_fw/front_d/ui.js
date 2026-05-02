@@ -23,15 +23,11 @@ function createGestorModal() {
   document.body.appendChild(overlay);
 }
 
-// Muestra el dialog del Gestor.
-// inputs:    [{ attr, label, dataType, options, hint, productId? }]
-// deletions: [{ label }]
-// onConfirm(filledValues) — filledValues: [{ ...inputSpec, value }]
 export function showGestorDialog({
   title,
-  description = "",
-  inputs      = [],
-  deletions   = [],
+  description  = "",
+  inputs       = [],
+  deletions    = [],
   confirmLabel = "Confirmar",
   onConfirm,
   onCancel,
@@ -45,7 +41,6 @@ export function showGestorDialog({
   titleEl.textContent = title;
   descEl.textContent  = description;
 
-  // Sección de eliminaciones
   deletionEl.innerHTML = "";
   if (deletions.length > 0) {
     const ul = document.createElement("ul");
@@ -61,22 +56,19 @@ export function showGestorDialog({
     deletionEl.classList.add("igm-hidden");
   }
 
-  // Sección de inputs aditivos
   inputsEl.innerHTML = "";
   const inputRefs = [];
   if (inputs.length > 0) {
     inputs.forEach((spec, idx) => {
       const group = document.createElement("div");
       group.className = "igm-gestor-input-group";
-
       const lbl = document.createElement("label");
       lbl.textContent = spec.label;
       lbl.htmlFor     = `igm-gin-${idx}`;
       group.appendChild(lbl);
-
       let el;
       if (spec.dataType === "boolean") {
-        el      = document.createElement("input");
+        el = document.createElement("input");
         el.type = "checkbox";
         el.id   = `igm-gin-${idx}`;
       } else if (spec.dataType === "enum" && spec.options?.length > 0) {
@@ -102,12 +94,11 @@ export function showGestorDialog({
     inputsEl.classList.add("igm-hidden");
   }
 
-  // Reemplazar botones para limpiar listeners viejos
-  const actionsDiv  = overlay.querySelector(".igm-modal-actions");
-  const oldConfirm  = document.getElementById("igm-gestor-confirm");
-  const oldCancel   = document.getElementById("igm-gestor-cancel");
-  const newConfirm  = oldConfirm.cloneNode(true);
-  const newCancel   = oldCancel.cloneNode(true);
+  const actionsDiv = overlay.querySelector(".igm-modal-actions");
+  const oldConfirm = document.getElementById("igm-gestor-confirm");
+  const oldCancel  = document.getElementById("igm-gestor-cancel");
+  const newConfirm = oldConfirm.cloneNode(true);
+  const newCancel  = oldCancel.cloneNode(true);
   newConfirm.textContent = confirmLabel;
   actionsDiv.replaceChild(newConfirm, oldConfirm);
   actionsDiv.replaceChild(newCancel,  oldCancel);
@@ -136,7 +127,7 @@ export function showGestorDialog({
   if (inputRefs.length > 0) inputRefs[0].el.focus();
 }
 
-// ── Creación del modal ─────────────────────────────────────────────────────────
+// ── Modal de edición de nodo ───────────────────────────────────────────────────
 
 function createModal() {
   const overlay = document.createElement("div");
@@ -147,7 +138,6 @@ function createModal() {
   modal.id        = "igm-modal";
   modal.className = "igm-modal";
 
-  // título dinámico
   const title = document.createElement("h3");
   title.id = "igm-modal-title";
   modal.appendChild(title);
@@ -163,36 +153,7 @@ function createModal() {
     <div class="igm-attr-manager">
       <h4>Atributos</h4>
       <div id="igm-attr-list" class="igm-attr-list"></div>
-
-      <div class="igm-attr-add-form">
-        <div>
-          <label>key</label>
-          <input id="igm-attr-key" type="text" placeholder="ej: color" />
-        </div>
-        <div>
-          <label>nombre</label>
-          <input id="igm-attr-name-inp" type="text" placeholder="ej: Color" />
-        </div>
-        <div>
-          <label>tipo</label>
-          <select id="igm-attr-dtype">
-            <option value="text">text</option>
-            <option value="number">number</option>
-            <option value="boolean">boolean</option>
-            <option value="enum">enum</option>
-          </select>
-        </div>
-        <div>
-          <label>es estático</label>
-          <select id="igm-attr-static">
-            <option value="false">No (variante)</option>
-            <option value="true">Sí (producto)</option>
-          </select>
-        </div>
-        <div class="igm-attr-add-full">
-          <button id="igm-attr-add-btn" class="igm-attr-add-btn">+ Agregar atributo</button>
-        </div>
-      </div>
+      <button id="igm-attr-picker-btn" class="igm-attr-open-picker-btn">+ Agregar atributos</button>
     </div>
   `;
   modal.appendChild(secCat);
@@ -220,7 +181,7 @@ function createModal() {
   secVar.id        = "igm-sec-variant";
   secVar.className = "igm-modal-section";
   secVar.innerHTML = `
-    <p style="font-size:13px;color:#666;margin:0 0 12px;">
+    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">
       Las implementaciones de atributos de la variante se gestionan
       a través de la integración con el dominio.
     </p>
@@ -228,7 +189,6 @@ function createModal() {
   `;
   modal.appendChild(secVar);
 
-  // ── Acciones ──────────────────────────────────────────────────────────────
   const actions = document.createElement("div");
   actions.className = "igm-modal-actions";
   actions.innerHTML = `
@@ -241,18 +201,130 @@ function createModal() {
   document.body.appendChild(overlay);
 }
 
+// ── Modal global de atributos (CRUD) ──────────────────────────────────────────
+
+function createAttrsModal() {
+  const overlay = document.createElement("div");
+  overlay.id        = "igm-attrs-overlay";
+  overlay.className = "igm-modal-overlay igm-hidden";
+
+  const modal = document.createElement("div");
+  modal.id        = "igm-attrs-modal";
+  modal.className = "igm-modal igm-attrs-modal";
+  modal.innerHTML = `
+    <h3>Gestión de Atributos</h3>
+
+    <div id="igm-attrs-list" class="igm-attrs-existing-list"></div>
+
+    <div class="igm-na-section">
+      <h4 class="igm-na-heading">Nuevo atributo</h4>
+      <div class="igm-na-form-grid">
+        <div>
+          <label for="igm-na-key">Key</label>
+          <input id="igm-na-key" type="text" placeholder="ej: color" />
+        </div>
+        <div>
+          <label for="igm-na-name">Nombre</label>
+          <input id="igm-na-name" type="text" placeholder="ej: Color" />
+        </div>
+        <div>
+          <label for="igm-na-dtype">Tipo</label>
+          <select id="igm-na-dtype">
+            <option value="text">text</option>
+            <option value="number">number</option>
+            <option value="boolean">boolean</option>
+            <option value="enum">enum</option>
+          </select>
+        </div>
+        <div>
+          <label for="igm-na-static">Aplica a</label>
+          <select id="igm-na-static">
+            <option value="false">Categoría (dinámico)</option>
+            <option value="true">Producto (estático)</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="igm-na-enum-section" class="igm-enum-section igm-hidden">
+        <label>Opciones del enum</label>
+        <div id="igm-na-enum-list" class="igm-enum-list"></div>
+        <div class="igm-enum-add-row">
+          <input id="igm-na-enum-input" type="text" placeholder="Nueva opción..." />
+          <button id="igm-na-enum-add" class="igm-btn-secondary">+ Agregar opción</button>
+        </div>
+      </div>
+
+      <button id="igm-na-create-btn" class="igm-attr-add-btn" style="margin-top:12px;">+ Crear atributo</button>
+    </div>
+
+    <div class="igm-modal-actions">
+      <button id="igm-attrs-close" class="igm-btn-secondary">Cerrar</button>
+    </div>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
+// ── Modal picker de atributos (selector para categorías) ──────────────────────
+
+function createAttrPickerModal() {
+  const overlay = document.createElement("div");
+  overlay.id        = "igm-attr-picker-overlay";
+  overlay.className = "igm-modal-overlay igm-hidden";
+
+  const modal = document.createElement("div");
+  modal.id        = "igm-attr-picker-modal";
+  modal.className = "igm-modal igm-attr-picker-modal";
+  modal.innerHTML = `
+    <h3>Agregar atributos</h3>
+
+    <div class="igm-picker-grid">
+
+      <div class="igm-picker-col">
+        <div class="igm-picker-group">
+          <h5 class="igm-picker-group-title igm-picker-title-product">Producto (los tuyos)</h5>
+          <div id="igm-picker-have-static"  class="igm-picker-list"></div>
+        </div>
+        <div class="igm-picker-group">
+          <h5 class="igm-picker-group-title igm-picker-title-category">Categoría (los tuyos)</h5>
+          <div id="igm-picker-have-dynamic" class="igm-picker-list"></div>
+        </div>
+      </div>
+
+      <div class="igm-picker-col">
+        <div class="igm-picker-group">
+          <h5 class="igm-picker-group-title igm-picker-title-product">Producto (todos)</h5>
+          <div id="igm-picker-all-static"   class="igm-picker-list"></div>
+        </div>
+        <div class="igm-picker-group">
+          <h5 class="igm-picker-group-title igm-picker-title-category">Categoría (todos)</h5>
+          <div id="igm-picker-all-dynamic"  class="igm-picker-list"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="igm-modal-actions">
+      <button id="igm-picker-cancel"  class="igm-btn-secondary">Cancelar</button>
+      <button id="igm-picker-confirm" class="igm-btn-primary">Confirmar</button>
+    </div>
+  `;
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+}
+
 // ── API pública ────────────────────────────────────────────────────────────────
 
 export function initUI() {
   createGestorModal();
   createModal();
+  createAttrsModal();
+  createAttrPickerModal();
 }
 
-// Muestra un menú flotante de opciones anclado a anchorEl.
-// opciones: [{ value, label }]
-// onSelect(value) se llama al elegir.
 export function showMenu(anchorEl, opciones, onSelect) {
-  // limpiar menús anteriores
   document.querySelectorAll(".igm-floating-menu").forEach(m => m.remove());
 
   const menu = document.createElement("ul");
