@@ -237,6 +237,7 @@ mode: "sibling" → fromChart pasará a ser hijo del padre de toChart
 **Paso 1 — Validación**:
 - Ciclo `child`: si `toChart` es descendiente de `fromChart` → blocked
 - Ciclo `sibling`: si `toChart.idParent` es `fromChart` o un descendiente de `fromChart` → blocked (el padre efectivo quedaría dentro del subárbol que se mueve)
+- Nivel raíz `sibling`: si `toChart.idParent === 0` → blocked (agregar hijos de root solo se permite desde el botón addRoot, no desde drag & drop)
 - Estructural: `checkAdd(effectiveParentId, fromChart.chartType)`
 
 **Paso 2 — Análisis por tipo**:

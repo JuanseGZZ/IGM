@@ -352,6 +352,9 @@ export class Gestor {
     if (mode === "sibling" && toChart.idParent !== null && Handler.findNode(fromChart, toChart.idParent))
       return { ok: false, blocked: true, reason: "No se puede mover una carta dentro de sí misma o de uno de sus descendientes." };
 
+    if (mode === "sibling" && toChart.idParent === 0)
+      return { ok: false, blocked: true, reason: "No se puede mover una carta al nivel raíz mediante drag & drop. Usá el botón de agregar raíz." };
+
     const effectiveParentId = mode === "child" ? toChartId : toChart.idParent;
     const structural = this.checkAdd(effectiveParentId, fromChart.chartType);
     if (!structural.ok) return { ...structural, flow: "blocked" };
