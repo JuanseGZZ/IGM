@@ -1,6 +1,6 @@
 - refactorizar:
 
-* pasar de la ui a el html esos modales que se estan generando al pedo dinamicamente.
+* pasar de la ui a el html esos modales que se estan generando al pedo dinamicamente. y eliminar ese llamado de init.
 * plantear para que es cada cosa:
 . el events es son triggers que sirven para llamar a otras cosas, no deberia haber muchas funciones ahi.
 
@@ -12,3 +12,5 @@
 - ver si se esta usando algo de la logica de negocio que esta en los models.js
 
 - si la esta usando ver de migrarla a gestor asi queda en un solo lado.
+
+- para ver el modo de importaciones pedir que haga una lista de los archivos diciendo que importa que. corregir estructura.
