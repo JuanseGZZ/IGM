@@ -170,7 +170,9 @@ Cada input incluye `productId` o `variantId` para que el confirm handler pueda g
 
 Analiza quitar un atributo de una categoría. Busca qué productos **y variantes** en el subárbol tienen una implementación del atributo (por `attribute.key`), respetando el shielding de categorías intermedias.
 
-Si una categoría intermedia sigue definiendo el atributo, los productos/variantes bajo ella **no se consideran afectados** (seguirán recibiendo el atributo de esa categoría).
+**Shielding de ancestros**: si el atributo sigue estando definido en alguna categoría **ancestro** de la categoría editada, quitarlo de esta categoría no tiene ningún impacto (los descendientes siguen recibiéndolo por herencia). Se retorna `flow: "none"` directamente, sin revisar el subárbol. Esta comprobación se hace con `cat.get_ancestor_attrs().has(attr)` antes de llamar a `compute_impact`.
+
+**Shielding de intermedios**: si una categoría intermedia entre la categoría editada y un producto sigue definiendo el atributo, los productos/variantes bajo ella **no se consideran afectados** (seguirán recibiendo el atributo de esa categoría intermedia). Esto lo maneja `compute_impact` internamente.
 
 ```
 flow: "none"        → ningún producto ni variante tiene implementación del atributo
@@ -233,16 +235,28 @@ mode: "sibling" → fromChart pasará a ser hijo del padre de toChart
 ```
 
 **Paso 1 — Validación**:
-- Ciclo: si `mode === "child"` y `toChart` es descendiente de `fromChart` → blocked
+- Ciclo `child`: si `toChart` es descendiente de `fromChart` → blocked
+- Ciclo `sibling`: si `toChart.idParent` es `fromChart` o un descendiente de `fromChart` → blocked (el padre efectivo quedaría dentro del subárbol que se mueve)
 - Estructural: `checkAdd(effectiveParentId, fromChart.chartType)`
 
 **Paso 2 — Análisis por tipo**:
 
 | Tipo del nodo movido | Método de análisis |
 |---|---|
-| `category` | `_analyzeMoveCategory` → `impact_on_add/remove/change_father` |
+| `category` | `_analyzeMoveCategory` → `impact_on_add/remove/change_father` (distingue static/dynamic en deletions) |
 | `product` | `_analyzeMoveProduct` → ver abajo |
 | `variant` | Sin impacto (`flow: "none"`) |
+
+**`_analyzeMoveCategory` — construcción de `deletions`**:
+
+Los atributos que se pierden al mover (`rawRem`) pueden ser estáticos o dinámicos. La conversión a `deletions` distingue:
+
+- **Atributo estático** → `{ productId, attrKey }` (vive en `attributes_implementations` del producto)
+- **Atributo dinámico** → evalúa cada variante hija del producto. Si la variante pierde **todas** sus implementaciones se genera `{ variantId }` (sin `attrKey`) → la variante se elimina entera. Si solo pierde algunas, se generan `{ variantId, attrKey }` individuales → solo se filtra esa implementación. Si la variante no tiene la implementación, no se genera ningún deletion para ese par variante×attr.
+
+`applyDestructiveDeletions` en `events.js` distingue los tres casos: `variantId` sin `attrKey` → `deleteById`; `variantId` con `attrKey` → filtrar impl; `productId` con `attrKey` → filtrar impl de producto.
+
+---
 
 **`_analyzeMoveProduct` — doble análisis**:
 

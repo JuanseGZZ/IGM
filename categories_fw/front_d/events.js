@@ -206,6 +206,10 @@ function applyAdditiveFilled(filled) {
 
 function applyDestructiveDeletions(deletions) {
   deletions.forEach(d => {
+    if (d.variantId != null && !d.attrKey) {
+      handler.deleteById(d.variantId);
+      return;
+    }
     if (!d.attrKey) return;
     if (d.variantId != null) {
       const varChart = Handler.findNode(handler.root, d.variantId);

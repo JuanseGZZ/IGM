@@ -275,6 +275,10 @@ export class Gestor {
         is_static: attrPlain.is_static ?? false,
         id: attrPlain.id ?? null,
       });
+      // Si el attr sigue siendo heredado de un ancestro, quitarlo de esta categoría no tiene impacto real
+      if (cat.get_ancestor_attrs().has(attr)) {
+        return { ok: true, blocked: false, flow: "none", affected: [], affectedVariants: [], variantsToDelete: [], deletions: [] };
+      }
       const impacts = cat.compute_impact(new AttributeSet([attr]));
       for (const [, products] of impacts) {
         for (const prod of products) {
@@ -345,6 +349,9 @@ export class Gestor {
     if (mode === "child" && Handler.findNode(fromChart, toChartId))
       return { ok: false, blocked: true, reason: "No se puede mover una carta dentro de sí misma o de uno de sus descendientes." };
 
+    if (mode === "sibling" && toChart.idParent !== null && Handler.findNode(fromChart, toChart.idParent))
+      return { ok: false, blocked: true, reason: "No se puede mover una carta dentro de sí misma o de uno de sus descendientes." };
+
     const effectiveParentId = mode === "child" ? toChartId : toChart.idParent;
     const structural = this.checkAdd(effectiveParentId, fromChart.chartType);
     if (!structural.ok) return { ...structural, flow: "blocked" };
@@ -406,7 +413,47 @@ export class Gestor {
     const losses = flatten(rawRem);
 
     const inputs    = gains.map(x => ({ attr: x.attr, label: `${x.productLabel}: ${x.attr.name}`, dataType: x.attr.data_type, options: x.attr.enum_values ?? [], hint: x.attr.key, productId: x.productId }));
-    const deletions = losses.map(x => ({ label: `"${x.attr.name}" en ${x.productLabel}`, productId: x.productId, attrKey: x.attr.key }));
+
+    // Atributos estáticos perdidos → deletion a nivel producto.
+    // Atributos dinámicos perdidos → cada variante se procesa de una sola vez:
+    //   si pierde TODAS sus implementaciones → se elimina la variante entera.
+    //   si pierde solo algunas → se filtran las implementaciones perdidas.
+    const deletions = [];
+
+    for (const { attr, productLabel, productId: cid } of losses) {
+      if (attr.is_static)
+        deletions.push({ label: `"${attr.name}" en ${productLabel}`, productId: cid, attrKey: attr.key });
+    }
+
+    // Agrupar pérdidas dinámicas por producto para evaluar cada variante de una vez.
+    const dynByProd = new Map(); // cid → { productLabel, lostKeys: Set<string> }
+    for (const { attr, productLabel, productId: cid } of losses) {
+      if (attr.is_static) continue;
+      if (!dynByProd.has(cid)) dynByProd.set(cid, { productLabel, lostKeys: new Set() });
+      dynByProd.get(cid).lostKeys.add(attr.key);
+    }
+
+    for (const [cid, { productLabel, lostKeys }] of dynByProd) {
+      const prodChart = cid != null ? Handler.findNode(this.handler.root, cid) : null;
+      if (!prodChart) continue;
+      for (const varChart of prodChart.listaHijos) {
+        if (varChart.chartType !== CHART_TYPE.VARIANT) continue;
+        const varImpls  = varChart.model?.attribute_implementations ?? [];
+        const lostInVar = varImpls.filter(i => lostKeys.has(i.attribute?.key ?? i.key));
+        if (lostInVar.length === 0) continue;
+
+        if (lostInVar.length === varImpls.length) {
+          // Quedaría vacía → eliminar la variante directamente.
+          deletions.push({ label: `Variante #${varChart.id} (${productLabel}) — eliminada (quedaría sin implementaciones)`, variantId: varChart.id });
+        } else {
+          // Quedan otras implementaciones → solo filtrar las perdidas.
+          for (const impl of lostInVar) {
+            const key = impl.attribute?.key ?? impl.key;
+            deletions.push({ label: `"${key}" en Variante #${varChart.id} (${productLabel})`, variantId: varChart.id, attrKey: key });
+          }
+        }
+      }
+    }
 
     const flow = inputs.length > 0 && deletions.length > 0 ? "mixed"
                : inputs.length > 0                         ? "additive"
