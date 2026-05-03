@@ -250,7 +250,11 @@ mode: "sibling" → fromChart pasará a ser hijo del padre de toChart
 
 **`_analyzeMoveCategory` — construcción de `deletions`**:
 
-Los atributos que se pierden al mover (`rawRem`) pueden ser estáticos o dinámicos. La conversión a `deletions` distingue:
+Si el padre efectivo es el mismo que el padre actual (cambio de posición dentro del mismo padre), retorna `flow: "none"` sin analizar atributos.
+
+`impact_on_change_father` computa el delta como "quitar padre viejo + agregar padre nuevo". Cuando un atributo existe en el padre viejo Y también en el nuevo (por ejemplo, ambos lo heredan del mismo abuelo), aparece en ambos `rawRem` y `rawAdd`. Después del `flatten`, se **netean** los pares attr×producto que aparecen en ambos lados: si el attr sigue llegando al producto por otra vía, no es ni una pérdida ni una ganancia real.
+
+Los atributos que se pierden al mover (`netLosses`) pueden ser estáticos o dinámicos. La conversión a `deletions` distingue:
 
 - **Atributo estático** → `{ productId, attrKey }` (vive en `attributes_implementations` del producto)
 - **Atributo dinámico** → evalúa cada variante hija del producto. Si la variante pierde **todas** sus implementaciones se genera `{ variantId }` (sin `attrKey`) → la variante se elimina entera. Si solo pierde algunas, se generan `{ variantId, attrKey }` individuales → solo se filtra esa implementación. Si la variante no tiene la implementación, no se genera ningún deletion para ese par variante×attr.

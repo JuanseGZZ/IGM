@@ -389,6 +389,10 @@ export class Gestor {
     if (!cat) return { ok: true, blocked: false, flow: "none" };
     const newParent = cats.get(newParentChartId) ?? null;
 
+    // Mismo padre: solo cambia de posición, sin impacto en atributos.
+    if (cat.father_categorie === newParent)
+      return { ok: true, blocked: false, flow: "none", inputs: [], deletions: [] };
+
     let rawAdd = [], rawRem = [];
     try {
       if (!cat.father_categorie && newParent) {
@@ -415,7 +419,14 @@ export class Gestor {
     const gains  = flatten(rawAdd);
     const losses = flatten(rawRem);
 
-    const inputs    = gains.map(x => ({ attr: x.attr, label: `${x.productLabel}: ${x.attr.name}`, dataType: x.attr.data_type, options: x.attr.enum_values ?? [], hint: x.attr.key, productId: x.productId }));
+    // Netear atributos que aparecen en ambos lados (attr×producto que no cambia).
+    // Ocurre cuando el attr sigue siendo heredado por la nueva posición (ej: viene del abuelo).
+    const lossSet = new Set(losses.map(l => `${l.productId}:${l.attr.key}`));
+    const gainSet = new Set(gains.map(g => `${g.productId}:${g.attr.key}`));
+    const netGains  = gains.filter(g => !lossSet.has(`${g.productId}:${g.attr.key}`));
+    const netLosses = losses.filter(l => !gainSet.has(`${l.productId}:${l.attr.key}`));
+
+    const inputs    = netGains.map(x => ({ attr: x.attr, label: `${x.productLabel}: ${x.attr.name}`, dataType: x.attr.data_type, options: x.attr.enum_values ?? [], hint: x.attr.key, productId: x.productId }));
 
     // Atributos estáticos perdidos → deletion a nivel producto.
     // Atributos dinámicos perdidos → cada variante se procesa de una sola vez:
@@ -423,14 +434,14 @@ export class Gestor {
     //   si pierde solo algunas → se filtran las implementaciones perdidas.
     const deletions = [];
 
-    for (const { attr, productLabel, productId: cid } of losses) {
+    for (const { attr, productLabel, productId: cid } of netLosses) {
       if (attr.is_static)
         deletions.push({ label: `"${attr.name}" en ${productLabel}`, productId: cid, attrKey: attr.key });
     }
 
     // Agrupar pérdidas dinámicas por producto para evaluar cada variante de una vez.
     const dynByProd = new Map(); // cid → { productLabel, lostKeys: Set<string> }
-    for (const { attr, productLabel, productId: cid } of losses) {
+    for (const { attr, productLabel, productId: cid } of netLosses) {
       if (attr.is_static) continue;
       if (!dynByProd.has(cid)) dynByProd.set(cid, { productLabel, lostKeys: new Set() });
       dynByProd.get(cid).lostKeys.add(attr.key);

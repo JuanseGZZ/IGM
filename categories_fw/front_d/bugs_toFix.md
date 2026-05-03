@@ -4,7 +4,6 @@
 
 - cuando el abuelo tiene un atributo y el hijo no pero el producto del hijo tiene una variante implementada con ese attributo, si al abuelo se lo saco no me sale la alerta de impacto detectado, cuando claramente esa variante esta siendo impactada. ARREGLADO
 
-
 - no se deberia poder crear dos variantes iguales. ARREGLADO
 
 - si quitan un attributo y queda la variante sin implementaciones, se deberia eliminar esa variante directamente ARREGLADO
@@ -13,5 +12,8 @@
 
 - cuando tengo una categoria abajo de la otra y abajo un producto con una variante, y corro la categoria con el hijo a otro lado, si bien me sale el cartel que se va a eliminar el atributo que estoy dejando attras en la del abuelo, no elimina esa implementacion en las variantes. ARREGLADO.
 
-
 - si yo tengo una categoria con un attributo de variante, y arriba de esa categoria tengo el mismo attributo de bariante y abajo tengo un producto con una variante que implementa ese attributo de variante, y yo elimino ese attributo de variante de la categoria, eso elimina la implementacion, pero no deberia porque ese attributo sigue siendo heredado por la categoria abuelo, entonces no deberia decirme de impacto, porque no lo estaria habiendo. ARREGLADO
+
+- ahora por alguna razon me dice que hay impactos cuando simplemente estoy moviendo de lugar una categoria, estoy moviendo de posicion nomas esa categoria que tiene productos y variantes implementadas, pero no deberia haber impacto solo es un cambio de posicion en el mismo padre. ARREGLADO
+
+- ahora estoy moviendo una categoria que tiene el mismo abuelo con otra a hija del hermano, esta tiene un producto con una variante que implementa un attributo que tiene el abuelo, y por lo tanto los hermanos tambien, y cuando muevo la categoria a hija del hermano dice que tiene impacto en esa variante cuando en realidad no, no se esta agregando nada nuevo. ARREGLADO
