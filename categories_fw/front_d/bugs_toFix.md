@@ -6,3 +6,9 @@
 
 
 - no se deberia poder crear dos variantes iguales. ARREGLADO
+
+- si quitan un attributo y queda la variante sin implementaciones, se deberia eliminar esa variante directamente ARREGLADO
+
+- cuando corro categorias me deja correrla como hermana de la hija del root y no deberia.
+
+- cuando tengo una categoria abajo de la otra y abajo un producto con una variante, y corro la categoria con el hijo a otro lado, si bien me sale el cartel que se va a eliminar el atributo que estoy dejando attras en la del abuelo, no elimina esa implementacion en las variantes.

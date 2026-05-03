@@ -246,8 +246,9 @@ export class Gestor {
     const { cats, prodToId } = this.buildMirror();
     const cat = cats.get(categoryChartId);
 
-    const affectedProds = [];
-    const affectedVars  = [];
+    const affectedProds   = [];
+    const affectedVars    = [];
+    const variantsToDelete = [];
 
     const checkProd = (prodChart) => {
       const impls = prodChart.model?.attributes_implementations ?? [];
@@ -257,8 +258,13 @@ export class Gestor {
       for (const varChart of prodChart.listaHijos) {
         if (varChart.chartType !== CHART_TYPE.VARIANT) continue;
         const varImpls = varChart.model?.attribute_implementations ?? [];
-        if (varImpls.some(i => (i.attribute?.key ?? i.key) === attrKey))
-          affectedVars.push({ id: varChart.id, label: `Variante #${varChart.id} (${prodChart.label})` });
+        if (!varImpls.some(i => (i.attribute?.key ?? i.key) === attrKey)) continue;
+        const label = `Variante #${varChart.id} (${prodChart.label})`;
+        if (varImpls.length === 1) {
+          variantsToDelete.push({ id: varChart.id, label });
+        } else {
+          affectedVars.push({ id: varChart.id, label });
+        }
       }
     };
 
@@ -283,17 +289,19 @@ export class Gestor {
     }
 
     const deletions = [
-      ...affectedProds.map(p => ({ label: `Implementación de "${attrPlain.name}" en ${p.label}`,   attrKey, productId: p.id })),
-      ...affectedVars .map(v => ({ label: `Implementación de "${attrPlain.name}" en ${v.label}`,   attrKey, variantId: v.id })),
+      ...affectedProds   .map(p => ({ label: `Implementación de "${attrPlain.name}" en ${p.label}`, attrKey, productId: p.id })),
+      ...affectedVars    .map(v => ({ label: `Implementación de "${attrPlain.name}" en ${v.label}`, attrKey, variantId: v.id })),
+      ...variantsToDelete.map(v => ({ label: `${v.label} — eliminada (quedaría sin implementaciones)` })),
     ];
 
-    const total = affectedProds.length + affectedVars.length;
+    const total = affectedProds.length + affectedVars.length + variantsToDelete.length;
     return {
       ok:               true,
       blocked:          false,
       flow:             total > 0 ? "destructive" : "none",
       affected:         affectedProds,
       affectedVariants: affectedVars,
+      variantsToDelete,
       deletions,
     };
   }

@@ -394,7 +394,7 @@ function openAttrPicker() {
         const an = gestor.analyzeRemoveAttribute(editingChart.id, attr);
         if (an.flow === "destructive") {
           allDeletions.push(...an.deletions);
-          affectedRemovals.push({ attr, affected: an.affected, affectedVariants: an.affectedVariants ?? [] });
+          affectedRemovals.push({ attr, affected: an.affected, affectedVariants: an.affectedVariants ?? [], variantsToDelete: an.variantsToDelete ?? [] });
         }
       }
     }
@@ -415,7 +415,7 @@ function openAttrPicker() {
           if (!already) prodChart.model.attributes_implementations.push({ attribute: f.attr, value: f.value, id: null });
         }
       });
-      affectedRemovals.forEach(({ attr, affected, affectedVariants }) => {
+      affectedRemovals.forEach(({ attr, affected, affectedVariants, variantsToDelete }) => {
         affected.forEach(({ id: prodChartId }) => {
           const prodChart = Handler.findNode(handler.root, prodChartId);
           if (!prodChart?.model?.attributes_implementations) return;
@@ -427,6 +427,9 @@ function openAttrPicker() {
           if (!varChart?.model?.attribute_implementations) return;
           varChart.model.attribute_implementations = varChart.model.attribute_implementations
             .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
+        });
+        (variantsToDelete ?? []).forEach(({ id: varChartId }) => {
+          handler.deleteById(varChartId);
         });
       });
       pendingAttrs = [...pickerSelection];
@@ -714,6 +717,9 @@ function refreshAttrList() {
             if (!varChart?.model?.attribute_implementations) return;
             varChart.model.attribute_implementations = varChart.model.attribute_implementations
               .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
+          });
+          (analysis.variantsToDelete ?? []).forEach(({ id: varChartId }) => {
+            handler.deleteById(varChartId);
           });
           pendingAttrs.splice(idx, 1);
           refreshAttrList();

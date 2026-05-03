@@ -180,11 +180,14 @@ flow: "destructive" → N elementos afectados → deletions: uno por producto o 
 **Retorno extendido:**
 ```js
 {
-  affected:         [{ id, label }],          // productos con attributes_implementations del attr
-  affectedVariants: [{ id, label }],          // variantes con attribute_implementations del attr
-  deletions:        [{ label, attrKey, productId? | variantId? }],
+  affected:          [{ id, label }],   // productos con attributes_implementations del attr
+  affectedVariants:  [{ id, label }],   // variantes que pierden 1 impl pero quedan con otras
+  variantsToDelete:  [{ id, label }],   // variantes que quedan sin ninguna impl → se eliminan
+  deletions:         [{ label, attrKey?, productId? | variantId? }],
 }
 ```
+
+**Criterio de `variantsToDelete`**: si la variante tiene exactamente 1 `attribute_implementation` y es la del atributo removido, quedaría vacía — se lista en `variantsToDelete` en vez de `affectedVariants`. El confirm handler llama `handler.deleteById()` sobre cada una.
 
 Los campos `attrKey` + `productId`/`variantId` en `deletions` permiten que el confirm handler limpie la implementación del nodo correcto.
 

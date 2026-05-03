@@ -112,8 +112,9 @@ El modal tiene tres **secciones** que se muestran/ocultan según el `chartType` 
 gestor.analyzeRemoveAttribute(editingChart.id, attr)
   → flow "destructive"  → showGestorDialog con lista de productos/variantes afectados
                           onConfirm limpia:
-                            analysis.affected         → attributes_implementations del producto
-                            analysis.affectedVariants → attribute_implementations de cada variante
+                            analysis.affected          → attributes_implementations del producto
+                            analysis.affectedVariants  → attribute_implementations de cada variante
+                            analysis.variantsToDelete  → handler.deleteById() por cada variante vacía
   → flow "none"         → quitar directamente de pendingAttrs
 ```
 
