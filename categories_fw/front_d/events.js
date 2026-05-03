@@ -394,7 +394,7 @@ function openAttrPicker() {
         const an = gestor.analyzeRemoveAttribute(editingChart.id, attr);
         if (an.flow === "destructive") {
           allDeletions.push(...an.deletions);
-          affectedRemovals.push({ attr, affected: an.affected });
+          affectedRemovals.push({ attr, affected: an.affected, affectedVariants: an.affectedVariants ?? [] });
         }
       }
     }
@@ -415,11 +415,17 @@ function openAttrPicker() {
           if (!already) prodChart.model.attributes_implementations.push({ attribute: f.attr, value: f.value, id: null });
         }
       });
-      affectedRemovals.forEach(({ attr, affected }) => {
+      affectedRemovals.forEach(({ attr, affected, affectedVariants }) => {
         affected.forEach(({ id: prodChartId }) => {
           const prodChart = Handler.findNode(handler.root, prodChartId);
           if (!prodChart?.model?.attributes_implementations) return;
           prodChart.model.attributes_implementations = prodChart.model.attributes_implementations
+            .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
+        });
+        (affectedVariants ?? []).forEach(({ id: varChartId }) => {
+          const varChart = Handler.findNode(handler.root, varChartId);
+          if (!varChart?.model?.attribute_implementations) return;
+          varChart.model.attribute_implementations = varChart.model.attribute_implementations
             .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
         });
       });
@@ -540,7 +546,10 @@ board.addEventListener("igm-add-chart", (ev) => {
             inputs:       analysis.inputs,
             confirmLabel: "Crear variante",
             onConfirm: (filled) => {
-              model.attribute_implementations = filled.map(f => ({ attribute: f.attr, value: f.value, id: null }));
+              const impls = filled.map(f => ({ attribute: f.attr, value: f.value, id: null }));
+              const unique = gestor.checkVariantUnique(parentId, impls);
+              if (!unique.ok) { alert(unique.reason); return; }
+              model.attribute_implementations = impls;
               layoutActors[currentLayout].add(base, dir, chartType, model);
             },
             onCancel: () => {},
@@ -700,6 +709,12 @@ function refreshAttrList() {
             prodChart.model.attributes_implementations = prodChart.model.attributes_implementations
               .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
           });
+          (analysis.affectedVariants ?? []).forEach(({ id: varChartId }) => {
+            const varChart = Handler.findNode(handler.root, varChartId);
+            if (!varChart?.model?.attribute_implementations) return;
+            varChart.model.attribute_implementations = varChart.model.attribute_implementations
+              .filter(i => (i.attribute?.key ?? i.key) !== attr.key);
+          });
           pendingAttrs.splice(idx, 1);
           refreshAttrList();
         },
@@ -838,7 +853,7 @@ board.addEventListener("dragend", () => {
 // ══════════════════════════════════════════════════════════════════════════════
 
 let zoomLevel = 1.0;
-const ZOOM_STEP = 0.1;
+const ZOOM_STEP = 0.03;
 const ZOOM_MIN  = 0.2;
 const ZOOM_MAX  = 3.0;
 

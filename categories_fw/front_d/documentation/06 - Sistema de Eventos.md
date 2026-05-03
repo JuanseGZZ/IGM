@@ -110,7 +110,10 @@ El modal tiene tres **secciones** que se muestran/ocultan según el `chartType` 
 **Flujo del botón × (quitar atributo)**:
 ```
 gestor.analyzeRemoveAttribute(editingChart.id, attr)
-  → flow "destructive"  → showGestorDialog con lista de productos afectados
+  → flow "destructive"  → showGestorDialog con lista de productos/variantes afectados
+                          onConfirm limpia:
+                            analysis.affected         → attributes_implementations del producto
+                            analysis.affectedVariants → attribute_implementations de cada variante
   → flow "none"         → quitar directamente de pendingAttrs
 ```
 
@@ -122,11 +125,12 @@ El picker (`openAttrPicker`) muestra todos los atributos del `attrStore` dividid
 diff entre pickerSelection y pendingAttrs
   → por cada attr agregado:
       gestor.analyzeAddAttribute(editingChart.id, attr)
-        → flow "additive"  → showGestorDialog con un input por cada producto afectado
-                             onConfirm aplica implementaciones en model de cada producto
+        → flow "additive"  → showGestorDialog con inputs por producto (estático)
+                             o por variante (dinámico), respetando shielding
+                             onConfirm aplica implementaciones en el nodo correcto
         → flow "none"      → agregar directamente a pendingAttrs
   → por cada attr removido (ya estaba en pendingAttrs pero no en pickerSelection):
-      tratar igual que botón × (analyzeRemoveAttribute)
+      tratar igual que botón × (analyzeRemoveAttribute + limpieza de affectedVariants)
 ```
 
 Los cambios se acumulan en `pendingAttrs[]` y solo se aplican al `chart.model` al hacer click en **Guardar**.

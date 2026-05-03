@@ -134,10 +134,12 @@ Los atributos estáticos vienen de `category.get_full_attr_set()` filtrado por `
 Analiza agregar una variante a un producto. Retorna los atributos **dinámicos** heredados que la variante deberá implementar.
 
 ```
-flow: "none"     → no hay atributos dinámicos en la cadena de categorías
+flow: "none"     → (nunca ocurre: si no hay attrs dinámicos, se bloquea)
 flow: "additive" → hay atributos dinámicos → inputs: uno por cada attr
-flow: "blocked"  → el padre no es un producto
+flow: "blocked"  → el padre no es un producto, O ningún ancestro define atributos de variante
 ```
+
+Si la cadena de categorías del producto no tiene ningún atributo dinámico, la operación se bloquea con un mensaje explicativo. No tiene sentido crear una variante sin atributos de variante en la familia.
 
 Los atributos dinámicos vienen de `product.category.get_full_attr_set()` filtrado por `!is_static`.
 
@@ -147,31 +149,63 @@ Los atributos dinámicos vienen de `product.category.get_full_attr_set()` filtra
 
 Analiza agregar un atributo a una categoría (llamado desde el modal de edición, antes de confirmar).
 
-**La lógica difiere según el tipo del atributo:**
+**La lógica difiere según el tipo del atributo, pero ambas ramas usan `compute_impact` para respetar el shielding:**
 
-- `is_static = true` (atributo de **producto**): usa `category.impact_on_add_attribute(attr)` para encontrar qué productos del subárbol deben implementar el valor ahora. Retorna `flow: "additive"` con un input por producto afectado.
-- `is_static = false` (atributo de **variante**): busca variantes ya existentes en el subárbol. Si hay, retorna `flow: "additive"` con un input por variante (campo `variantId`). Si no hay variantes todavía, retorna `flow: "none"` — cuando el usuario cree una variante más adelante, `analyzeAddVariant` le pedirá los valores.
+Si una categoría intermedia entre la categoría editada y un producto ya define el mismo atributo, ese producto (y sus variantes) **no se consideran impactados**, porque ya reciben el atributo de esa categoría intermedia.
+
+- `is_static = true` (atributo de **producto**): usa `category.impact_on_add_attribute(attr)` (que internamente llama a `compute_impact`) para encontrar qué productos del subárbol deben implementar el valor. Retorna `flow: "additive"` con un input por producto afectado.
+- `is_static = false` (atributo de **variante**): usa `compute_impact` para obtener los mismos productos no shieldeados, luego busca variantes existentes dentro de esos productos. Retorna `flow: "additive"` con un input por variante (campo `variantId`). Si no hay variantes en esos productos, retorna `flow: "none"`.
 
 ```
-flow: "none"     → atributo estático sin productos, o dinámico sin variantes en el subárbol
+flow: "none"     → atributo estático sin productos afectados, o dinámico sin variantes en la zona de impacto
 flow: "additive" → atributo estático: inputs con productId, uno por producto afectado
-                   atributo dinámico: inputs con variantId, uno por variante existente
+                   atributo dinámico: inputs con variantId, uno por variante en productos afectados
 ```
 
-Cada input incluye `productId` para que el confirm handler pueda guardar la implementación directamente en el modelo del chart producto.
+Cada input incluye `productId` o `variantId` para que el confirm handler pueda guardar la implementación en el nodo correcto.
 
 ---
 
 ### `analyzeRemoveAttribute(categoryChartId, attrPlain)`
 
-Analiza quitar un atributo de una categoría. Busca qué productos en el subárbol tienen una implementación del atributo (por `attribute.key`).
+Analiza quitar un atributo de una categoría. Busca qué productos **y variantes** en el subárbol tienen una implementación del atributo (por `attribute.key`), respetando el shielding de categorías intermedias.
+
+Si una categoría intermedia sigue definiendo el atributo, los productos/variantes bajo ella **no se consideran afectados** (seguirán recibiendo el atributo de esa categoría).
 
 ```
-flow: "none"        → ningún producto tiene implementación de ese atributo
-flow: "destructive" → N productos afectados → deletions: uno por producto
+flow: "none"        → ningún producto ni variante tiene implementación del atributo
+flow: "destructive" → N elementos afectados → deletions: uno por producto o variante
 ```
 
-Cada deletion incluye `productId` y `attrKey` para que el confirm handler pueda borrar las implementaciones correctas.
+**Retorno extendido:**
+```js
+{
+  affected:         [{ id, label }],          // productos con attributes_implementations del attr
+  affectedVariants: [{ id, label }],          // variantes con attribute_implementations del attr
+  deletions:        [{ label, attrKey, productId? | variantId? }],
+}
+```
+
+Los campos `attrKey` + `productId`/`variantId` en `deletions` permiten que el confirm handler limpie la implementación del nodo correcto.
+
+---
+
+### `checkVariantUnique(parentProductChartId, implementations)`
+
+Verifica que la combinación de valores dada no duplique ninguna variante existente del producto.
+
+```js
+// implementations: [{ attribute: { key } | key, value }]
+```
+
+Calcula la firma `"key1:val1|key2:val2|..."` (sorted) tanto para las implementaciones candidatas como para cada variante hija del producto. Si hay coincidencia, retorna bloqueado.
+
+```
+{ ok: true }                          → combinación única, se puede crear
+{ ok: false, reason: string }         → ya existe una variante con esa combinación
+```
+
+Se llama desde `events.js` en el `onConfirm` del dialog de creación de variante, después de que el usuario ingresa los valores y antes de agregar el nodo al árbol.
 
 ---
 

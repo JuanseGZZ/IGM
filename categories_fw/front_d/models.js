@@ -399,17 +399,13 @@ class Product {
 
 class AttributeSet {
   constructor(iterable = []) {
-    this._map    = new Map();
-    this._refMap = new Map();
+    this._map = new Map();
     for (const attr of iterable) this.add(attr);
   }
 
   _keyFor(attr) {
     if (attr.id !== null) return `id:${attr.id}`;
-    if (!this._refMap.has(attr)) {
-      this._refMap.set(attr, `ref:${Math.random()}`);
-    }
-    return this._refMap.get(attr);
+    return `key:${attr.key}`;
   }
 
   add(attr) {

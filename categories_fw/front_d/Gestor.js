@@ -155,7 +155,12 @@ export class Gestor {
     if (!prod) return { ok: true, blocked: false, flow: "none", inputs: [] };
 
     const dynAttrs = [...prod.category.get_full_attr_set().values()].filter(a => !a.is_static);
-    if (dynAttrs.length === 0) return { ok: true, blocked: false, flow: "none", inputs: [] };
+    if (dynAttrs.length === 0) return {
+      ok:      false,
+      blocked: true,
+      reason:  "No hay atributos de variante en la familia de este producto. Agregá un atributo de variante a alguna categoría ancestral antes de crear una variante.",
+      flow:    "blocked",
+    };
 
     const inputs = dynAttrs.map(a => ({
       attr:     a,
@@ -183,13 +188,17 @@ export class Gestor {
     });
     attr.enum_values = [...(attrPlain.enum_values ?? [])];
 
-    // Atributos dinámicos: no impactan productos pero sí variantes ya existentes.
-    // Cada variante en el subárbol necesita implementar el nuevo attr.
+    // Atributos dinámicos: impactan variantes ya existentes, pero solo las de
+    // productos que no estén cubiertos por una categoría intermedia que ya defina el attr.
     if (!attr.is_static) {
-      const catChart = Handler.findNode(this.handler.root, categoryChartId);
+      const impacts = cat.compute_impact(new AttributeSet([attr]));
       const variantInputs = [];
-      if (catChart) {
-        this._walkProductCharts(catChart, (prodChart) => {
+      for (const [, products] of impacts) {
+        for (const prod of products) {
+          const cid = prodToId.get(prod);
+          if (cid == null) continue;
+          const prodChart = Handler.findNode(this.handler.root, cid);
+          if (!prodChart) continue;
           for (const varChart of prodChart.listaHijos) {
             if (varChart.chartType !== CHART_TYPE.VARIANT) continue;
             variantInputs.push({
@@ -201,7 +210,7 @@ export class Gestor {
               variantId: varChart.id,
             });
           }
-        });
+        }
       }
       if (variantInputs.length === 0) return { ok: true, blocked: false, flow: "none", affected: [], inputs: [] };
       return { ok: true, blocked: false, flow: "additive", affected: [], inputs: variantInputs };
@@ -227,28 +236,86 @@ export class Gestor {
   }
 
   // Analiza quitar un atributo de una categoría (desde el modal).
-  // Retorna qué productos perderán su implementación.
+  // Retorna qué productos y variantes perderán su implementación,
+  // respetando el shielding de categorías intermedias que definan el mismo attr.
   analyzeRemoveAttribute(categoryChartId, attrPlain) {
     const attrKey  = attrPlain.key;
-    const affected = [];
-
     const catChart = Handler.findNode(this.handler.root, categoryChartId);
-    if (!catChart) return { ok: true, blocked: false, flow: "none", affected: [], deletions: [] };
+    if (!catChart) return { ok: true, blocked: false, flow: "none", affected: [], affectedVariants: [], deletions: [] };
 
-    this._walkProductCharts(catChart, (prodChart) => {
+    const { cats, prodToId } = this.buildMirror();
+    const cat = cats.get(categoryChartId);
+
+    const affectedProds = [];
+    const affectedVars  = [];
+
+    const checkProd = (prodChart) => {
       const impls = prodChart.model?.attributes_implementations ?? [];
       if (impls.some(i => (i.attribute?.key ?? i.key) === attrKey))
-        affected.push({ id: prodChart.id, label: prodChart.label });
-    });
+        affectedProds.push({ id: prodChart.id, label: prodChart.label });
 
-    const deletions = affected.map(p => ({ label: `Implementación de "${attrPlain.name}" en ${p.label}` }));
+      for (const varChart of prodChart.listaHijos) {
+        if (varChart.chartType !== CHART_TYPE.VARIANT) continue;
+        const varImpls = varChart.model?.attribute_implementations ?? [];
+        if (varImpls.some(i => (i.attribute?.key ?? i.key) === attrKey))
+          affectedVars.push({ id: varChart.id, label: `Variante #${varChart.id} (${prodChart.label})` });
+      }
+    };
+
+    if (cat) {
+      const attr = new Attribute({
+        key: attrKey, name: attrPlain.name ?? attrKey,
+        data_type: attrPlain.data_type ?? "text",
+        is_static: attrPlain.is_static ?? false,
+        id: attrPlain.id ?? null,
+      });
+      const impacts = cat.compute_impact(new AttributeSet([attr]));
+      for (const [, products] of impacts) {
+        for (const prod of products) {
+          const cid = prodToId.get(prod);
+          if (cid == null) continue;
+          const prodChart = Handler.findNode(this.handler.root, cid);
+          if (prodChart) checkProd(prodChart);
+        }
+      }
+    } else {
+      this._walkProductCharts(catChart, checkProd);
+    }
+
+    const deletions = [
+      ...affectedProds.map(p => ({ label: `Implementación de "${attrPlain.name}" en ${p.label}`,   attrKey, productId: p.id })),
+      ...affectedVars .map(v => ({ label: `Implementación de "${attrPlain.name}" en ${v.label}`,   attrKey, variantId: v.id })),
+    ];
+
+    const total = affectedProds.length + affectedVars.length;
     return {
-      ok:       true,
-      blocked:  false,
-      flow:     affected.length > 0 ? "destructive" : "none",
-      affected,
+      ok:               true,
+      blocked:          false,
+      flow:             total > 0 ? "destructive" : "none",
+      affected:         affectedProds,
+      affectedVariants: affectedVars,
       deletions,
     };
+  }
+
+  // Verifica que una combinación de implementaciones no duplique una variante existente.
+  // implementations: [{ attribute: { key } | key, value }]
+  // Retorna { ok: true } o { ok: false, reason: string }.
+  checkVariantUnique(parentProductChartId, implementations) {
+    const sig = (impls) =>
+      impls.map(i => `${i.attribute?.key ?? i.key}:${i.value}`).sort().join("|");
+
+    const newSig    = sig(implementations);
+    const prodChart = Handler.findNode(this.handler.root, parentProductChartId);
+    if (!prodChart) return { ok: true };
+
+    for (const varChart of prodChart.listaHijos) {
+      if (varChart.chartType !== CHART_TYPE.VARIANT) continue;
+      const existing = varChart.model?.attribute_implementations ?? [];
+      if (sig(existing) === newSig)
+        return { ok: false, reason: "Ya existe una variante con la misma combinación de valores." };
+    }
+    return { ok: true };
   }
 
   // Analiza eliminar un nodo: retorna todo lo que se borrará en cascada.
