@@ -17,3 +17,6 @@
 - ahora por alguna razon me dice que hay impactos cuando simplemente estoy moviendo de lugar una categoria, estoy moviendo de posicion nomas esa categoria que tiene productos y variantes implementadas, pero no deberia haber impacto solo es un cambio de posicion en el mismo padre. ARREGLADO
 
 - ahora estoy moviendo una categoria que tiene el mismo abuelo con otra a hija del hermano, esta tiene un producto con una variante que implementa un attributo que tiene el abuelo, y por lo tanto los hermanos tambien, y cuando muevo la categoria a hija del hermano dice que tiene impacto en esa variante cuando en realidad no, no se esta agregando nada nuevo. ARREGLADO
+
+
+- me aviso que tenia impacto con color cuando movi una categoria que tenia de hijo un producto sin variantes implementadas, eso no deberia pasar porque no hay impacto ahi. pero si paso el producto solo no me avisa que eso si esta bien.

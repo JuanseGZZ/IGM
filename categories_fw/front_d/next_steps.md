@@ -14,3 +14,16 @@
 - si la esta usando ver de migrarla a gestor asi queda en un solo lado.
 
 - para ver el modo de importaciones pedir que haga una lista de los archivos diciendo que importa que. corregir estructura.
+
+
+
+
+AGREGACIONES: 
+- editar attributos.
+- que se pueda editar en producto las implementaciones de attributos de producto
+- que se vean las implementaciones de los productos.
+
+
+imples:
+
+hacer que me grafique las cosas en el models de py y que me de botones para indicar acciones en nodo con ui para python. si anda todo bien el worflow va a ser me llega un arbol y lo armo de arriba hacia abajo si sale todo bien se queda, sino se retorna error
