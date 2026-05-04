@@ -880,10 +880,21 @@ function fitToScreen() {
   boardContainer.scrollTop  = 0;
 }
 
+function zoomAroundCenter(newZ) {
+  if (!boardContainer) { applyZoom(newZ); return; }
+  const cx = boardContainer.scrollLeft + boardContainer.clientWidth  / 2;
+  const cy = boardContainer.scrollTop  + boardContainer.clientHeight / 2;
+  const bx = cx / zoomLevel;
+  const by = cy / zoomLevel;
+  applyZoom(newZ);
+  boardContainer.scrollLeft = bx * zoomLevel - boardContainer.clientWidth  / 2;
+  boardContainer.scrollTop  = by * zoomLevel - boardContainer.clientHeight / 2;
+}
+
 document.querySelectorAll("[data-igm='zoom-in']").forEach(b =>
-  b.addEventListener("click", () => applyZoom(zoomLevel + ZOOM_STEP)));
+  b.addEventListener("click", () => zoomAroundCenter(zoomLevel + ZOOM_STEP)));
 document.querySelectorAll("[data-igm='zoom-out']").forEach(b =>
-  b.addEventListener("click", () => applyZoom(zoomLevel - ZOOM_STEP)));
+  b.addEventListener("click", () => zoomAroundCenter(zoomLevel - ZOOM_STEP)));
 document.querySelectorAll("[data-igm='zoom-fit']").forEach(b =>
   b.addEventListener("click", fitToScreen));
 
