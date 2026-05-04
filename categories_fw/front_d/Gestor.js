@@ -429,7 +429,29 @@ export class Gestor {
     const netGains  = gains.filter(g => !lossSet.has(`${g.productId}:${g.attr.key}`));
     const netLosses = losses.filter(l => !gainSet.has(`${l.productId}:${l.attr.key}`));
 
-    const inputs    = netGains.map(x => ({ attr: x.attr, label: `${x.productLabel}: ${x.attr.name}`, dataType: x.attr.data_type, options: x.attr.enum_values ?? [], hint: x.attr.key, productId: x.productId }));
+    // Estáticos ganados → input a nivel de producto.
+    const inputs = netGains
+      .filter(x => x.attr.is_static)
+      .map(x => ({ attr: x.attr, label: `${x.productLabel}: ${x.attr.name}`, dataType: x.attr.data_type, options: x.attr.enum_values ?? [], hint: x.attr.key, productId: x.productId }));
+
+    // Dinámicos ganados → solo impactan variantes que YA EXISTEN y aún no implementan el attr.
+    for (const { attr, productId: cid } of netGains.filter(x => !x.attr.is_static)) {
+      const prodChart = cid != null ? Handler.findNode(this.handler.root, cid) : null;
+      if (!prodChart) continue;
+      for (const varChart of prodChart.listaHijos) {
+        if (varChart.chartType !== CHART_TYPE.VARIANT) continue;
+        const varImpls = varChart.model?.attribute_implementations ?? [];
+        if (varImpls.some(i => (i.attribute?.key ?? i.key) === attr.key)) continue;
+        inputs.push({
+          attr,
+          label:     `Variante #${varChart.id} — ${attr.name}`,
+          dataType:  attr.data_type,
+          options:   attr.enum_values ?? [],
+          hint:      attr.key,
+          variantId: varChart.id,
+        });
+      }
+    }
 
     // Atributos estáticos perdidos → deletion a nivel producto.
     // Atributos dinámicos perdidos → cada variante se procesa de una sola vez:

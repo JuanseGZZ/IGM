@@ -19,7 +19,7 @@
 - ahora estoy moviendo una categoria que tiene el mismo abuelo con otra a hija del hermano, esta tiene un producto con una variante que implementa un attributo que tiene el abuelo, y por lo tanto los hermanos tambien, y cuando muevo la categoria a hija del hermano dice que tiene impacto en esa variante cuando en realidad no, no se esta agregando nada nuevo. ARREGLADO
 
 
-- me aviso que tenia impacto con color cuando movi una categoria que tenia de hijo un producto sin variantes implementadas, eso no deberia pasar porque no hay impacto ahi. pero si paso el producto solo no me avisa que eso si esta bien.
+- me aviso que tenia impacto con color cuando movi una categoria que tenia de hijo un producto sin variantes implementadas, eso no deberia pasar porque no hay impacto ahi. pero si paso el producto solo no me avisa que eso si esta bien. ARREGLADO
 
 
-- cuando edito variantes me deja editarla y que queden dos variantes iguales, eso no deberia pasar.
+- cuando edito variantes me deja editarla y que queden dos variantes iguales, eso no deberia pasar. ARREGLADO
