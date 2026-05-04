@@ -808,10 +808,19 @@ document.getElementById("igm-modal-save").addEventListener("click", () => {
 
   } else if (editingChart.chartType === CHART_TYPE.VARIANT) {
     if (!editingChart.model) editingChart.model = {};
-    _readBackImpls(
-      document.getElementById("igm-var-impls"),
-      editingChart.model.attribute_implementations ?? [],
-    );
+    const impls     = editingChart.model.attribute_implementations ?? [];
+    const container = document.getElementById("igm-var-impls");
+
+    const proposed = impls.map(impl => ({ ...impl }));
+    container?.querySelectorAll("[data-impl-idx]").forEach(el => {
+      const impl = proposed[parseInt(el.dataset.implIdx, 10)];
+      if (impl) impl.value = el.type === "checkbox" ? el.checked : el.value;
+    });
+
+    const unique = gestor.checkVariantUnique(editingChart.idParent, proposed, editingChart.id);
+    if (!unique.ok) { alert(unique.reason); return; }
+
+    _readBackImpls(container, impls);
   }
 
   handler.treeToMax();

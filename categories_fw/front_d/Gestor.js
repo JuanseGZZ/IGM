@@ -315,7 +315,7 @@ export class Gestor {
   // Verifica que una combinación de implementaciones no duplique una variante existente.
   // implementations: [{ attribute: { key } | key, value }]
   // Retorna { ok: true } o { ok: false, reason: string }.
-  checkVariantUnique(parentProductChartId, implementations) {
+  checkVariantUnique(parentProductChartId, implementations, excludeChartId = null) {
     const sig = (impls) =>
       impls.map(i => `${i.attribute?.key ?? i.key}:${i.value}`).sort().join("|");
 
@@ -325,6 +325,7 @@ export class Gestor {
 
     for (const varChart of prodChart.listaHijos) {
       if (varChart.chartType !== CHART_TYPE.VARIANT) continue;
+      if (varChart.id === excludeChartId) continue;
       const existing = varChart.model?.attribute_implementations ?? [];
       if (sig(existing) === newSig)
         return { ok: false, reason: "Ya existe una variante con la misma combinación de valores." };
