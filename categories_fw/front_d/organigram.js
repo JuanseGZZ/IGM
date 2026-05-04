@@ -42,33 +42,33 @@ export class Organigram {
     for (const hijo of root.listaHijos) calcWidth(hijo);
 
     const place = (node, startCol, depth) => {
-      const w       = widths.get(node.id) ?? 1;
-      const nodeCol = startCol + Math.floor((w - 1) / 2);
+      const hijos = node.listaHijos ?? [];
 
       node.up    = depth > 0 ? 1 : 0;
-      node.down  = (node.listaHijos?.length ?? 0) > 0 ? 1 : 0;
+      node.down  = hijos.length > 0 ? 1 : 0;
       node.left  = 0;
       node.right = 0;
 
-      this.setAt(depth, nodeCol, node);
+      if (hijos.length === 0) {
+        this.setAt(depth, startCol, node);
+        return startCol;
+      }
 
-      const hijos = node.listaHijos ?? [];
-      if (hijos.length === 0) return;
-
+      // Colocar hijos primero para obtener sus columnas reales
       const childRow = depth + 1;
       let cs = startCol;
-      const childCols = hijos.map(h => {
-        const cw  = widths.get(h.id) ?? 1;
-        const col = cs + Math.floor((cw - 1) / 2);
-        cs += cw;
+      const placedCols = hijos.map(hijo => {
+        const col = place(hijo, cs, depth + 1);
+        cs += widths.get(hijo.id) ?? 1;
         return col;
       });
 
-      cs = startCol;
-      for (const hijo of hijos) {
-        place(hijo, cs, depth + 1);
-        cs += widths.get(hijo.id) ?? 1;
-      }
+      // Centrar el padre sobre el span real de sus hijos
+      const leftCol  = placedCols[0];
+      const rightCol = placedCols[placedCols.length - 1];
+      const nodeCol  = Math.round((leftCol + rightCol) / 2);
+
+      this.setAt(depth, nodeCol, node);
 
       if (hijos.length > 1) {
         hijos[0].right = 1;
@@ -78,11 +78,11 @@ export class Organigram {
         }
       }
 
-      const leftCol  = childCols[0];
-      const rightCol = childCols[childCols.length - 1];
       for (let c = leftCol; c <= rightCol; c++) {
-        if (!childCols.includes(c)) this.setAt(childRow, c, new WireTop());
+        if (!placedCols.includes(c)) this.setAt(childRow, c, new WireTop());
       }
+
+      return nodeCol;
     };
 
     let startCol = 0;
