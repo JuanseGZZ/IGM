@@ -1,6 +1,6 @@
 // Renders para el modal CRUD de atributos globales (navbar "Atributos").
 
-export function renderAttrRows(listEl, attrs, onRemove) {
+export function renderAttrRows(listEl, attrs, onRemove, onEdit) {
   listEl.innerHTML = "";
   if (attrs.length === 0) {
     const p = document.createElement("p");
@@ -24,6 +24,12 @@ export function renderAttrRows(listEl, attrs, onRemove) {
         ? `<span class="igm-attr-enum-hint">[${attr.enum_values.join(", ")}]</span>`
         : "");
 
+    const editBtn = document.createElement("button");
+    editBtn.className   = "igm-attr-edit-btn";
+    editBtn.textContent = "✎";
+    editBtn.title       = "Editar atributo";
+    editBtn.addEventListener("click", () => onEdit(attr));
+
     const delBtn = document.createElement("button");
     delBtn.className   = "igm-attr-remove";
     delBtn.textContent = "×";
@@ -31,6 +37,7 @@ export function renderAttrRows(listEl, attrs, onRemove) {
     delBtn.addEventListener("click", () => onRemove(attr));
 
     row.appendChild(info);
+    row.appendChild(editBtn);
     row.appendChild(delBtn);
     listEl.appendChild(row);
   });

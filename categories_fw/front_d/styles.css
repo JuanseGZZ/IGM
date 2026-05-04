@@ -414,6 +414,18 @@ body {
 }
 .igm-attr-remove:hover { background: #3b1111; color: #f87171; }
 
+.igm-attr-edit-btn {
+  background:    transparent;
+  border:        none;
+  color:         var(--text-muted);
+  cursor:        pointer;
+  font-size:     15px;
+  padding:       1px 5px;
+  border-radius: 4px;
+  transition:    background .12s, color .12s;
+}
+.igm-attr-edit-btn:hover { background: #1a2a3b; color: #60a5fa; }
+
 .igm-attr-add-form {
   display:               grid;
   grid-template-columns: 1fr 1fr;
@@ -553,6 +565,10 @@ body {
   font-size:   13px;
   color:       var(--text-secondary);
   font-weight: 700;
+}
+.igm-na-form-grid input[readonly] {
+  opacity:    0.5;
+  cursor:     not-allowed;
 }
 .igm-na-form-grid {
   display:               grid;

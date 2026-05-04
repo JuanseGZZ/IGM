@@ -1,28 +1,5 @@
 // ── Gestor dialog ──────────────────────────────────────────────────────────────
 
-function createGestorModal() {
-  const overlay = document.createElement("div");
-  overlay.id        = "igm-gestor-overlay";
-  overlay.className = "igm-modal-overlay igm-hidden";
-
-  const modal = document.createElement("div");
-  modal.id        = "igm-gestor-modal";
-  modal.className = "igm-modal";
-  modal.innerHTML = `
-    <h3 id="igm-gestor-title"></h3>
-    <p  id="igm-gestor-desc"  class="igm-gestor-desc"></p>
-    <div id="igm-gestor-deletions" class="igm-gestor-section igm-hidden"></div>
-    <div id="igm-gestor-inputs"    class="igm-gestor-section igm-hidden"></div>
-    <div class="igm-modal-actions">
-      <button id="igm-gestor-cancel"  class="igm-btn-secondary">Cancelar</button>
-      <button id="igm-gestor-confirm" class="igm-btn-primary">Confirmar</button>
-    </div>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-}
-
 export function showGestorDialog({
   title,
   description  = "",
@@ -131,201 +108,84 @@ export function showGestorDialog({
   if (inputRefs.length > 0) inputRefs[0].el.focus();
 }
 
-// ── Modal de edición de nodo ───────────────────────────────────────────────────
+// ── Zoom & pan ────────────────────────────────────────────────────────────────
 
-function createModal() {
-  const overlay = document.createElement("div");
-  overlay.id        = "igm-modal-overlay";
-  overlay.className = "igm-modal-overlay igm-hidden";
+export function initZoom() {
+  const board          = document.querySelector("#igm-board");
+  const boardContainer = document.querySelector("#igm-board-container");
 
-  const modal = document.createElement("div");
-  modal.id        = "igm-modal";
-  modal.className = "igm-modal";
+  let zoomLevel = 1.0;
+  const ZOOM_STEP = 0.03;
+  const ZOOM_MIN  = 0.2;
+  const ZOOM_MAX  = 3.0;
 
-  const title = document.createElement("h3");
-  title.id = "igm-modal-title";
-  modal.appendChild(title);
+  function applyZoom(z) {
+    zoomLevel        = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +z.toFixed(2)));
+    board.style.zoom = zoomLevel;
+  }
 
-  // ── Sección: Category ─────────────────────────────────────────────────────
-  const secCat = document.createElement("div");
-  secCat.id        = "igm-sec-category";
-  secCat.className = "igm-modal-section";
-  secCat.innerHTML = `
-    <label for="igm-cat-name">Nombre</label>
-    <input id="igm-cat-name" type="text" placeholder="Nombre de la categoría" />
+  function fitToScreen() {
+    if (!boardContainer) return;
+    const natW    = board.offsetWidth  / zoomLevel;
+    const natH    = board.offsetHeight / zoomLevel;
+    const fitZoom = Math.min(boardContainer.clientWidth / natW, boardContainer.clientHeight / natH, 1.0);
+    applyZoom(fitZoom);
+    boardContainer.scrollLeft = 0;
+    boardContainer.scrollTop  = 0;
+  }
 
-    <div class="igm-attr-manager">
-      <h4>Atributos</h4>
-      <div id="igm-attr-list" class="igm-attr-list"></div>
-      <button id="igm-attr-picker-btn" class="igm-attr-open-picker-btn">+ Agregar atributos</button>
-    </div>
-  `;
-  modal.appendChild(secCat);
+  function zoomAroundCenter(newZ) {
+    if (!boardContainer) { applyZoom(newZ); return; }
+    const cx = boardContainer.scrollLeft + boardContainer.clientWidth  / 2;
+    const cy = boardContainer.scrollTop  + boardContainer.clientHeight / 2;
+    const bx = cx / zoomLevel;
+    const by = cy / zoomLevel;
+    applyZoom(newZ);
+    boardContainer.scrollLeft = bx * zoomLevel - boardContainer.clientWidth  / 2;
+    boardContainer.scrollTop  = by * zoomLevel - boardContainer.clientHeight / 2;
+  }
 
-  // ── Sección: Product ──────────────────────────────────────────────────────
-  const secProd = document.createElement("div");
-  secProd.id        = "igm-sec-product";
-  secProd.className = "igm-modal-section";
-  secProd.innerHTML = `
-    <label for="igm-prod-title">Título</label>
-    <input id="igm-prod-title" type="text" placeholder="Nombre del producto" />
-    <label for="igm-prod-code">Código (SKU)</label>
-    <input id="igm-prod-code" type="text" placeholder="ABC-001" />
-    <label for="igm-prod-price">Precio</label>
-    <input id="igm-prod-price" type="number" placeholder="0.00" min="0" step="0.01" />
-    <label for="igm-prod-brand">Marca</label>
-    <input id="igm-prod-brand" type="text" placeholder="Marca" />
-    <label for="igm-prod-desc">Descripción</label>
-    <textarea id="igm-prod-desc" rows="3" placeholder="Descripción opcional"></textarea>
-  `;
-  modal.appendChild(secProd);
+  document.querySelectorAll("[data-igm='zoom-in']").forEach(b =>
+    b.addEventListener("click", () => zoomAroundCenter(zoomLevel + ZOOM_STEP)));
+  document.querySelectorAll("[data-igm='zoom-out']").forEach(b =>
+    b.addEventListener("click", () => zoomAroundCenter(zoomLevel - ZOOM_STEP)));
+  document.querySelectorAll("[data-igm='zoom-fit']").forEach(b =>
+    b.addEventListener("click", fitToScreen));
 
-  // ── Sección: Variant ──────────────────────────────────────────────────────
-  const secVar = document.createElement("div");
-  secVar.id        = "igm-sec-variant";
-  secVar.className = "igm-modal-section";
-  secVar.innerHTML = `
-    <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">
-      Las implementaciones de atributos de la variante se gestionan
-      a través de la integración con el dominio.
-    </p>
-    <div id="igm-var-impls"></div>
-  `;
-  modal.appendChild(secVar);
+  if (boardContainer) {
+    boardContainer.addEventListener("wheel", (e) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
+      const newZ  = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(zoomLevel + delta).toFixed(2)));
+      const rect  = boardContainer.getBoundingClientRect();
+      const bx    = (boardContainer.scrollLeft + e.clientX - rect.left) / zoomLevel;
+      const by    = (boardContainer.scrollTop  + e.clientY - rect.top)  / zoomLevel;
+      applyZoom(newZ);
+      boardContainer.scrollLeft = bx * zoomLevel - (e.clientX - rect.left);
+      boardContainer.scrollTop  = by * zoomLevel - (e.clientY - rect.top);
+    }, { passive: false });
 
-  const actions = document.createElement("div");
-  actions.className = "igm-modal-actions";
-  actions.innerHTML = `
-    <button id="igm-modal-cancel" class="igm-btn-secondary">Cancelar</button>
-    <button id="igm-modal-save"   class="igm-btn-primary">Guardar</button>
-  `;
-  modal.appendChild(actions);
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-}
-
-// ── Modal global de atributos (CRUD) ──────────────────────────────────────────
-
-function createAttrsModal() {
-  const overlay = document.createElement("div");
-  overlay.id        = "igm-attrs-overlay";
-  overlay.className = "igm-modal-overlay igm-hidden";
-
-  const modal = document.createElement("div");
-  modal.id        = "igm-attrs-modal";
-  modal.className = "igm-modal igm-attrs-modal";
-  modal.innerHTML = `
-    <h3>Gestión de Atributos</h3>
-
-    <div id="igm-attrs-list" class="igm-attrs-existing-list"></div>
-
-    <div class="igm-na-section">
-      <h4 class="igm-na-heading">Nuevo atributo</h4>
-      <div class="igm-na-form-grid">
-        <div>
-          <label for="igm-na-key">Key</label>
-          <input id="igm-na-key" type="text" placeholder="ej: color" />
-        </div>
-        <div>
-          <label for="igm-na-name">Nombre</label>
-          <input id="igm-na-name" type="text" placeholder="ej: Color" />
-        </div>
-        <div>
-          <label for="igm-na-dtype">Tipo</label>
-          <select id="igm-na-dtype">
-            <option value="text">text</option>
-            <option value="number">number</option>
-            <option value="boolean">boolean</option>
-            <option value="enum">enum</option>
-          </select>
-        </div>
-        <div>
-          <label for="igm-na-static">Aplica a</label>
-          <select id="igm-na-static">
-            <option value="false">Variante (dinámico)</option>
-            <option value="true">Producto (estático)</option>
-          </select>
-        </div>
-      </div>
-
-      <div id="igm-na-enum-section" class="igm-enum-section igm-hidden">
-        <label>Opciones del enum</label>
-        <div id="igm-na-enum-list" class="igm-enum-list"></div>
-        <div class="igm-enum-add-row">
-          <input id="igm-na-enum-input" type="text" placeholder="Nueva opción..." />
-          <button id="igm-na-enum-add" class="igm-btn-secondary">+ Agregar opción</button>
-        </div>
-      </div>
-
-      <button id="igm-na-create-btn" class="igm-attr-add-btn" style="margin-top:12px;">+ Crear atributo</button>
-    </div>
-
-    <div class="igm-modal-actions">
-      <button id="igm-attrs-close" class="igm-btn-secondary">Cerrar</button>
-    </div>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-}
-
-// ── Modal picker de atributos (selector para categorías) ──────────────────────
-
-function createAttrPickerModal() {
-  const overlay = document.createElement("div");
-  overlay.id        = "igm-attr-picker-overlay";
-  overlay.className = "igm-modal-overlay igm-hidden";
-
-  const modal = document.createElement("div");
-  modal.id        = "igm-attr-picker-modal";
-  modal.className = "igm-modal igm-attr-picker-modal";
-  modal.innerHTML = `
-    <h3>Agregar atributos</h3>
-
-    <div class="igm-picker-grid">
-
-      <div class="igm-picker-col">
-        <div class="igm-picker-group">
-          <h5 class="igm-picker-group-title igm-picker-title-product">Producto (los tuyos)</h5>
-          <div id="igm-picker-have-static"  class="igm-picker-list"></div>
-        </div>
-        <div class="igm-picker-group">
-          <h5 class="igm-picker-group-title igm-picker-title-category">Variante (los tuyos)</h5>
-          <div id="igm-picker-have-dynamic" class="igm-picker-list"></div>
-        </div>
-      </div>
-
-      <div class="igm-picker-col">
-        <div class="igm-picker-group">
-          <h5 class="igm-picker-group-title igm-picker-title-product">Producto (todos)</h5>
-          <div id="igm-picker-all-static"   class="igm-picker-list"></div>
-        </div>
-        <div class="igm-picker-group">
-          <h5 class="igm-picker-group-title igm-picker-title-category">Variante (todos)</h5>
-          <div id="igm-picker-all-dynamic"  class="igm-picker-list"></div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="igm-modal-actions">
-      <button id="igm-picker-cancel"  class="igm-btn-secondary">Cancelar</button>
-      <button id="igm-picker-confirm" class="igm-btn-primary">Confirmar</button>
-    </div>
-  `;
-
-  overlay.appendChild(modal);
-  document.body.appendChild(overlay);
-}
-
-// ── API pública ────────────────────────────────────────────────────────────────
-
-export function initUI() {
-  createGestorModal();
-  createModal();
-  createAttrsModal();
-  createAttrPickerModal();
+    let isPanning = false, panX = 0, panY = 0, panSL = 0, panST = 0;
+    boardContainer.addEventListener("mousedown", (e) => {
+      if (e.button !== 1) return;
+      e.preventDefault();
+      isPanning = true;
+      panX = e.clientX; panY = e.clientY;
+      panSL = boardContainer.scrollLeft; panST = boardContainer.scrollTop;
+      boardContainer.style.cursor = "grabbing";
+    });
+    window.addEventListener("mousemove", (e) => {
+      if (!isPanning) return;
+      boardContainer.scrollLeft = panSL - (e.clientX - panX);
+      boardContainer.scrollTop  = panST - (e.clientY - panY);
+    });
+    window.addEventListener("mouseup", (e) => {
+      if (e.button !== 1 || !isPanning) return;
+      isPanning = false;
+      boardContainer.style.cursor = "";
+    });
+  }
 }
 
 export function showMenu(anchorEl, opciones, onSelect) {

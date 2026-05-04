@@ -1,7 +1,7 @@
 import { Handler }                              from "./Handler.js";
 import { CHART_TYPE, CHART_BG }                from "./charts.js";
 import { Category, Product, Variant, Attribute } from "./models.js";
-import { initUI, showMenu, showGestorDialog }   from "./ui.js";
+import { showMenu, showGestorDialog, initZoom } from "./ui.js";
 import { Gestor }                               from "./Gestor.js";
 import { attrStore }                            from "./stores/attrStore.js";
 import { catalogStore }                         from "./stores/catalogStore.js";
@@ -11,7 +11,6 @@ import { renderPicker as renderPickerView }     from "./renders/renderAttrPicker
 
 // ── Inicialización ─────────────────────────────────────────────────────────────
 
-initUI();
 attrStore.load();
 
 const handler = new Handler();
@@ -235,23 +234,12 @@ function moveMsgFor(flow) {
 // MODAL GLOBAL DE ATRIBUTOS (CRUD)
 // ══════════════════════════════════════════════════════════════════════════════
 
-let attrsModalReady  = false;
+let attrsModalReady   = false;
 let currentEnumValues = [];
+let editingAttrId     = null;
 
 function openAttrsModal() {
   const overlay = document.getElementById("igm-attrs-overlay");
-
-  const renderExistingList = () => {
-    renderAttrRows(
-      document.getElementById("igm-attrs-list"),
-      attrStore.attrs,
-      (attr) => {
-        if (!confirm(`¿Eliminar el atributo "${attr.name}" (${attr.key})?`)) return;
-        attrStore.remove(attr.id);
-        renderExistingList();
-      },
-    );
-  };
 
   const refreshEnumValues = () => {
     renderEnumValues(
@@ -262,13 +250,47 @@ function openAttrsModal() {
   };
 
   const resetForm = () => {
-    document.getElementById("igm-na-key").value    = "";
-    document.getElementById("igm-na-name").value   = "";
-    document.getElementById("igm-na-dtype").value  = "text";
-    document.getElementById("igm-na-static").value = "false";
+    editingAttrId = null;
+    document.getElementById("igm-na-key").value     = "";
+    document.getElementById("igm-na-key").readOnly  = false;
+    document.getElementById("igm-na-name").value    = "";
+    document.getElementById("igm-na-dtype").value   = "text";
+    document.getElementById("igm-na-static").value  = "false";
+    document.getElementById("igm-na-heading").textContent    = "Nuevo atributo";
+    document.getElementById("igm-na-create-btn").textContent = "+ Crear atributo";
+    document.getElementById("igm-na-cancel-edit").classList.add("igm-hidden");
     currentEnumValues = [];
     document.getElementById("igm-na-enum-section").classList.add("igm-hidden");
     refreshEnumValues();
+  };
+
+  const renderExistingList = () => {
+    renderAttrRows(
+      document.getElementById("igm-attrs-list"),
+      attrStore.attrs,
+      (attr) => {
+        if (!confirm(`¿Eliminar el atributo "${attr.name}" (${attr.key})?`)) return;
+        attrStore.remove(attr.id);
+        if (editingAttrId === attr.id) resetForm();
+        renderExistingList();
+      },
+      (attr) => {
+        editingAttrId = attr.id;
+        document.getElementById("igm-na-key").value     = attr.key;
+        document.getElementById("igm-na-key").readOnly  = true;
+        document.getElementById("igm-na-name").value    = attr.name;
+        document.getElementById("igm-na-dtype").value   = attr.data_type;
+        document.getElementById("igm-na-static").value  = String(attr.is_static);
+        currentEnumValues = [...(attr.enum_values ?? [])];
+        const isEnum = attr.data_type === "enum";
+        document.getElementById("igm-na-enum-section").classList.toggle("igm-hidden", !isEnum);
+        refreshEnumValues();
+        document.getElementById("igm-na-heading").textContent    = `Editando: ${attr.key}`;
+        document.getElementById("igm-na-create-btn").textContent = "Guardar cambios";
+        document.getElementById("igm-na-cancel-edit").classList.remove("igm-hidden");
+        document.getElementById("igm-na-name").focus();
+      },
+    );
   };
 
   if (!attrsModalReady) {
@@ -294,12 +316,26 @@ function openAttrsModal() {
       if (e.key === "Enter") { e.preventDefault(); addEnumValue(); }
     });
 
+    document.getElementById("igm-na-cancel-edit").addEventListener("click", resetForm);
+
     document.getElementById("igm-na-create-btn").addEventListener("click", () => {
-      const key      = document.getElementById("igm-na-key").value.trim();
       const name     = document.getElementById("igm-na-name").value.trim();
       const dataType = document.getElementById("igm-na-dtype").value;
       const isStatic = document.getElementById("igm-na-static").value === "true";
 
+      if (editingAttrId !== null) {
+        if (!name) { document.getElementById("igm-na-name").focus(); return; }
+        if (dataType === "enum" && currentEnumValues.length === 0) {
+          alert("El atributo enum necesita al menos una opción.");
+          return;
+        }
+        attrStore.update(editingAttrId, { name, data_type: dataType, is_static: isStatic, enum_values: currentEnumValues });
+        resetForm();
+        renderExistingList();
+        return;
+      }
+
+      const key = document.getElementById("igm-na-key").value.trim();
       if (!key || !name) { document.getElementById("igm-na-key").focus(); return; }
       if (attrStore.attrs.some(a => a.key === key)) {
         alert(`Ya existe un atributo con key "${key}".`);
@@ -856,86 +892,6 @@ board.addEventListener("dragend", () => {
   dragId = null; dropZone = null; clearDropHighlights();
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// ZOOM
-// ══════════════════════════════════════════════════════════════════════════════
-
-let zoomLevel = 1.0;
-const ZOOM_STEP = 0.03;
-const ZOOM_MIN  = 0.2;
-const ZOOM_MAX  = 3.0;
-
-function applyZoom(z) {
-  zoomLevel        = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +z.toFixed(2)));
-  board.style.zoom = zoomLevel;
-}
-
-function fitToScreen() {
-  if (!boardContainer) return;
-  const natW    = board.offsetWidth  / zoomLevel;
-  const natH    = board.offsetHeight / zoomLevel;
-  const fitZoom = Math.min(boardContainer.clientWidth / natW, boardContainer.clientHeight / natH, 1.0);
-  applyZoom(fitZoom);
-  boardContainer.scrollLeft = 0;
-  boardContainer.scrollTop  = 0;
-}
-
-function zoomAroundCenter(newZ) {
-  if (!boardContainer) { applyZoom(newZ); return; }
-  const cx = boardContainer.scrollLeft + boardContainer.clientWidth  / 2;
-  const cy = boardContainer.scrollTop  + boardContainer.clientHeight / 2;
-  const bx = cx / zoomLevel;
-  const by = cy / zoomLevel;
-  applyZoom(newZ);
-  boardContainer.scrollLeft = bx * zoomLevel - boardContainer.clientWidth  / 2;
-  boardContainer.scrollTop  = by * zoomLevel - boardContainer.clientHeight / 2;
-}
-
-document.querySelectorAll("[data-igm='zoom-in']").forEach(b =>
-  b.addEventListener("click", () => zoomAroundCenter(zoomLevel + ZOOM_STEP)));
-document.querySelectorAll("[data-igm='zoom-out']").forEach(b =>
-  b.addEventListener("click", () => zoomAroundCenter(zoomLevel - ZOOM_STEP)));
-document.querySelectorAll("[data-igm='zoom-fit']").forEach(b =>
-  b.addEventListener("click", fitToScreen));
-
-if (boardContainer) {
-  boardContainer.addEventListener("wheel", (e) => {
-    if (!e.ctrlKey) return;
-    e.preventDefault();
-    const delta = e.deltaY < 0 ? ZOOM_STEP : -ZOOM_STEP;
-    const newZ  = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, +(zoomLevel + delta).toFixed(2)));
-    const rect  = boardContainer.getBoundingClientRect();
-    const bx    = (boardContainer.scrollLeft + e.clientX - rect.left) / zoomLevel;
-    const by    = (boardContainer.scrollTop  + e.clientY - rect.top)  / zoomLevel;
-    applyZoom(newZ);
-    boardContainer.scrollLeft = bx * zoomLevel - (e.clientX - rect.left);
-    boardContainer.scrollTop  = by * zoomLevel - (e.clientY - rect.top);
-  }, { passive: false });
-}
-
-// ── Pan con botón del medio ───────────────────────────────────────────────────
-
-if (boardContainer) {
-  let isPanning = false, panX = 0, panY = 0, panSL = 0, panST = 0;
-
-  boardContainer.addEventListener("mousedown", (e) => {
-    if (e.button !== 1) return;
-    e.preventDefault();
-    isPanning = true;
-    panX = e.clientX; panY = e.clientY;
-    panSL = boardContainer.scrollLeft; panST = boardContainer.scrollTop;
-    boardContainer.style.cursor = "grabbing";
-  });
-  window.addEventListener("mousemove", (e) => {
-    if (!isPanning) return;
-    boardContainer.scrollLeft = panSL - (e.clientX - panX);
-    boardContainer.scrollTop  = panST - (e.clientY - panY);
-  });
-  window.addEventListener("mouseup", (e) => {
-    if (e.button !== 1 || !isPanning) return;
-    isPanning = false;
-    boardContainer.style.cursor = "";
-  });
-}
+initZoom();
 
 export { handler, gestor };

@@ -73,6 +73,155 @@
     </div>
   </div>
 
+  <!-- Modal: Gestor (confirmación con inputs/deletions) -->
+  <div id="igm-gestor-overlay" class="igm-modal-overlay igm-hidden">
+    <div id="igm-gestor-modal" class="igm-modal">
+      <h3 id="igm-gestor-title"></h3>
+      <p id="igm-gestor-desc" class="igm-gestor-desc"></p>
+      <div id="igm-gestor-deletions" class="igm-gestor-section igm-hidden"></div>
+      <div id="igm-gestor-inputs" class="igm-gestor-section igm-hidden"></div>
+      <div class="igm-modal-actions">
+        <button id="igm-gestor-cancel" class="igm-btn-secondary">Cancelar</button>
+        <button id="igm-gestor-confirm" class="igm-btn-primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edición de nodo -->
+  <div id="igm-modal-overlay" class="igm-modal-overlay igm-hidden">
+    <div id="igm-modal" class="igm-modal">
+      <h3 id="igm-modal-title"></h3>
+
+      <div id="igm-sec-category" class="igm-modal-section">
+        <label for="igm-cat-name">Nombre</label>
+        <input id="igm-cat-name" type="text" placeholder="Nombre de la categoría" />
+        <div class="igm-attr-manager">
+          <h4>Atributos</h4>
+          <div id="igm-attr-list" class="igm-attr-list"></div>
+          <button id="igm-attr-picker-btn" class="igm-attr-open-picker-btn">+ Agregar atributos</button>
+        </div>
+      </div>
+
+      <div id="igm-sec-product" class="igm-modal-section">
+        <label for="igm-prod-title">Título</label>
+        <input id="igm-prod-title" type="text" placeholder="Nombre del producto" />
+        <label for="igm-prod-code">Código (SKU)</label>
+        <input id="igm-prod-code" type="text" placeholder="ABC-001" />
+        <label for="igm-prod-price">Precio</label>
+        <input id="igm-prod-price" type="number" placeholder="0.00" min="0" step="0.01" />
+        <label for="igm-prod-brand">Marca</label>
+        <input id="igm-prod-brand" type="text" placeholder="Marca" />
+        <label for="igm-prod-desc">Descripción</label>
+        <textarea id="igm-prod-desc" rows="3" placeholder="Descripción opcional"></textarea>
+      </div>
+
+      <div id="igm-sec-variant" class="igm-modal-section">
+        <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">
+          Las implementaciones de atributos de la variante se gestionan
+          a través de la integración con el dominio.
+        </p>
+        <div id="igm-var-impls"></div>
+      </div>
+
+      <div class="igm-modal-actions">
+        <button id="igm-modal-cancel" class="igm-btn-secondary">Cancelar</button>
+        <button id="igm-modal-save" class="igm-btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Gestión global de atributos (CRUD) -->
+  <div id="igm-attrs-overlay" class="igm-modal-overlay igm-hidden">
+    <div id="igm-attrs-modal" class="igm-modal igm-attrs-modal">
+      <h3>Gestión de Atributos</h3>
+
+      <div id="igm-attrs-list" class="igm-attrs-existing-list"></div>
+
+      <div class="igm-na-section">
+        <h4 id="igm-na-heading" class="igm-na-heading">Nuevo atributo</h4>
+        <div class="igm-na-form-grid">
+          <div>
+            <label for="igm-na-key">Key</label>
+            <input id="igm-na-key" type="text" placeholder="ej: color" />
+          </div>
+          <div>
+            <label for="igm-na-name">Nombre</label>
+            <input id="igm-na-name" type="text" placeholder="ej: Color" />
+          </div>
+          <div>
+            <label for="igm-na-dtype">Tipo</label>
+            <select id="igm-na-dtype">
+              <option value="text">text</option>
+              <option value="number">number</option>
+              <option value="boolean">boolean</option>
+              <option value="enum">enum</option>
+            </select>
+          </div>
+          <div>
+            <label for="igm-na-static">Aplica a</label>
+            <select id="igm-na-static">
+              <option value="false">Variante (dinámico)</option>
+              <option value="true">Producto (estático)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="igm-na-enum-section" class="igm-enum-section igm-hidden">
+          <label>Opciones del enum</label>
+          <div id="igm-na-enum-list" class="igm-enum-list"></div>
+          <div class="igm-enum-add-row">
+            <input id="igm-na-enum-input" type="text" placeholder="Nueva opción..." />
+            <button id="igm-na-enum-add" class="igm-btn-secondary">+ Agregar opción</button>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <button id="igm-na-create-btn" class="igm-attr-add-btn">+ Crear atributo</button>
+          <button id="igm-na-cancel-edit" class="igm-btn-secondary igm-hidden">Cancelar</button>
+        </div>
+      </div>
+
+      <div class="igm-modal-actions">
+        <button id="igm-attrs-close" class="igm-btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Picker de atributos (selector para categorías) -->
+  <div id="igm-attr-picker-overlay" class="igm-modal-overlay igm-hidden">
+    <div id="igm-attr-picker-modal" class="igm-modal igm-attr-picker-modal">
+      <h3>Agregar atributos</h3>
+
+      <div class="igm-picker-grid">
+        <div class="igm-picker-col">
+          <div class="igm-picker-group">
+            <h5 class="igm-picker-group-title igm-picker-title-product">Producto (los tuyos)</h5>
+            <div id="igm-picker-have-static" class="igm-picker-list"></div>
+          </div>
+          <div class="igm-picker-group">
+            <h5 class="igm-picker-group-title igm-picker-title-category">Variante (los tuyos)</h5>
+            <div id="igm-picker-have-dynamic" class="igm-picker-list"></div>
+          </div>
+        </div>
+        <div class="igm-picker-col">
+          <div class="igm-picker-group">
+            <h5 class="igm-picker-group-title igm-picker-title-product">Producto (todos)</h5>
+            <div id="igm-picker-all-static" class="igm-picker-list"></div>
+          </div>
+          <div class="igm-picker-group">
+            <h5 class="igm-picker-group-title igm-picker-title-category">Variante (todos)</h5>
+            <div id="igm-picker-all-dynamic" class="igm-picker-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="igm-modal-actions">
+        <button id="igm-picker-cancel" class="igm-btn-secondary">Cancelar</button>
+        <button id="igm-picker-confirm" class="igm-btn-primary">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="./events.js"></script>
 </body>
 </html>

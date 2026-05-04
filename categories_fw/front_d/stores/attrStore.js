@@ -44,4 +44,15 @@ export const attrStore = {
     this._save();
     return true;
   },
+
+  update(id, { name, data_type, is_static, enum_values }) {
+    const attr = this.attrs.find(a => a.id === id);
+    if (!attr) return false;
+    if (name        !== undefined) attr.name        = name;
+    if (data_type   !== undefined) attr.data_type   = data_type;
+    if (is_static   !== undefined) attr.is_static   = !!is_static;
+    if (enum_values !== undefined) attr.enum_values = [...enum_values];
+    this._save();
+    return true;
+  },
 };

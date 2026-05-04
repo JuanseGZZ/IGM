@@ -1,10 +1,8 @@
 - refactorizar:
 
-* pasar de la ui a el html esos modales que se estan generando al pedo dinamicamente. y eliminar ese llamado de init.
+
 * plantear para que es cada cosa:
 . el events es son triggers que sirven para llamar a otras cosas, no deberia haber muchas funciones ahi.
-
-* pasar la logica de zoom de events a ui.
 
 
 - hacer la lista de todos los casos de usos y reglas de negocio que se implementaron, y ver cuales faltan. Puede ayudar la logica de codigo, las reglas y los bugs arreglados.
