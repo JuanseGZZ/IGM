@@ -8,7 +8,7 @@ import sys
 import traceback
 from typing import Optional
 
-from app import App, ComposeResult
+from textual.app import App, ComposeResult
 from textual.widgets import (
     Header, Footer, Tree, Log, Input, Label, Button, Select
 )
