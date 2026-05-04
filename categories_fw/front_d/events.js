@@ -5,7 +5,7 @@ import { showMenu, showGestorDialog, initZoom } from "./ui.js";
 import { Gestor }                               from "./Gestor.js";
 import { attrStore }                            from "./stores/attrStore.js";
 import { catalogStore }                         from "./stores/catalogStore.js";
-import { renderAttrList, renderVariantImpls }   from "./renders/renderEditModal.js";
+import { renderAttrList, renderImplsEditable }  from "./renders/renderEditModal.js";
 import { renderAttrRows, renderEnumValues }     from "./renders/renderAttrsModal.js";
 import { renderPicker as renderPickerView }     from "./renders/renderAttrPicker.js";
 
@@ -716,10 +716,11 @@ function openModal(chart) {
     prodPrice.value = m.price       ?? "";
     prodBrand.value = m.brand       ?? "";
     prodDesc.value  = m.description ?? "";
+    renderImplsEditable(document.getElementById("igm-prod-impls"), m.attributes_implementations ?? []);
 
   } else if (chart.chartType === CHART_TYPE.VARIANT) {
     secVariant.classList.add("igm-active");
-    renderVariantImpls(document.getElementById("igm-var-impls"), chart.model);
+    renderImplsEditable(document.getElementById("igm-var-impls"), chart.model?.attribute_implementations ?? []);
   }
 
   overlay.classList.remove("igm-hidden");
@@ -773,6 +774,14 @@ function refreshAttrList() {
 
 // ── Guardar modal ─────────────────────────────────────────────────────────────
 
+function _readBackImpls(containerEl, impls) {
+  containerEl?.querySelectorAll("[data-impl-idx]").forEach(el => {
+    const impl = impls[parseInt(el.dataset.implIdx, 10)];
+    if (!impl) return;
+    impl.value = el.type === "checkbox" ? el.checked : el.value;
+  });
+}
+
 document.getElementById("igm-modal-save").addEventListener("click", () => {
   if (!editingChart) return;
 
@@ -792,6 +801,17 @@ document.getElementById("igm-modal-save").addEventListener("click", () => {
     editingChart.model.price       = parseFloat(prodPrice.value) || 0;
     editingChart.model.brand       = prodBrand.value.trim();
     editingChart.model.description = prodDesc.value.trim();
+    _readBackImpls(
+      document.getElementById("igm-prod-impls"),
+      editingChart.model.attributes_implementations ?? [],
+    );
+
+  } else if (editingChart.chartType === CHART_TYPE.VARIANT) {
+    if (!editingChart.model) editingChart.model = {};
+    _readBackImpls(
+      document.getElementById("igm-var-impls"),
+      editingChart.model.attribute_implementations ?? [],
+    );
   }
 
   handler.treeToMax();

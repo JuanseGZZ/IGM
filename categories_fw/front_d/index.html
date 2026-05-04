@@ -113,14 +113,18 @@
         <input id="igm-prod-brand" type="text" placeholder="Marca" />
         <label for="igm-prod-desc">Descripción</label>
         <textarea id="igm-prod-desc" rows="3" placeholder="Descripción opcional"></textarea>
+
+        <div class="igm-attr-manager" id="igm-prod-impls-section">
+          <h4>Implementaciones de atributos</h4>
+          <div id="igm-prod-impls" class="igm-impl-list"></div>
+        </div>
       </div>
 
       <div id="igm-sec-variant" class="igm-modal-section">
-        <p style="font-size:13px;color:var(--text-muted);margin:0 0 12px;">
-          Las implementaciones de atributos de la variante se gestionan
-          a través de la integración con el dominio.
-        </p>
-        <div id="igm-var-impls"></div>
+        <div class="igm-attr-manager">
+          <h4>Implementaciones de atributos</h4>
+          <div id="igm-var-impls" class="igm-impl-list"></div>
+        </div>
       </div>
 
       <div class="igm-modal-actions">

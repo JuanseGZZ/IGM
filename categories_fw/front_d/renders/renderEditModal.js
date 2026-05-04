@@ -36,18 +36,49 @@ export function renderAttrList(container, attrs, onRemove) {
   });
 }
 
-export function renderVariantImpls(container, model) {
+export function renderImplsEditable(container, impls) {
   if (!container) return;
   container.innerHTML = "";
-  const impls = model?.attribute_implementations ?? [];
-  if (impls.length === 0) {
-    container.textContent = "Esta variante no tiene implementaciones.";
+  if (!impls || impls.length === 0) {
+    const span = document.createElement("span");
+    span.className   = "igm-body-empty";
+    span.textContent = "Sin implementaciones";
+    container.appendChild(span);
     return;
   }
-  impls.forEach(impl => {
-    const row = document.createElement("div");
-    row.className   = "igm-attr-item";
-    row.textContent = `${impl.attribute?.key ?? "?"}: ${impl.value}`;
+  impls.forEach((impl, idx) => {
+    const attr = impl.attribute ?? {};
+    const row  = document.createElement("div");
+    row.className = "igm-impl-row";
+
+    const label = document.createElement("label");
+    label.className   = "igm-impl-label";
+    label.textContent = attr.name ?? attr.key ?? "?";
+    label.htmlFor     = `igm-impl-${idx}`;
+
+    let input;
+    if (attr.data_type === "boolean") {
+      input         = document.createElement("input");
+      input.type    = "checkbox";
+      input.checked = impl.value === true || impl.value === "true";
+    } else if (attr.data_type === "enum" && attr.enum_values?.length > 0) {
+      input = document.createElement("select");
+      attr.enum_values.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = opt.textContent = v;
+        if (String(v) === String(impl.value)) opt.selected = true;
+        input.appendChild(opt);
+      });
+    } else {
+      input       = document.createElement("input");
+      input.type  = attr.data_type === "number" ? "number" : "text";
+      input.value = impl.value ?? "";
+    }
+    input.id              = `igm-impl-${idx}`;
+    input.dataset.implIdx = idx;
+
+    row.appendChild(label);
+    row.appendChild(input);
     container.appendChild(row);
   });
 }

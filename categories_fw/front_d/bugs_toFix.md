@@ -20,3 +20,6 @@
 
 
 - me aviso que tenia impacto con color cuando movi una categoria que tenia de hijo un producto sin variantes implementadas, eso no deberia pasar porque no hay impacto ahi. pero si paso el producto solo no me avisa que eso si esta bien.
+
+
+- cuando edito variantes me deja editarla y que queden dos variantes iguales, eso no deberia pasar.
