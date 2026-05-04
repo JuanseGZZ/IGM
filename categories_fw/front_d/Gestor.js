@@ -92,6 +92,8 @@ export class Gestor {
     if (chartType === CHART_TYPE.CATEGORY) {
       if (parent.chartType !== "root" && parent.chartType !== CHART_TYPE.CATEGORY)
         return { ok: false, blocked: true, reason: "Una categoría solo puede ser hija de otra categoría." };
+      if (parent.chartType === "root" && parent.listaHijos.length > 0)
+        return { ok: false, blocked: true, reason: "Ya existe una categoría principal. Solo puede haber una." };
     }
     if (chartType === CHART_TYPE.PRODUCT) {
       if (parent.chartType !== CHART_TYPE.CATEGORY)
@@ -484,6 +486,8 @@ export class Gestor {
     if (!prod || !newCat) return { ok: true, blocked: false, flow: "none" };
 
     // ── Atributos estáticos (implementaciones a nivel de producto) ────────────
+    console.log("Este es el impacto por cambiar de categoria")
+    console.log(prod.impact_on_change_category(newCat));
     const [toAdd, toRemove] = prod.impact_on_change_category(newCat);
     const inputs    = [...toAdd.values()].map(a => ({
       attr: a, label: a.name, dataType: a.data_type, options: a.enum_values ?? [], hint: a.key,

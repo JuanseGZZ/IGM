@@ -621,13 +621,11 @@ board.addEventListener("dblclick", (ev) => {
 const addRootBtn = document.getElementById("igm-add-root");
 if (addRootBtn) {
   addRootBtn.addEventListener("click", () => {
-    showMenu(addRootBtn, CHART_OPCIONES, (chartType) => {
-      const check = gestor.checkAdd(0, chartType);
-      if (!check.ok) { alert(check.reason); return; }
-      createModel(chartType, (model) => {
-        if (!model) return;
-        layoutActors[currentLayout].addRoot(chartType, model);
-      });
+    const check = gestor.checkAdd(0, CHART_TYPE.CATEGORY);
+    if (!check.ok) { alert(check.reason); return; }
+    createModel(CHART_TYPE.CATEGORY, (model) => {
+      if (!model) return;
+      layoutActors[currentLayout].addRoot(CHART_TYPE.CATEGORY, model);
     });
   });
 }
