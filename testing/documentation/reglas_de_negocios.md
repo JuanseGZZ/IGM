@@ -56,7 +56,7 @@ Formato: **dado [situación] → se actúa como [consecuencia]**
 Dado que una categoría pasa a tener un padre que antes no tenía → sus productos descendientes ganan los atributos que el nuevo padre aporta (menos los que la propia subcategoría ya define, según R4).
 
 **E2 — Categoría cambia de padre**
-Dado que una categoría cambia su padre → es la combinación de E3 (pierde los attrs del padre viejo) más E1 (gana los attrs del padre nuevo). Se calcula el delta completo.
+Dado que una categoría cambia su padre → se calcula el **delta neto**: qué attrs se heredaban antes vs qué attrs se heredarán con el nuevo padre. Si un attr sigue llegando por otra rama del árbol (ej: el nuevo padre también es descendiente del mismo ancestro que aportaba ese attr), no hay impacto real para ese attr. Solo impactan los attrs que realmente aparecen o desaparecen del conjunto heredado.
 
 **E3 — Categoría pierde su padre**
 Dado que una categoría deja de tener padre → sus productos descendientes pierden todos los atributos que estaban llegando por herencia (los que venían de la ascendencia anterior, menos los que la propia subcategoría ya redefinía).
@@ -73,10 +73,18 @@ Dado que un producto se mueve a otra categoría → gana los atributos que la nu
 **E7 — Variante: consistencia con la categoría**
 Dado que se agrega una variante → debe implementar exactamente los atributos dinámicos del `full_attr_set` de la categoría del producto. Se valida completitud (no faltan) y no exceso (no sobran).
 
+**E8 — Limpieza de variantes tras remoción de atributos**
+Dado que ciertos atributos dejan de aplicar a un producto (por E5 o E6) → se ejecutan tres pasos en orden:
+1. Se quitan de cada variante las implementaciones de los atributos removidos.
+2. Las variantes que queden sin ninguna implementación se eliminan.
+3. Las variantes que queden con la misma firma (misma combinación de valores) se deduplicación: se conserva la primera, se eliminan las demás.
+
+**R16** — Dado que una variante queda sin implementaciones tras una remoción de atributos → se elimina automáticamente.
+
+**R17** — Dado que dos variantes quedan con la misma combinación de valores tras una remoción de atributos → se elimina la duplicada. No pueden existir dos variantes con la misma firma en el mismo producto, ni al crearlas ni tras modificaciones.
+
 ---
 
 ## Pendiente / A definir
 
-- ¿Qué pasa con las variantes existentes de un producto cuando ese producto cambia de categoría? (el modelo detecta el delta de la categoría en E6, pero no valida las variantes existentes)
-- ¿Qué pasa con las variantes cuando una categoría cambia sus atributos dinámicos (E4/E5)?
 - ¿Un producto puede existir sin variantes?

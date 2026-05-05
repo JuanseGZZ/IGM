@@ -195,10 +195,19 @@ class Category:
         return self.compute_impact(self.get_effective_inherited_attrs())
 
     def impact_on_change_father(self, new_father: 'Category') -> tuple[list, list]:
-        """E2: delta completo al cambiar de padre.
-        Retorna (impacto_salida, impacto_entrada) para que el llamador resuelva el diff."""
+        """E2: delta neto al cambiar de padre.
+        Compara lo que se hereda actualmente vs lo que se heredaría con new_father.
+        Si un attr sigue llegando por otra rama (ej: hermano que también hereda del abuelo),
+        no aparece en el delta — no hay impacto real.
+        Retorna (impact_out, impact_in)."""
         new_father._check_no_cycle(self)
-        return self.impact_on_remove_father(), self.impact_on_add_father(new_father)
+        current_inherited = self.get_effective_inherited_attrs()
+        new_inherited = (new_father.get_ancestor_attrs() | set(new_father.attributes)) - set(self.attributes)
+        losing  = current_inherited - new_inherited
+        gaining = new_inherited - current_inherited
+        impact_out = self.compute_impact(losing)  if losing  else []
+        impact_in  = self.compute_impact(gaining) if gaining else []
+        return impact_out, impact_in
 
     def impact_on_add_attribute(self, attr: 'Attribute') -> list[tuple[set, list]]:
         """E4: que productos deben implementar attr porque self lo acaba de agregar."""
@@ -359,3 +368,34 @@ class Product:
         if variant not in self.variants:
             raise ValueError("La variante no pertenece a este producto.")
         self.variants.remove(variant)
+
+    def clean_variants_after_attr_removal(self, removed_attrs: set) -> tuple[int, int]:
+        """E8: limpia las variantes luego de que ciertos attrs dejaron de aplicar.
+        1. Quita las implementaciones de removed_attrs de cada variante.
+        2. Elimina variantes que queden sin implementaciones.
+        3. Elimina variantes duplicadas que surjan tras la limpieza (conserva la primera).
+        Retorna (vaciadas_eliminadas, duplicadas_eliminadas).
+        Llamar DESPUÉS de mutar self.category si el cambio fue por E6."""
+        keys = {a.key for a in removed_attrs}
+
+        for var in self.variants:
+            var.attribute_implementations = [
+                impl for impl in var.attribute_implementations
+                if impl.attribute.key not in keys
+            ]
+
+        before = len(self.variants)
+        self.variants = [v for v in self.variants if v.attribute_implementations]
+        empty_removed = before - len(self.variants)
+
+        seen: set[frozenset] = set()
+        unique = []
+        for v in self.variants:
+            sig = self._variant_signature(v)
+            if sig not in seen:
+                seen.add(sig)
+                unique.append(v)
+        dup_removed = len(self.variants) - len(unique)
+        self.variants = unique
+
+        return empty_removed, dup_removed

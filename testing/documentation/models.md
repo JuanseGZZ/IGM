@@ -157,6 +157,8 @@ Representa un producto dentro de una categoría.
 
 **`remove_variant(variant)`** — Quita una variante existente.
 
+**`clean_variants_after_attr_removal(removed_attrs) → (int, int)`** — E8: limpieza tras remoción de atributos. En orden: (1) quita las implementaciones de `removed_attrs` de todas las variantes, (2) elimina las variantes que queden vacías, (3) elimina variantes duplicadas que surjan. Retorna `(vaciadas_eliminadas, duplicadas_eliminadas)`. Llamar después de aplicar E5 o E6.
+
 **`_check_variant_completeness(variant)`** — Valida que no falten ni sobren atributos dinámicos.
 
 **`_check_variant_uniqueness(variant)`** — Valida que la combinación de valores no exista ya.

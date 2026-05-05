@@ -531,6 +531,7 @@ class OrgApp(tk.Tk):
                     src.attributes_implementations.append(
                         AttributeImplementation(attribute=attr, value="")
                     )
+                src.clean_variants_after_attr_removal(to_remove)  # E8: modelo
 
                 # Mover en el árbol — modelo no tiene remove_product
                 if src.category:
@@ -561,7 +562,8 @@ class OrgApp(tk.Tk):
                         )
 
     def _apply_remove_impls(self, impact_pairs):
-        """Aplica lo que impact_on_* dijo: quita AttributeImplementation."""
+        """Aplica lo que impact_on_* dijo: quita AttributeImplementation del producto
+        y delega al modelo la limpieza de variantes (E8)."""
         for attrs, products in impact_pairs:
             keys = {a.key for a in attrs}
             for prod in products:
@@ -569,6 +571,7 @@ class OrgApp(tk.Tk):
                     impl for impl in prod.attributes_implementations
                     if impl.attribute.key not in keys
                 ]
+                prod.clean_variants_after_attr_removal(attrs)  # E8: modelo
 
     def _impact_preview(self, title, lose_pairs, gain_pairs):
         """
@@ -719,7 +722,8 @@ class OrgApp(tk.Tk):
 
         elif isinstance(obj, Product):
             m.title(f"Producto — {obj.title}")
-            m.geometry("480x580")
+            impl_count = len(obj.attributes_implementations)
+            m.geometry(f"480x{600 + impl_count * 34}")
             tk.Label(m, text=f"Producto: {obj.code}", bg=BG2, fg=TEXT,
                      font=("Inter", 13, "bold")).pack(pady=(20, 4))
             f = tk.Frame(m, bg=BG2); f.pack(fill=tk.X, padx=24)
@@ -729,7 +733,26 @@ class OrgApp(tk.Tk):
             e_brand = entry_field(f, "Marca",        obj.brand)
             e_desc  = entry_field(f, "Descripción",  obj.description)
 
-            # Variants summary
+            # Atributos implementados (estáticos)
+            tk.Label(f, text="Atributos del producto:", bg=BG2, fg=SUBTEXT,
+                     font=("Inter", 9), anchor="w").pack(fill=tk.X, pady=(12, 2))
+
+            impl_entries = {}
+            if obj.attributes_implementations:
+                for impl in obj.attributes_implementations:
+                    row = tk.Frame(f, bg=BG3); row.pack(fill=tk.X, pady=2)
+                    tk.Label(row, text=impl.attribute.name + ":", bg=BG3, fg=SUBTEXT,
+                             font=("Inter", 9), width=14, anchor="w").pack(side=tk.LEFT, padx=8, pady=4)
+                    e = tk.Entry(row, bg=BG3, fg=TEXT, insertbackground=TEXT,
+                                 relief=tk.FLAT, font=("Inter", 10))
+                    e.insert(0, impl.value)
+                    e.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+                    impl_entries[impl] = e
+            else:
+                tk.Label(f, text="  (ninguno)", bg=BG3, fg=SUBTEXT,
+                         font=("Inter", 9)).pack(fill=tk.X, ipady=4)
+
+            # Variantes
             tk.Label(f, text=f"Variantes: {len(obj.variants)}", bg=BG2, fg=SUBTEXT,
                      font=("Inter", 9)).pack(anchor="w", pady=(10, 0))
 
@@ -740,6 +763,8 @@ class OrgApp(tk.Tk):
                 obj.description = e_desc.get().strip()
                 try: obj.price = float(e_price.get())
                 except ValueError: pass
+                for impl, e in impl_entries.items():
+                    impl.value = e.get().strip()
                 self._render_tree(); m.destroy()
 
             _lbl_btn(m, "Guardar", _save_prod, ACCENT).pack(pady=16, ipady=6)
