@@ -90,3 +90,53 @@ Dado que ciertos atributos dejan de aplicar a un producto (por E5 o E6) → se e
 ## Pendiente / A definir
 
 - ¿Un producto puede existir sin variantes?
+
+---
+
+## A chequear — del archivo original (`categories_fw/app/reglas`)
+
+Reglas que escribiste antes. Las que ya están cubiertas se marcan. Las que faltan o tienen dudas quedan abiertas.
+
+| Regla original | Estado |
+|---|---|
+| Categoría agrega padre → ver todos los attrs del padre y ascendencia, recorrer ramas filtrando lo que las subcategorías intermedias redefinen, impactar productos al final de cada camino | ✓ Cubierto — E1 + `compute_impact` + `_descend_impact` |
+| Categoría cambia de padre → verificar salida Y entrada, ambas son impactos | ✓ Cubierto — E2 (delta neto: losing / gaining) |
+| Categoría elimina padre → solo la salida | ✓ Cubierto — E3 |
+| Categoría agrega atributo → solo ese attr, recorre ramas, impacta productos | ✓ Cubierto — E4 |
+| Categoría elimina atributo → solo ese attr, mismo recorrido | ✓ Cubierto — E5 |
+| Producto cambia de categoría → recolecta attrs implementados, compara con nueva herencia, agrega los que faltan y elimina los que sobran | ✓ Parcialmente — E6 calcula delta correcto. **⚠ FALTA**: cuando `to_add` incluye attrs dinámicos, hay que agregarlos a las variantes, no al producto |
+| Producto agrega y quita variantes → mira ancestros e implementa necesidades | ✓ Cubierto — E7 (`add_variant` valida completitud) y E8 (limpieza) |
+| Atributos estáticos → producto / dinámicos → variante | ✓ Cubierto — R6, R7, R8, R9, R10 |
+| Categorías: hijos son productos O categorías, no ambos; no cíclicas | ✓ Cubierto — R1, R2, R3 |
+| Productos: solo implementan estáticos heredados | ✓ Cubierto — R13, `_check_product_completeness` |
+| Variantes: solo dinámicos heredados, combinación única | ✓ Cubierto — R13b, R14, R15, `_check_variant_completeness` |
+
+---
+
+## A chequear — propuestas por IA
+
+Casos no cubiertos o no definidos que surgen de mirar el modelo tal como está:
+
+**AC-1 — E6 con `to_add` dinámicos**
+Cuando un producto se mueve a una categoría que exige attrs dinámicos que la anterior no exigía, esos attrs faltan en las variantes (no en el producto). Las variantes quedan inválidas. Hoy `to_add` se agrega a `product.attributes_implementations` sin distinción estático/dinámico. ¿Qué se hace con las variantes que ahora les falta ese attr? ¿Se eliminan? ¿Se piden valores?
+
+**AC-2 — E4 con attrs dinámicos**
+Cuando una categoría agrega un attr dinámico, los productos no se ven afectados directamente, pero todas las variantes de esos productos quedan incompletas (les falta ese attr). Hoy `_apply_add_impls` solo toca `product.attributes_implementations`. ¿Qué pasa con las variantes existentes?
+
+**AC-3 — Eliminación de un atributo global**
+Si se elimina un `Attribute` del catálogo mientras está siendo usado en implementations de productos o variantes, esas references quedan colgadas. El modelo no tiene lógica de cascading delete. ¿Se elimina el atributo de todas las implementaciones también? ¿Se bloquea la eliminación si está en uso?
+
+**AC-4 — Cambio de `is_static` de un atributo en uso**
+Si un atributo pasa de estático a dinámico (o viceversa) mientras está implementado en productos o variantes → las implementaciones quedan en el lugar equivocado. ¿Se migran automáticamente? ¿Se bloquea el cambio?
+
+**AC-5 — Atributo enum sin valores**
+¿Se permite crear un atributo de tipo enum sin ningún valor definido? Hoy el modelo no lo valida. Si se permite, `check_value` nunca va a pasar para ese atributo.
+
+**AC-6 — Categoría raíz**
+La categoría raíz no debería poder tener padre ni ser movida como hija de otra. Hoy el modelo no la distingue de las demás; solo la app la protege de eliminación.
+
+**AC-7 — R4 en reversa: subcategoría quita un atributo que "tapaba" al ancestro**
+Si una subcategoría define un attr que "tapa" al mismo attr del ancestro (según R4), y después esa subcategoría lo quita, el attr del ancestro debería volver a propagarse. ¿Se recalcula ese impacto? No hay un evento definido para este caso.
+
+**AC-8 — Firma de variante: ¿incluye attrs heredados o solo los propios?**
+La firma se calcula sobre `variant.attribute_implementations` completo. Si se agrega o quita un attr a la categoría, la firma de las variantes existentes cambia implícitamente. ¿La unicidad se verifica sobre la firma nueva o la vieja?
