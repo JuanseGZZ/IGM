@@ -534,8 +534,8 @@ class OrgApp(tk.Tk):
                 # Mover en el árbol — modelo no tiene remove_product
                 if src.category:
                     src.category.products.remove(src)  # GAP del modelo
-                tgt.add_product(src)   # no setea product.category — GAP del modelo
-                src.category = tgt     # parche necesario por gap de add_product
+                src.category = tgt     # actualizar ANTES de add_product para que
+                tgt.add_product(src)   # _check_product_completeness valide contra la cat nueva
                 self._render_tree()
 
             else:
