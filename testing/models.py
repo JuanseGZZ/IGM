@@ -216,7 +216,10 @@ class Category:
 
     def impact_on_remove_attribute(self, attr: 'Attribute') -> list[tuple[set, list]]:
         """E5: que productos deben quitar la implementacion de attr porque self lo elimino.
-        Si una subcategoria descendiente define el mismo attr, sus productos no se ven afectados."""
+        Si una subcategoria descendiente define el mismo attr, sus productos no se ven afectados.
+        Si un ancestro de self ya define attr, el attr seguira propagandose — sin impacto."""
+        if attr in self.get_ancestor_attrs():
+            return []
         return self.compute_impact({attr})
 
     def get_ancestor_attrs(self) -> set:

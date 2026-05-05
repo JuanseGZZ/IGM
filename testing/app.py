@@ -246,9 +246,51 @@ class OrgApp(tk.Tk):
     def _del_attr(self):
         sel = self.attr_tv.selection()
         if not sel: return
-        if messagebox.askyesno("Eliminar", "¿Eliminar este atributo?", parent=self):
-            self.all_attrs = [a for a in self.all_attrs if str(a.id) != sel[0]]
-            self._refresh_attrs()
+        attr = next((a for a in self.all_attrs if str(a.id) == sel[0]), None)
+        if attr is None: return
+
+        using_cats = self._cats_using_attr(attr)
+        using_prods, using_vars = self._impls_using_attr(attr)
+
+        if using_cats or using_prods or using_vars:
+            lines = []
+            if using_cats:
+                lines.append(f"Categorías: {', '.join(c.name for c in using_cats)}")
+            if using_prods:
+                lines.append(f"Productos: {', '.join(p.code for p in using_prods)}")
+            if using_vars:
+                affected_codes = sorted({p.code for _, p in using_vars})
+                lines.append(f"Variantes en: {', '.join(affected_codes)}")
+            detail = "\n".join(lines)
+            if not messagebox.askyesno(
+                "Atributo en uso",
+                f"'{attr.name}' está siendo usado:\n{detail}\n\n"
+                "¿Eliminar todas las implementaciones y el atributo?",
+                parent=self
+            ):
+                return
+            for cat in using_cats:
+                cat.attributes = [a for a in cat.attributes if a != attr]
+            for prod in using_prods:
+                prod.attributes_implementations = [
+                    impl for impl in prod.attributes_implementations
+                    if impl.attribute != attr
+                ]
+            affected_prods = {p for _, p in using_vars}
+            for prod in affected_prods:
+                for var in prod.variants:
+                    var.attribute_implementations = [
+                        impl for impl in var.attribute_implementations
+                        if impl.attribute != attr
+                    ]
+                prod.variants = [v for v in prod.variants if v.attribute_implementations]
+        else:
+            if not messagebox.askyesno("Eliminar", f"¿Eliminar '{attr.name}'?", parent=self):
+                return
+
+        self.all_attrs = [a for a in self.all_attrs if a != attr]
+        self._refresh_attrs()
+        self._render_tree()
 
     def _attr_modal(self, attr):
         m = tk.Toplevel(self)
@@ -296,18 +338,38 @@ class OrgApp(tk.Tk):
             name = e_name.get().strip()
             if not key or not name:
                 return messagebox.showerror("Error", "Key y nombre son obligatorios.", parent=m)
+
+            # AC-5: enum requiere al menos un valor
+            enum_values = []
+            if dtype_var.get() == "enum":
+                enum_values = [v.strip() for v in ev_text.get("1.0", tk.END).strip().splitlines() if v.strip()]
+                if not enum_values:
+                    return messagebox.showerror("Error", "Un atributo enum debe tener al menos un valor.", parent=m)
+
+            # AC-4: is_static no se puede cambiar si el attr ya está en uso
+            if attr is not None and attr.is_static != static_var.get():
+                cats_in_use = self._cats_using_attr(attr)
+                prods_in_use, vars_in_use = self._impls_using_attr(attr)
+                if cats_in_use or prods_in_use or vars_in_use:
+                    return messagebox.showerror(
+                        "No permitido",
+                        "No se puede cambiar 'Estático' de un atributo en uso.\n"
+                        "Creá un nuevo atributo.",
+                        parent=m
+                    )
+
             if attr is None:
                 na = Attribute(key=key, name=name, data_type=dtype_var.get(),
                                id=self._next_attr_id, is_static=static_var.get())
                 self._next_attr_id += 1
                 if dtype_var.get() == "enum":
-                    na.enum_values = [v.strip() for v in ev_text.get("1.0", tk.END).strip().splitlines() if v.strip()]
+                    na.enum_values = enum_values
                 self.all_attrs.append(na)
             else:
                 attr.key = key; attr.name = name
                 attr.data_type = dtype_var.get(); attr.is_static = static_var.get()
                 if dtype_var.get() == "enum":
-                    attr.enum_values = [v.strip() for v in ev_text.get("1.0", tk.END).strip().splitlines() if v.strip()]
+                    attr.enum_values = enum_values
             self._refresh_attrs(); m.destroy()
 
         tk.Label(m, bg=BG2, height=1).pack()
@@ -526,9 +588,17 @@ class OrgApp(tk.Tk):
                     if impl.attribute not in to_remove
                 ]
                 for attr in to_add:
-                    src.attributes_implementations.append(
-                        AttributeImplementation(attribute=attr, value="")
-                    )
+                    if attr.is_static:
+                        src.attributes_implementations.append(
+                            AttributeImplementation(attribute=attr, value="")
+                        )
+                    else:
+                        for var in src.variants:
+                            var_keys = {impl.attribute.key for impl in var.attribute_implementations}
+                            if attr.key not in var_keys:
+                                var.attribute_implementations.append(
+                                    AttributeImplementation(attribute=attr, value="")
+                                )
                 src.clean_variants_after_attr_removal(to_remove)  # E8: modelo
 
                 # Mover en el árbol — modelo no tiene remove_product
@@ -548,16 +618,25 @@ class OrgApp(tk.Tk):
     # ── Impact helpers ────────────────────────────────────────────────────────
 
     def _apply_add_impls(self, impact_pairs):
-        """Aplica lo que impact_on_* dijo: agrega AttributeImplementation vacíos."""
+        """Aplica lo que impact_on_* dijo.
+        Estáticos → agrega AttributeImplementation vacío al producto.
+        Dinámicos → agrega AttributeImplementation vacío a cada variante del producto."""
         for attrs, products in impact_pairs:
-            existing_keys = lambda p: {impl.attribute.key for impl in p.attributes_implementations}
             for prod in products:
-                eks = existing_keys(prod)
+                static_keys = {impl.attribute.key for impl in prod.attributes_implementations}
                 for attr in attrs:
-                    if attr.key not in eks:
-                        prod.attributes_implementations.append(
-                            AttributeImplementation(attribute=attr, value="")
-                        )
+                    if attr.is_static:
+                        if attr.key not in static_keys:
+                            prod.attributes_implementations.append(
+                                AttributeImplementation(attribute=attr, value="")
+                            )
+                    else:
+                        for var in prod.variants:
+                            var_keys = {impl.attribute.key for impl in var.attribute_implementations}
+                            if attr.key not in var_keys:
+                                var.attribute_implementations.append(
+                                    AttributeImplementation(attribute=attr, value="")
+                                )
 
     def _apply_remove_impls(self, impact_pairs):
         """Aplica lo que impact_on_* dijo: quita AttributeImplementation del producto
@@ -891,6 +970,33 @@ class OrgApp(tk.Tk):
             r = self._find_prod(code, s)
             if r: return r
         return None
+
+    def _cats_using_attr(self, attr):
+        """Lista de categorías que tienen attr en sus atributos propios."""
+        result = []
+        def _walk(node):
+            if attr in node.attributes:
+                result.append(node)
+            for sub in node.subcategories:
+                _walk(sub)
+        _walk(self.root_cat)
+        return result
+
+    def _impls_using_attr(self, attr):
+        """Retorna (prod_list, [(var, prod)]) con todos los lugares donde attr está implementado."""
+        prod_usages = []
+        var_usages  = []
+        def _walk(node):
+            for prod in node.products:
+                if any(impl.attribute == attr for impl in prod.attributes_implementations):
+                    prod_usages.append(prod)
+                for var in prod.variants:
+                    if any(impl.attribute == attr for impl in var.attribute_implementations):
+                        var_usages.append((var, prod))
+            for sub in node.subcategories:
+                _walk(sub)
+        _walk(self.root_cat)
+        return prod_usages, var_usages
 
 
 # ─── Reusable label-button ────────────────────────────────────────────────────

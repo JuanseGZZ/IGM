@@ -67,7 +67,7 @@ Dado que una categoría deja de tener padre → sus productos descendientes pier
 Dado que una categoría agrega un atributo → los productos en sus ramas descendientes deben incorporar ese atributo, excepto los productos cuya rama intermedia ya define ese mismo atributo (según R4).
 
 **E5 — Categoría quita un atributo propio**
-Dado que una categoría elimina un atributo → los productos en sus ramas descendientes pierden ese atributo, excepto los cuya rama intermedia lo redefine (misma lógica que E4 pero en sentido inverso).
+Dado que una categoría elimina un atributo → los productos en sus ramas descendientes pierden ese atributo, excepto los cuya rama intermedia lo redefine (misma lógica que E4 pero en sentido inverso). **Si un ancestro de la categoría ya define ese mismo atributo, no hay impacto: el atributo seguirá propagándose desde el ancestro.**
 
 **E6 — Producto cambia de categoría**
 Dado que un producto se mueve a otra categoría → gana los atributos que la nueva categoría exige y que la anterior no exigía, y pierde los que la anterior exigía y la nueva no. El delta se calcula comparando `categoria_actual.get_full_attr_set()` vs `categoria_nueva.get_full_attr_set()`.
@@ -87,9 +87,22 @@ Dado que ciertos atributos dejan de aplicar a un producto (por E5 o E6) → se e
 
 ---
 
+## Atributos — restricciones de ciclo de vida
+
+**R18** — Dado que se intenta eliminar un `Attribute` del catálogo → se verifica si está en uso (en atributos de alguna categoría, en implementaciones de productos, o en implementaciones de variantes). Si está en uso, se bloquea y se muestra dónde. Si el usuario confirma la eliminación forzada, se quitan todas las implementaciones, se eliminan las variantes que queden vacías, y luego se elimina el atributo.
+
+**R19** — Dado que se intenta cambiar el campo `is_static` de un atributo que ya está en uso → se rechaza. El atributo ya no puede cambiar de naturaleza (estático ↔ dinámico). Si se necesita otro comportamiento, hay que crear un atributo nuevo.
+
+**R20** — Dado que se intenta crear o guardar un atributo de tipo `enum` sin ningún valor definido → se rechaza. Un enum sin valores nunca podría pasar `check_value`.
+
+**R21** — Dado que existe una categoría raíz → no puede ser eliminada, no puede ser movida como hija de otra categoría, y no puede tener categorías hermanas. Solo puede tener hijos (subcategorías o productos, sujeto a R1/R2). Esta es una categoría especial de la que depende todo el árbol.
+
+---
+
 ## Pendiente / A definir
 
 - ¿Un producto puede existir sin variantes?
+  si, un producto puede no tener variantes. luego otro sistema lo mostrara o no pero en nuestro sistema puede vivir sin variantes.
 
 ---
 
@@ -113,30 +126,19 @@ Reglas que escribiste antes. Las que ya están cubiertas se marcan. Las que falt
 
 ---
 
-## A chequear — propuestas por IA
+## Casos verificados (ex "A chequear")
 
-Casos no cubiertos o no definidos que surgen de mirar el modelo tal como está:
+Preguntas que surgieron al revisar el modelo. Todas respondidas y aplicadas.
 
-**AC-1 — E6 con `to_add` dinámicos**
-Cuando un producto se mueve a una categoría que exige attrs dinámicos que la anterior no exigía, esos attrs faltan en las variantes (no en el producto). Las variantes quedan inválidas. Hoy `to_add` se agrega a `product.attributes_implementations` sin distinción estático/dinámico. ¿Qué se hace con las variantes que ahora les falta ese attr? ¿Se eliminan? ¿Se piden valores?
+| Caso                                      | Regla resultante                                                                                                                               | Estado                              |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| AC-1 — E6 con `to_add` dinámicos          | Dinámicos van a variantes, no al producto. Se agregan con value="" a cada variante existente. UI pendiente: formulario para completar valores. | ✓ Implementado                      |
+| AC-2 — E4 con attrs dinámicos             | Mismo tratamiento que AC-1: `_apply_add_impls` separa estáticos (producto) y dinámicos (variantes). UI pendiente: formulario.                  | ✓ Implementado                      |
+| AC-3 — Eliminar un Attribute en uso       | → R18: bloquear + confirmar + cascada de eliminación + limpiar variantes vacías.                                                               | ✓ Implementado                      |
+| AC-4 — Cambiar `is_static` si está en uso | → R19: no se puede cambiar. Crear otro atributo.                                                                                               | ✓ Implementado                      |
+| AC-5 — Enum sin valores                   | → R20: no se puede crear/guardar. Mínimo un valor requerido.                                                                                   | ✓ Implementado                      |
+| AC-6 — Categoría raíz                     | → R21: no se puede eliminar, mover ni agregar hermanos. Solo tiene hijos.                                                                      | ✓ Documentado (app ya lo bloqueaba) |
+| AC-7 — R4 en reversa (E5 redundancia)     | Si un ancestro ya tiene el attr, quitar el attr propio no genera impacto.                                                                      | ✓ Implementado en modelo            |
+| AC-8 — Firma de variante                  | Las variantes solo tienen attrs dinámicos heredados. La firma es el conjunto de (attr, valor). E8 ya maneja deduplicación correctamente.       | ✓ Documentado (código ya correcto)  |
 
-**AC-2 — E4 con attrs dinámicos**
-Cuando una categoría agrega un attr dinámico, los productos no se ven afectados directamente, pero todas las variantes de esos productos quedan incompletas (les falta ese attr). Hoy `_apply_add_impls` solo toca `product.attributes_implementations`. ¿Qué pasa con las variantes existentes?
-
-**AC-3 — Eliminación de un atributo global**
-Si se elimina un `Attribute` del catálogo mientras está siendo usado en implementations de productos o variantes, esas references quedan colgadas. El modelo no tiene lógica de cascading delete. ¿Se elimina el atributo de todas las implementaciones también? ¿Se bloquea la eliminación si está en uso?
-
-**AC-4 — Cambio de `is_static` de un atributo en uso**
-Si un atributo pasa de estático a dinámico (o viceversa) mientras está implementado en productos o variantes → las implementaciones quedan en el lugar equivocado. ¿Se migran automáticamente? ¿Se bloquea el cambio?
-
-**AC-5 — Atributo enum sin valores**
-¿Se permite crear un atributo de tipo enum sin ningún valor definido? Hoy el modelo no lo valida. Si se permite, `check_value` nunca va a pasar para ese atributo.
-
-**AC-6 — Categoría raíz**
-La categoría raíz no debería poder tener padre ni ser movida como hija de otra. Hoy el modelo no la distingue de las demás; solo la app la protege de eliminación.
-
-**AC-7 — R4 en reversa: subcategoría quita un atributo que "tapaba" al ancestro**
-Si una subcategoría define un attr que "tapa" al mismo attr del ancestro (según R4), y después esa subcategoría lo quita, el attr del ancestro debería volver a propagarse. ¿Se recalcula ese impacto? No hay un evento definido para este caso.
-
-**AC-8 — Firma de variante: ¿incluye attrs heredados o solo los propios?**
-La firma se calcula sobre `variant.attribute_implementations` completo. Si se agrega o quita un attr a la categoría, la firma de las variantes existentes cambia implícitamente. ¿La unicidad se verifica sobre la firma nueva o la vieja?
+**UI pendiente (AC-1/AC-2):** cuando se agregan attrs dinámicos a productos con variantes existentes, las variantes quedan con value="" para esos attrs. Falta formulario que muestre: por atributo → por producto → sus variantes, para que el usuario complete los valores.
