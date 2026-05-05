@@ -35,18 +35,16 @@ def build_demo():
 
     def make_impl(attr, val): return AttributeImplementation(attribute=attr, value=val)
 
-    p1 = Product(code="REM001", title="Remera Básica", price=1500, description="Algodón 100%", brand="Nike", id=1, category=remeras)
-    p1.attributes_implementations = [make_impl(material, "Algodón")]
-    p1.variants = [
-        Variant(id=1, attribute_implementations=[make_impl(color,"Rojo"), make_impl(talle,"M"), make_impl(material,"Algodón")]),
-        Variant(id=2, attribute_implementations=[make_impl(color,"Azul"), make_impl(talle,"L"), make_impl(material,"Algodón")]),
-    ]
-    remeras.add_product(p1)  # usa el método del modelo: valida exclusive_children
+    # Estáticos van en el producto. Dinámicos (Color, Talle) van en cada variante.
+    p1 = Product(code="REM001", title="Remera Básica", price=1500, description="Algodón 100%", brand="Nike", id=1, category=remeras,
+                 attributes_implementations=[make_impl(material, "Algodón")])
+    p1.add_variant(Variant(id=1, attribute_implementations=[make_impl(color,"Rojo"), make_impl(talle,"M")]))
+    p1.add_variant(Variant(id=2, attribute_implementations=[make_impl(color,"Azul"), make_impl(talle,"L")]))
+    remeras.add_product(p1)
 
-    p2 = Product(code="REM002", title="Polo Premium", price=2800, description="Piqué francés", brand="Lacoste", id=2, category=remeras)
-    p2.variants = [
-        Variant(id=3, attribute_implementations=[make_impl(color,"Verde"), make_impl(talle,"S"), make_impl(material,"Piqué")]),
-    ]
+    p2 = Product(code="REM002", title="Polo Premium", price=2800, description="Piqué francés", brand="Lacoste", id=2, category=remeras,
+                 attributes_implementations=[make_impl(material, "Piqué")])
+    p2.add_variant(Variant(id=3, attribute_implementations=[make_impl(color,"Verde"), make_impl(talle,"S")]))
     remeras.add_product(p2)
 
     return root, [color, talle, material, peso]

@@ -83,7 +83,7 @@ Una categoría puede tener **subcategorías** o **productos**, nunca ambos.
 
 **`add_subcategory(cat)`** — Valida exclusividad y ciclos. Setea `cat.father_categorie`.
 
-**`add_product(product)`** — Valida exclusividad. **No setea `product.category`** ← gap.
+**`add_product(product)`** — Valida exclusividad y llama `product._check_product_completeness()`. **No setea `product.category`** ← gap.
 
 **`set_father(father)`** — Setea `father_categorie` con validación de ciclo.
 
@@ -159,7 +159,9 @@ Representa un producto dentro de una categoría.
 
 **`clean_variants_after_attr_removal(removed_attrs) → (int, int)`** — E8: limpieza tras remoción de atributos. En orden: (1) quita las implementaciones de `removed_attrs` de todas las variantes, (2) elimina las variantes que queden vacías, (3) elimina variantes duplicadas que surjan. Retorna `(vaciadas_eliminadas, duplicadas_eliminadas)`. Llamar después de aplicar E5 o E6.
 
-**`_check_variant_completeness(variant)`** — Valida que no falten ni sobren atributos dinámicos.
+**`_check_product_completeness()`** — Valida que el producto implemente exactamente los atributos estáticos requeridos por su categoría (ni faltan ni sobran). Llamado por `add_product`.
+
+**`_check_variant_completeness(variant)`** — Valida que la variante implemente exactamente los atributos dinámicos requeridos (ni faltan ni sobran). Los estáticos no deben estar en variantes.
 
 **`_check_variant_uniqueness(variant)`** — Valida que la combinación de valores no exista ya.
 

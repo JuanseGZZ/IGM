@@ -171,6 +171,7 @@ class Category:
 
     def add_product(self, product: 'Product') -> None:
         self._check_exclusive_children('product')
+        product._check_product_completeness()
         self.products.append(product)
         self._product_codes.add(product.code)
 
@@ -310,6 +311,21 @@ class Product:
         self.attributes_implementations = attributes_implementations or []
         self._impl_keys = {i.attribute.key for i in self.attributes_implementations}
         self.variants = variants or []
+
+    def _check_product_completeness(self) -> None:
+        """Valida que el producto implemente exactamente los atributos estáticos
+        que exige su categoría (ni faltan ni sobran)."""
+        required    = {a for a in self.category.get_full_attr_set() if a.is_static}
+        implemented = {impl.attribute for impl in self.attributes_implementations}
+        missing = required - implemented
+        extra   = implemented - required
+        errors  = []
+        if missing:
+            errors.append(f"faltan: {sorted(a.key for a in missing)}")
+        if extra:
+            errors.append(f"de mas: {sorted(a.key for a in extra)}")
+        if errors:
+            raise ValueError(f"Producto incompleto — {', '.join(errors)}")
 
     def _current_static_attrs(self) -> set:
         return {impl.attribute for impl in self.attributes_implementations if impl.attribute.is_static}

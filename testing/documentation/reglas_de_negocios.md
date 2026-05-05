@@ -38,7 +38,9 @@ Formato: **dado [situación] → se actúa como [consecuencia]**
 
 **R12** — Dado que se crea un producto → debe pertenecer a una categoría. No existe producto sin categoría.
 
-**R13** — Dado que un producto pertenece a una categoría → debe implementar todos los atributos estáticos que esa categoría exige (propios + heredados).
+**R13** — Dado que un producto pertenece a una categoría → debe implementar exactamente los atributos estáticos que esa categoría exige (propios + heredados): ni faltan ni sobran. Se valida al agregarlo con `add_product`.
+
+**R13b** — Dado que una variante pertenece a un producto → debe implementar exactamente los atributos dinámicos que exige la categoría del producto: ni faltan ni sobran. Los atributos estáticos no van en variantes. Se valida al agregarla con `add_variant`.
 
 ---
 
