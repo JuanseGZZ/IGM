@@ -564,6 +564,8 @@ class OrgApp(tk.Tk):
                 # Aplicar lo que el modelo dijo
                 self._apply_remove_impls(impact_out)
                 self._apply_add_impls(impact_in)
+                if impact_in:
+                    self._fill_added_attrs_modal(impact_in)
 
                 # Mover en el árbol — modelo no tiene remove_subcategory
                 if src.father_categorie:
@@ -572,7 +574,6 @@ class OrgApp(tk.Tk):
                 self._render_tree()
 
             elif isinstance(src, Product) and isinstance(tgt, Category):
-                # Modelo calcula el delta de atributos estáticos
                 to_add, to_remove = src.impact_on_change_category(tgt)
 
                 if not self._impact_preview(
@@ -582,11 +583,14 @@ class OrgApp(tk.Tk):
                 ):
                     return
 
-                # Aplicar el delta que dijo el modelo
+                # Quitar lo que sale
                 src.attributes_implementations = [
                     impl for impl in src.attributes_implementations
                     if impl.attribute not in to_remove
                 ]
+                src.clean_variants_after_attr_removal(to_remove)  # E8: modelo
+
+                # Agregar placeholders vacíos para lo que entra
                 for attr in to_add:
                     if attr.is_static:
                         src.attributes_implementations.append(
@@ -599,7 +603,10 @@ class OrgApp(tk.Tk):
                                 var.attribute_implementations.append(
                                     AttributeImplementation(attribute=attr, value="")
                                 )
-                src.clean_variants_after_attr_removal(to_remove)  # E8: modelo
+
+                # Formulario para completar los valores nuevos
+                if to_add:
+                    self._fill_added_attrs_modal([(to_add, [src])])
 
                 # Mover en el árbol — modelo no tiene remove_product
                 if src.category:
@@ -712,6 +719,98 @@ class OrgApp(tk.Tk):
         self.wait_window(m)
         return result["ok"]
 
+    def _fill_added_attrs_modal(self, impact_pairs) -> None:
+        """Formulario para completar valores de implementaciones recién agregadas.
+        impact_pairs: [(set[Attribute], list[Product])] — mismo formato que impact_on_*.
+        Agrupa por atributo y muestra producto/variante por fila.
+        Sin cancelar — el cambio ya fue confirmado en el paso anterior."""
+        # Armar lista plana (attr, prod, var_or_None), sin duplicados
+        to_fill = []
+        seen = set()
+        for attrs, products in impact_pairs:
+            for attr in sorted(attrs, key=lambda a: a.key):
+                for prod in products:
+                    if attr.is_static:
+                        k = (attr.key, id(prod), None)
+                        if k not in seen:
+                            seen.add(k); to_fill.append((attr, prod, None))
+                    else:
+                        for var in prod.variants:
+                            k = (attr.key, id(prod), id(var))
+                            if k not in seen:
+                                seen.add(k); to_fill.append((attr, prod, var))
+
+        if not to_fill:
+            return
+
+        # Agrupar por attr.key para mostrar una sección por atributo
+        by_attr = {}
+        for attr, prod, var in to_fill:
+            by_attr.setdefault(attr.key, []).append((attr, prod, var))
+
+        m = tk.Toplevel(self)
+        m.title("Completar atributos nuevos")
+        m.configure(bg=BG2)
+        m.grab_set()
+        m.resizable(False, True)
+        m.protocol("WM_DELETE_WINDOW", lambda: None)
+
+        tk.Label(m, text="Completar valores para atributos nuevos",
+                 bg=BG2, fg=TEXT, font=("Inter", 11, "bold")).pack(pady=(18, 4), padx=20)
+        tk.Label(m, text="El cambio ya fue confirmado. Completá los valores antes de continuar.",
+                 bg=BG2, fg=SUBTEXT, font=("Inter", 8), wraplength=440).pack(padx=20)
+
+        f = tk.Frame(m, bg=BG2)
+        f.pack(fill=tk.BOTH, expand=True, padx=20, pady=8)
+
+        # entries: lista de (widget, prod, var_or_None, attr_key) para el _apply
+        entries = []
+
+        for attr_key, items in by_attr.items():
+            attr = items[0][0]
+            kind  = "estático" if attr.is_static else "dinámico"
+            color = ACCENT if attr.is_static else PURPLE
+            tk.Label(f, text=f"  {attr.name}  [{attr.data_type} · {kind}]",
+                     bg=BG2, fg=color, font=("Inter", 9, "bold"), anchor="w").pack(fill=tk.X, pady=(10, 2))
+
+            for _, prod, var in items:
+                if var is None:
+                    label    = f"Prod. {prod.code}"
+                    existing = next((i.value for i in prod.attributes_implementations if i.attribute == attr), "")
+                else:
+                    label    = f"Prod. {prod.code} — Var. #{var.id}"
+                    existing = next((i.value for i in var.attribute_implementations  if i.attribute == attr), "")
+
+                row = tk.Frame(f, bg=BG3); row.pack(fill=tk.X, pady=1)
+                tk.Label(row, text=label + ":", bg=BG3, fg=SUBTEXT,
+                         font=("Inter", 9), width=26, anchor="w").pack(side=tk.LEFT, padx=8, pady=4)
+
+                if attr.data_type == "enum" and attr.enum_values:
+                    sv = tk.StringVar(value=existing if existing in attr.enum_values else attr.enum_values[0])
+                    cb = ttk.Combobox(row, textvariable=sv, values=attr.enum_values,
+                                      state="readonly", font=("Inter", 9))
+                    cb.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8), pady=2)
+                    entries.append((sv, prod, var, attr_key))
+                else:
+                    e = tk.Entry(row, bg=BG3, fg=TEXT, insertbackground=TEXT,
+                                 relief=tk.FLAT, font=("Inter", 9))
+                    e.insert(0, existing)
+                    e.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8), pady=2)
+                    entries.append((e, prod, var, attr_key))
+
+        def _apply():
+            for widget, prod, var, attr_key in entries:
+                value = widget.get()
+                impl_list = prod.attributes_implementations if var is None else var.attribute_implementations
+                for impl in impl_list:
+                    if impl.attribute.key == attr_key:
+                        impl.value = value; break
+            m.destroy()
+
+        m.geometry(f"560x{min(660, 200 + len(to_fill) * 48)}")
+        _lbl_btn(m, "Completar", _apply, ACCENT).pack(pady=16, ipady=6)
+        self.wait_window(m)
+
     # ── Double-click edit ─────────────────────────────────────────────────────
 
     def _on_dbl(self, event):
@@ -779,6 +878,8 @@ class OrgApp(tk.Tk):
                 # Aplicar a productos descendientes lo que el modelo reportó
                 self._apply_add_impls(gain_pairs)
                 self._apply_remove_impls(lose_pairs)
+                if gain_pairs:
+                    self._fill_added_attrs_modal(gain_pairs)
 
                 self._render_tree()
                 m.destroy()
@@ -786,11 +887,24 @@ class OrgApp(tk.Tk):
             def _del_cat():
                 if obj is self.root_cat:
                     return messagebox.showerror("Error", "No podés eliminar la raíz.", parent=m)
-                if obj.subcategories or obj.products:
-                    return messagebox.showerror("Error", "Eliminá o mové sus hijos primero.", parent=m)
-                if obj.father_categorie:
-                    obj.father_categorie.subcategories.remove(obj)  # GAP del modelo: no hay remove_subcategory
-                    obj.set_father(None)  # limpia father_categorie via modelo
+                subcats, prods, var_count = self._collect_descendants(obj)
+                if subcats or prods:
+                    lines = []
+                    if subcats:
+                        lines.append(f"• {len(subcats)} categoría(s): {', '.join(c.name for c in subcats)}")
+                    if prods:
+                        lines.append(f"• {len(prods)} producto(s): {', '.join(p.code for p in prods)}")
+                    if var_count:
+                        lines.append(f"• {var_count} variante(s)")
+                    if not messagebox.askyesno(
+                        "Eliminar en cascada",
+                        f"Eliminar '{obj.name}' también eliminará:\n" + "\n".join(lines) + "\n\n¿Confirmar?",
+                        parent=m
+                    ):
+                        return
+                elif not messagebox.askyesno("Eliminar", f"¿Eliminar '{obj.name}'?", parent=m):
+                    return
+                self._cascade_delete_cat(obj)
                 m.destroy(); self._render_tree()
 
             row = tk.Frame(m, bg=BG2); row.pack(pady=16)
@@ -820,11 +934,18 @@ class OrgApp(tk.Tk):
                     row = tk.Frame(f, bg=BG3); row.pack(fill=tk.X, pady=2)
                     tk.Label(row, text=impl.attribute.name + ":", bg=BG3, fg=SUBTEXT,
                              font=("Inter", 9), width=14, anchor="w").pack(side=tk.LEFT, padx=8, pady=4)
-                    e = tk.Entry(row, bg=BG3, fg=TEXT, insertbackground=TEXT,
-                                 relief=tk.FLAT, font=("Inter", 10))
-                    e.insert(0, impl.value)
-                    e.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
-                    impl_entries[impl] = e
+                    if impl.attribute.data_type == "enum" and impl.attribute.enum_values:
+                        sv = tk.StringVar(value=impl.value if impl.value in impl.attribute.enum_values else impl.attribute.enum_values[0])
+                        cb = ttk.Combobox(row, textvariable=sv, values=impl.attribute.enum_values,
+                                          state="readonly", font=("Inter", 10))
+                        cb.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+                        impl_entries[impl] = sv
+                    else:
+                        e = tk.Entry(row, bg=BG3, fg=TEXT, insertbackground=TEXT,
+                                     relief=tk.FLAT, font=("Inter", 10))
+                        e.insert(0, impl.value)
+                        e.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+                        impl_entries[impl] = e
             else:
                 tk.Label(f, text="  (ninguno)", bg=BG3, fg=SUBTEXT,
                          font=("Inter", 9)).pack(fill=tk.X, ipady=4)
@@ -861,15 +982,22 @@ class OrgApp(tk.Tk):
                 row = tk.Frame(f, bg=BG3); row.pack(fill=tk.X, pady=2)
                 tk.Label(row, text=impl.attribute.name + ":", bg=BG3, fg=SUBTEXT,
                          font=("Inter", 9), width=14, anchor="w").pack(side=tk.LEFT, padx=8, pady=4)
-                e = tk.Entry(row, bg=BG3, fg=TEXT, insertbackground=TEXT,
-                             relief=tk.FLAT, font=("Inter", 10))
-                e.insert(0, impl.value)
-                e.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
-                entries[impl] = e
+                if impl.attribute.data_type == "enum" and impl.attribute.enum_values:
+                    sv = tk.StringVar(value=impl.value if impl.value in impl.attribute.enum_values else impl.attribute.enum_values[0])
+                    cb = ttk.Combobox(row, textvariable=sv, values=impl.attribute.enum_values,
+                                      state="readonly", font=("Inter", 10))
+                    cb.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+                    entries[impl] = sv
+                else:
+                    e = tk.Entry(row, bg=BG3, fg=TEXT, insertbackground=TEXT,
+                                 relief=tk.FLAT, font=("Inter", 10))
+                    e.insert(0, impl.value)
+                    e.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 8))
+                    entries[impl] = e
 
             def _save_var():
-                for impl, e in entries.items():
-                    impl.value = e.get().strip() or impl.value
+                for impl, widget in entries.items():
+                    impl.value = widget.get().strip() or impl.value
                 self._render_tree(); m.destroy()
 
             _lbl_btn(m, "Guardar", _save_var, ACCENT).pack(pady=16, ipady=6)
@@ -970,6 +1098,29 @@ class OrgApp(tk.Tk):
             r = self._find_prod(code, s)
             if r: return r
         return None
+
+    def _collect_descendants(self, cat):
+        """Retorna (subcats_list, products_list, variant_count) de toda la descendencia de cat."""
+        subcats, products, var_count = [], [], [0]
+        def _walk(node):
+            for sub in node.subcategories:
+                subcats.append(sub)
+                _walk(sub)
+            for prod in node.products:
+                products.append(prod)
+                var_count[0] += len(prod.variants)
+        _walk(cat)
+        return subcats, products, var_count[0]
+
+    def _cascade_delete_cat(self, cat):
+        """Elimina cat y toda su descendencia del árbol."""
+        for sub in list(cat.subcategories):
+            self._cascade_delete_cat(sub)
+        cat.subcategories.clear()
+        cat.products.clear()
+        if cat.father_categorie:
+            cat.father_categorie.subcategories.remove(cat)
+            cat.father_categorie = None
 
     def _cats_using_attr(self, attr):
         """Lista de categorías que tienen attr en sus atributos propios."""

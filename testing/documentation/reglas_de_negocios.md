@@ -97,6 +97,12 @@ Dado que ciertos atributos dejan de aplicar a un producto (por E5 o E6) → se e
 
 **R21** — Dado que existe una categoría raíz → no puede ser eliminada, no puede ser movida como hija de otra categoría, y no puede tener categorías hermanas. Solo puede tener hijos (subcategorías o productos, sujeto a R1/R2). Esta es una categoría especial de la que depende todo el árbol.
 
+**R22 — Eliminación en cascada**
+Dado que se elimina una categoría → se elimina también toda su descendencia (subcategorías, productos y variantes) en cascada. Si la categoría tiene descendientes, se muestra la lista de lo que se va a eliminar (cuántas categorías, productos y variantes) y se pide confirmación explícita antes de ejecutar.
+
+**R23 — Formulario de completado para atributos nuevos**
+Dado que una operación agrega atributos nuevos a productos o variantes — ya sea moviendo un producto a otra categoría, moviendo una categoría a otra, o agregando un atributo a una categoría — → después de confirmar el impacto, el sistema muestra un formulario agrupado por atributo con todos los productos y variantes afectados, para que el usuario complete los valores antes de que el cambio quede aplicado. Los atributos estáticos nuevos se completan a nivel producto; los dinámicos nuevos se completan por cada variante existente del producto. Los atributos de tipo `enum` se presentan como selector de opciones (no campo de texto libre). El formulario no tiene cancelar: la decisión de avanzar ya se tomó en el modal de impacto.
+
 ---
 
 ## Pendiente / A definir
@@ -132,8 +138,8 @@ Preguntas que surgieron al revisar el modelo. Todas respondidas y aplicadas.
 
 | Caso                                      | Regla resultante                                                                                                                               | Estado                              |
 | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| AC-1 — E6 con `to_add` dinámicos          | Dinámicos van a variantes, no al producto. Se agregan con value="" a cada variante existente. UI pendiente: formulario para completar valores. | ✓ Implementado                      |
-| AC-2 — E4 con attrs dinámicos             | Mismo tratamiento que AC-1: `_apply_add_impls` separa estáticos (producto) y dinámicos (variantes). UI pendiente: formulario.                  | ✓ Implementado                      |
+| AC-1 — E6 con `to_add` dinámicos          | Dinámicos van a variantes, no al producto. Al mover producto: formulario para completar valores (R23). Enum como selector.                    | ✓ Implementado                      |
+| AC-2 — E4 con attrs dinámicos             | Mismo tratamiento que AC-1: `_apply_add_impls` separa estáticos (producto) y dinámicos (variantes).                                           | ✓ Implementado                      |
 | AC-3 — Eliminar un Attribute en uso       | → R18: bloquear + confirmar + cascada de eliminación + limpiar variantes vacías.                                                               | ✓ Implementado                      |
 | AC-4 — Cambiar `is_static` si está en uso | → R19: no se puede cambiar. Crear otro atributo.                                                                                               | ✓ Implementado                      |
 | AC-5 — Enum sin valores                   | → R20: no se puede crear/guardar. Mínimo un valor requerido.                                                                                   | ✓ Implementado                      |
@@ -141,4 +147,4 @@ Preguntas que surgieron al revisar el modelo. Todas respondidas y aplicadas.
 | AC-7 — R4 en reversa (E5 redundancia)     | Si un ancestro ya tiene el attr, quitar el attr propio no genera impacto.                                                                      | ✓ Implementado en modelo            |
 | AC-8 — Firma de variante                  | Las variantes solo tienen attrs dinámicos heredados. La firma es el conjunto de (attr, valor). E8 ya maneja deduplicación correctamente.       | ✓ Documentado (código ya correcto)  |
 
-**UI pendiente (AC-1/AC-2):** cuando se agregan attrs dinámicos a productos con variantes existentes, las variantes quedan con value="" para esos attrs. Falta formulario que muestre: por atributo → por producto → sus variantes, para que el usuario complete los valores.
+AC-1/AC-2 completamente implementados: formulario de completado (R23) cubre el caso de mover producto. El formulario de completado para E4 (agregar attr a categoría) queda pendiente de UI pero los datos se asignan correctamente.
