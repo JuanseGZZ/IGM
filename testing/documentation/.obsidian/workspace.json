@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "reglas_de_negocios.md",
+                "file": "api.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "reglas_de_negocios"
+              "title": "api"
             }
           }
         ]
@@ -183,6 +183,7 @@
   "active": "1f5ed972ec679cb1",
   "lastOpenFiles": [
     "reglas_de_negocios.md",
+    "api.md",
     "models.md"
   ]
 }

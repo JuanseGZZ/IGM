@@ -17,7 +17,8 @@ front_d/
 ├── Handler.js          ← CRUD del árbol, serialización JSON
 ├── Gestor.js           ← árbol espejo de dominio, validaciones y análisis de impacto
 ├── ui.js               ← modal de edición, showMenu, showGestorDialog
-├── events.js           ← entry point: eventos, layout actors, drag&drop, zoom
+├── api.js              ← comunicación REST: saveCatalog, fetchCatalog, buildAPIPayload, loadFromAPIData
+├── events.js           ← entry point: eventos, layout actors, drag&drop, zoom, botones API
 │
 ├── stores/
 │   ├── attrStore.js    ← almacén global de atributos (localStorage "igm-attrs")
@@ -48,3 +49,4 @@ front_d/
 | 08 | [Gestor](08%20-%20Gestor.md) | Árbol espejo, validaciones, análisis de impacto, flujos aditivo/destructivo/mixto |
 | 09 | [Stores](09%20-%20Stores.md) | `attrStore` y `catalogStore`: qué persisten y cómo usarlos |
 | 10 | [Renders](10%20-%20Renders.md) | `renders/`: contratos de cada función de render, separación DOM/lógica |
+| 11 | [API](11%20-%20API.md) | `api.js`: comunicación REST, serialización/deserialización, botones Save y Bring Tree |

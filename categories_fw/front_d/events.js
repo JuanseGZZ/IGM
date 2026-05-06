@@ -8,6 +8,7 @@ import { catalogStore }                         from "./stores/catalogStore.js";
 import { renderAttrList, renderImplsEditable }  from "./renders/renderEditModal.js";
 import { renderAttrRows, renderEnumValues }     from "./renders/renderAttrsModal.js";
 import { renderPicker as renderPickerView }     from "./renders/renderAttrPicker.js";
+import { saveCatalog, fetchCatalog, buildAPIPayload, loadFromAPIData } from "./api.js";
 
 // ── Inicialización ─────────────────────────────────────────────────────────────
 
@@ -920,6 +921,62 @@ board.addEventListener("drop", (ev) => {
 board.addEventListener("dragend", () => {
   dragId = null; dropZone = null; clearDropHighlights();
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// BOTONES API — Save / Bring Tree
+// ══════════════════════════════════════════════════════════════════════════════
+
+const saveBtn  = document.getElementById("igm-save-btn");
+const bringBtn = document.getElementById("igm-bring-btn");
+
+if (saveBtn) {
+  saveBtn.addEventListener("click", async () => {
+    saveBtn.disabled    = true;
+    saveBtn.textContent = "Guardando…";
+    try {
+      const payload = buildAPIPayload(handler, attrStore);
+      const result  = await saveCatalog(payload);
+      if (result.valid) {
+        alert("Catálogo guardado correctamente.");
+      } else {
+        alert(`Error de validación:\n${result.error}`);
+      }
+    } catch (err) {
+      alert(`Error al guardar:\n${err.message}`);
+    } finally {
+      saveBtn.disabled    = false;
+      saveBtn.textContent = "Save";
+    }
+  });
+}
+
+if (bringBtn) {
+  bringBtn.addEventListener("click", async () => {
+    bringBtn.disabled    = true;
+    bringBtn.textContent = "Cargando…";
+    try {
+      localStorage.removeItem(catalogStore.KEY);
+      localStorage.removeItem("igm-attrs");
+
+      const data = await fetchCatalog();
+
+      if (!data.tree) {
+        alert("La base de datos está vacía. No hay árbol que cargar.");
+        return;
+      }
+
+      loadFromAPIData(handler, attrStore, data);
+      handler.treeToMax();
+      handler.render({ container: "#igm-board" });
+      alert("Árbol cargado correctamente desde la API.");
+    } catch (err) {
+      alert(`Error al cargar:\n${err.message}`);
+    } finally {
+      bringBtn.disabled    = false;
+      bringBtn.textContent = "Bring Tree";
+    }
+  });
+}
 
 initZoom();
 
