@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 import repository as repo
@@ -15,6 +16,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="IGM Catalog API", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type"],
+)
 
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
