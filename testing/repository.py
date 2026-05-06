@@ -190,38 +190,41 @@ def save_full_state(attrs: list, root_cat) -> None:
 
 
 def _insert_category(conn: sqlite3.Connection, cat, father_id) -> None:
-    conn.execute(
+    cur = conn.execute(
         "INSERT INTO categories (id, name, father_category_id) VALUES (?,?,?)",
         (cat.id, cat.name, father_id)
     )
+    cat_id = cat.id if cat.id is not None else cur.lastrowid
     for attr in cat.attributes:
         conn.execute(
             "INSERT INTO category_attributes (category_id, attribute_id) VALUES (?,?)",
-            (cat.id, attr.id)
+            (cat_id, attr.id)
         )
     for prod in cat.products:
-        _insert_product(conn, prod, cat.id)
+        _insert_product(conn, prod, cat_id)
     for sub in cat.subcategories:
-        _insert_category(conn, sub, cat.id)
+        _insert_category(conn, sub, cat_id)
 
 
 def _insert_product(conn: sqlite3.Connection, prod, category_id: int) -> None:
-    conn.execute(
+    cur = conn.execute(
         "INSERT INTO products (id, code, title, price, description, brand, category_id) VALUES (?,?,?,?,?,?,?)",
         (prod.id, prod.code, prod.title, prod.price, prod.description, prod.brand, category_id)
     )
+    prod_id = prod.id if prod.id is not None else cur.lastrowid
     for impl in prod.attributes_implementations:
         conn.execute(
             "INSERT INTO attribute_implementations (attribute_id, value, product_id, variant_id) VALUES (?,?,?,NULL)",
-            (impl.attribute.id, impl.value, prod.id)
+            (impl.attribute.id, impl.value, prod_id)
         )
     for var in prod.variants:
-        conn.execute(
+        cur_v = conn.execute(
             "INSERT INTO variants (id, product_id) VALUES (?,?)",
-            (var.id, prod.id)
+            (var.id, prod_id)
         )
+        var_id = var.id if var.id is not None else cur_v.lastrowid
         for impl in var.attribute_implementations:
             conn.execute(
                 "INSERT INTO attribute_implementations (attribute_id, value, product_id, variant_id) VALUES (?,?,NULL,?)",
-                (impl.attribute.id, impl.value, var.id)
+                (impl.attribute.id, impl.value, var_id)
             )
