@@ -110,6 +110,14 @@ Dado que una operación agrega atributos nuevos a productos o variantes — ya s
 - ¿Un producto puede existir sin variantes?
   si, un producto puede no tener variantes. luego otro sistema lo mostrara o no pero en nuestro sistema puede vivir sin variantes.
 
+- **PD-1 — Validación de valor al implementar:** `check_value` existe en `Attribute` pero nunca se llama. Si se ingresa `"hola"` en un atributo de tipo `number`, el modelo no reclama. ¿La validación se hace en este modelo o la delega el sistema consumidor?
+
+- **PD-2 — Impacto de borrar un valor enum en uso:** Si Color tiene valores `[Rojo, Azul]` y una variante tiene `Color=Rojo`, y alguien borra `"Rojo"` de los valores posibles del atributo, esa implementación queda con un valor que `check_value` rechazaría. ¿Se bloquea la eliminación del valor? ¿Se limpian las implementaciones que lo usan?
+
+- **PD-3 — Crear producto con atributos estáticos requeridos:** El flujo de creación (`_add_product`) actualmente falla si la categoría ya exige atributos estáticos, porque el producto se crea vacío y `_check_product_completeness` lo rechaza. El formulario de completado (R23) cubre el caso de mover pero no el de crear. ¿Cómo debería ser el flujo de creación?
+
+- **PD-4 — Precio y stock por variante:** `price` vive únicamente en `Product`. ¿Una variante puede tener su propio precio (ej: talle XL más caro que M)? ¿Y stock por variante? Si sí, ambos campos deberían vivir (también) en `Variant`.
+
 ---
 
 ## A chequear — del archivo original (`categories_fw/app/reglas`)
