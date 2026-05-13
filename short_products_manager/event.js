@@ -334,11 +334,13 @@ const App = {
             }
         });
 
+        this.render();
+
         API.bring().then(data => {
             this.state.products = data.products;
             this.state.brands   = data.brands;
             this.render();
-        });
+        }).catch(() => {});
     }
 };
 

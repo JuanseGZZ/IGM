@@ -22,26 +22,23 @@ const Render = {
     // ── Products ─────────────────────────────────────────────────────────────
 
     attrRow(attr, productId) {
-        const badges = attr.values.map(v =>
-            `<span class="badge bg-light text-secondary border">${esc(v)}</span>`
+        const valueBadges = attr.values.map(v =>
+            `<span class="badge rounded-pill" style="background:#e0e7ff;color:#3730a3;font-weight:500">${esc(v)}</span>`
         ).join(' ');
         return `
-            <div class="d-flex align-items-center gap-2 py-1 border-bottom">
-                <small class="fw-semibold text-nowrap" style="min-width:80px">${esc(attr.key)}</small>
+            <div class="d-flex align-items-center gap-2 py-1">
+                <span class="badge rounded-2 text-nowrap"
+                      style="background:#c7d2fe;color:#3730a3;font-size:.72rem;min-width:70px;text-align:center">
+                    ${esc(attr.key)}
+                </span>
                 <div class="d-flex flex-wrap gap-1 flex-grow-1">
-                    ${badges || '<small class="text-muted">—</small>'}
+                    ${valueBadges || '<small class="text-muted">—</small>'}
                 </div>
                 <div class="d-flex gap-1 flex-shrink-0">
-                    <button class="btn btn-outline-secondary"
-                            style="padding:.1rem .45rem;font-size:.72rem;line-height:1.4"
-                            data-action="edit-attr"
-                            data-product-id="${productId}"
-                            data-id="${attr.id}">Edit</button>
-                    <button class="btn btn-outline-danger"
-                            style="padding:.1rem .45rem;font-size:.72rem;line-height:1.4"
-                            data-action="delete-attr"
-                            data-product-id="${productId}"
-                            data-id="${attr.id}">×</button>
+                    <button class="btn btn-outline-secondary btn-xs"
+                            data-action="edit-attr" data-product-id="${productId}" data-id="${attr.id}">Edit</button>
+                    <button class="btn btn-outline-danger btn-xs"
+                            data-action="delete-attr" data-product-id="${productId}" data-id="${attr.id}">×</button>
                 </div>
             </div>
         `;
@@ -52,44 +49,58 @@ const Render = {
         const attrRows  = product.attributes.map(a => this.attrRow(a, product.id)).join('');
         const vCount    = product.variants.length;
         return `
-            <div class="card mb-3">
-                <div class="card-body py-3 px-3">
-                    <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
+            <div class="card mb-3 shadow-sm" style="border-left:4px solid #6366f1">
+                <div class="card-body p-3">
+
+                    <!-- Header -->
+                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
                         <div>
-                            <span class="fw-semibold">${esc(product.name)}</span>
-                            ${brandName ? `<small class="text-muted ms-2">${esc(brandName)}</small>` : ''}
-                            ${product.description ? `<p class="text-muted small mb-0 mt-1">${esc(product.description)}</p>` : ''}
+                            <span class="fw-bold" style="font-size:1rem">${esc(product.name)}</span>
+                            ${brandName
+                                ? `<span class="badge ms-2 fw-normal"
+                                         style="background:#dcfce7;color:#166534;font-size:.75rem">${esc(brandName)}</span>`
+                                : ''}
+                            ${product.description
+                                ? `<div class="text-muted mt-1" style="font-size:.82rem">${esc(product.description)}</div>`
+                                : ''}
                         </div>
                         <div class="d-flex gap-1 flex-shrink-0">
-                            <button class="btn btn-sm btn-outline-secondary" data-action="edit-product" data-id="${product.id}">Edit</button>
-                            <button class="btn btn-sm btn-outline-danger"    data-action="delete-product" data-id="${product.id}">Delete</button>
+                            <button class="btn btn-outline-secondary btn-sm" data-action="edit-product" data-id="${product.id}">Edit</button>
+                            <button class="btn btn-outline-danger btn-sm" data-action="delete-product" data-id="${product.id}">Delete</button>
                         </div>
                     </div>
 
-                    <div class="border-top pt-2">
-                        <small class="text-muted text-uppercase fw-semibold" style="font-size:.68rem;letter-spacing:.05em">Attributes</small>
-                        <div class="mt-1">
-                            ${attrRows || '<small class="text-muted d-block mb-1">None</small>'}
+                    <!-- Attributes section -->
+                    <div class="rounded-2 p-2 mb-2" style="background:#f5f3ff">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span style="font-size:.65rem;font-weight:700;letter-spacing:.08em;color:#6366f1;text-transform:uppercase">
+                                Attributes
+                            </span>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-xs" style="font-size:.72rem;padding:.1rem .5rem;color:#6366f1;border:1px solid #c7d2fe;background:#ede9fe"
+                                        data-action="new-attr" data-product-id="${product.id}">+ Add</button>
+                                <button class="btn btn-xs btn-outline-secondary" style="font-size:.72rem;padding:.1rem .5rem"
+                                        data-action="copy-attr" data-product-id="${product.id}">Copy</button>
+                            </div>
                         </div>
-                        <div class="d-flex gap-2 mt-2">
-                            <button class="btn btn-sm btn-outline-primary"
-                                    data-action="new-attr"
-                                    data-product-id="${product.id}">+ Attribute</button>
-                            <button class="btn btn-sm btn-outline-secondary"
-                                    data-action="copy-attr"
-                                    data-product-id="${product.id}">Copy from...</button>
+                        <div class="d-flex flex-column gap-1">
+                            ${attrRows || '<small class="text-muted">No attributes yet</small>'}
                         </div>
                     </div>
 
-                    <div class="border-top pt-2 mt-2 d-flex justify-content-between align-items-center">
-                        <small class="text-muted">
-                            <span class="text-uppercase fw-semibold" style="font-size:.68rem;letter-spacing:.05em">Variants</span>
-                            <span class="ms-2">${vCount > 0 ? vCount + ' defined' : 'none'}</span>
-                        </small>
-                        <button class="btn btn-sm btn-outline-secondary"
-                                data-action="manage-variants"
-                                data-product-id="${product.id}">Manage Variants</button>
+                    <!-- Variants section -->
+                    <div class="rounded-2 p-2" style="background:#f0fdf4">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="font-size:.65rem;font-weight:700;letter-spacing:.08em;color:#16a34a;text-transform:uppercase">
+                                Variants
+                                <span class="badge rounded-pill ms-1"
+                                      style="background:#bbf7d0;color:#166534;font-size:.65rem">${vCount}</span>
+                            </span>
+                            <button class="btn btn-xs" style="font-size:.72rem;padding:.1rem .5rem;color:#16a34a;border:1px solid #86efac;background:#dcfce7"
+                                    data-action="manage-variants" data-product-id="${product.id}">Manage</button>
+                        </div>
                     </div>
+
                 </div>
             </div>
         `;
@@ -145,9 +156,10 @@ const Render = {
         const key    = pendingKey    !== undefined ? pendingKey    : (attr ? attr.key    : '');
         const values = pendingValues !== undefined ? pendingValues : (attr ? attr.values : []);
         const valueBadges = values.map((v, i) => `
-            <span class="badge bg-secondary bg-opacity-10 text-secondary border d-inline-flex align-items-center gap-1">
+            <span class="badge rounded-pill d-inline-flex align-items-center gap-1"
+                  style="background:#e0e7ff;color:#3730a3">
                 ${esc(v)}
-                <button type="button" class="btn-close" style="font-size:.55rem;"
+                <button type="button" class="btn-close" style="font-size:.5rem;filter:none;opacity:.6"
                         data-action="remove-value" data-index="${i}" aria-label="Remove"></button>
             </span>
         `).join(' ');
@@ -161,7 +173,7 @@ const Render = {
                 </div>
                 <div class="mb-3">
                     <label class="form-label form-label-sm">Values</label>
-                    <div class="d-flex flex-wrap gap-1 mb-2" id="values-preview">
+                    <div class="d-flex flex-wrap gap-1 mb-2 p-2 rounded-2" style="min-height:36px;background:#f5f3ff" id="values-preview">
                         ${valueBadges || '<small class="text-muted">No values yet</small>'}
                     </div>
                     <div class="input-group input-group-sm">
@@ -191,11 +203,13 @@ const Render = {
                     data-source-product-id="${item.productId}"
                     data-attr-id="${item.attr.id}"
                     data-target-product-id="${targetProductId}">
-                <span class="fw-medium">${esc(item.attr.key)}</span>
-                <span class="d-flex align-items-center gap-1 flex-wrap justify-content-end">
-                    ${item.attr.values.map(v => `<small class="badge bg-light text-dark border">${esc(v)}</small>`).join('')}
-                    <small class="text-muted ms-2">${esc(item.productName)}</small>
+                <span class="badge rounded-2 me-2" style="background:#c7d2fe;color:#3730a3">${esc(item.attr.key)}</span>
+                <span class="d-flex align-items-center gap-1 flex-wrap flex-grow-1">
+                    ${item.attr.values.map(v =>
+                        `<small class="badge rounded-pill" style="background:#e0e7ff;color:#3730a3">${esc(v)}</small>`
+                    ).join('')}
                 </span>
+                <small class="text-muted ms-2 flex-shrink-0">${esc(item.productName)}</small>
             </button>
         `).join('');
         return `
@@ -227,27 +241,25 @@ const Render = {
             const isEditing = editingVariant?.id === v.id;
             const pills = attrs.map(a => {
                 const impl = v.implementations.find(i => i.attributeId === a.id);
-                return `<span class="badge bg-light text-dark border ${isEditing ? 'border-primary' : ''}">
-                    <span class="text-muted" style="font-size:.7rem">${esc(a.key)}:</span> ${esc(impl?.value ?? '?')}
+                return `<span class="badge rounded-pill" style="background:#e0e7ff;color:#3730a3">
+                    <span style="opacity:.6;font-size:.7em">${esc(a.key)}</span> ${esc(impl?.value ?? '?')}
                 </span>`;
             }).join(' ');
             return `
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom gap-2 ${isEditing ? 'bg-primary bg-opacity-10 rounded px-1' : ''}">
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom gap-2
+                            ${isEditing ? 'rounded px-2' : ''}"
+                     style="${isEditing ? 'background:#f5f3ff' : ''}">
                     <div class="d-flex flex-wrap gap-1 align-items-center">
                         ${pills}
-                        <span class="badge bg-success bg-opacity-10 text-success border">$${parseFloat(v.price).toFixed(2)}</span>
+                        <span class="badge rounded-pill ms-1" style="background:#dcfce7;color:#166534">
+                            $${parseFloat(v.price).toFixed(2)}
+                        </span>
                     </div>
                     <div class="d-flex gap-1 flex-shrink-0">
-                        <button class="btn btn-outline-secondary"
-                                style="padding:.1rem .45rem;font-size:.72rem;line-height:1.4"
-                                data-action="edit-variant"
-                                data-product-id="${product.id}"
-                                data-id="${v.id}">Edit</button>
-                        <button class="btn btn-outline-danger"
-                                style="padding:.1rem .45rem;font-size:.72rem;line-height:1.4"
-                                data-action="delete-variant"
-                                data-product-id="${product.id}"
-                                data-id="${v.id}">×</button>
+                        <button class="btn btn-outline-secondary btn-xs"
+                                data-action="edit-variant" data-product-id="${product.id}" data-id="${v.id}">Edit</button>
+                        <button class="btn btn-outline-danger btn-xs"
+                                data-action="delete-variant" data-product-id="${product.id}" data-id="${v.id}">×</button>
                     </div>
                 </div>
             `;
@@ -260,7 +272,9 @@ const Render = {
             ).join('');
             return `
                 <div class="mb-2">
-                    <label class="form-label form-label-sm">${esc(a.key)}</label>
+                    <label class="form-label form-label-sm d-flex align-items-center gap-1">
+                        <span class="badge rounded-2" style="background:#c7d2fe;color:#3730a3">${esc(a.key)}</span>
+                    </label>
                     <select class="form-select form-select-sm" name="attr-${a.id}" required>
                         <option value="">— Select —</option>
                         ${opts}
@@ -271,15 +285,20 @@ const Render = {
 
         const editing = !!editingVariant;
         return `
-            <h6 class="fw-semibold mb-1">Variants — ${esc(product.name)}</h6>
-            <p class="text-muted small mb-2">${attrs.map(a => esc(a.key)).join(' · ')}</p>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h6 class="fw-semibold mb-0">Variants</h6>
+                <span class="text-muted small">— ${esc(product.name)}</span>
+            </div>
+            <p class="text-muted mb-2" style="font-size:.75rem">${attrs.map(a => esc(a.key)).join(' · ')}</p>
 
             <div style="max-height:200px;overflow-y:auto" class="mb-3">
                 ${variantRows || '<p class="text-muted small mb-0">No variants yet.</p>'}
             </div>
 
             <hr class="my-2">
-            <p class="small fw-semibold mb-2">${editing ? 'Edit Variant' : 'Add Variant'}</p>
+            <p class="small fw-semibold mb-2" style="color:${editing ? '#6366f1' : 'inherit'}">
+                ${editing ? 'Editing Variant' : 'Add Variant'}
+            </p>
             <form id="variant-form">
                 <input type="hidden" name="product-id" value="${product.id}">
                 <input type="hidden" name="variant-id" value="${editingVariant ? editingVariant.id : ''}">
@@ -292,9 +311,11 @@ const Render = {
                 </div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary btn-sm" data-action="save-variant">
-                        ${editing ? 'Update Variant' : 'Add Variant'}
+                        ${editing ? 'Update' : 'Add Variant'}
                     </button>
-                    ${editing ? `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancel-edit-variant" data-product-id="${product.id}">Cancel</button>` : ''}
+                    ${editing ? `<button type="button" class="btn btn-outline-secondary btn-sm"
+                                         data-action="cancel-edit-variant"
+                                         data-product-id="${product.id}">Cancel</button>` : ''}
                     <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" data-action="close-modal">Close</button>
                 </div>
             </form>
@@ -305,13 +326,16 @@ const Render = {
 
     brandCard(brand) {
         return `
-            <div class="card mb-2">
+            <div class="card mb-2 shadow-sm" style="border-left:4px solid #16a34a">
                 <div class="card-body py-2 px-3">
                     <div class="d-flex justify-content-between align-items-center">
-                        <span class="fw-semibold">${esc(brand.name)}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge rounded-2" style="background:#dcfce7;color:#166534;font-size:.7rem">Brand</span>
+                            <span class="fw-semibold">${esc(brand.name)}</span>
+                        </div>
                         <div class="d-flex gap-1">
                             <button class="btn btn-sm btn-outline-secondary" data-action="edit-brand" data-id="${brand.id}">Edit</button>
-                            <button class="btn btn-sm btn-outline-danger"    data-action="delete-brand" data-id="${brand.id}">Delete</button>
+                            <button class="btn btn-sm btn-outline-danger" data-action="delete-brand" data-id="${brand.id}">Delete</button>
                         </div>
                     </div>
                 </div>
