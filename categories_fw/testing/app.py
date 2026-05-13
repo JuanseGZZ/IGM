@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
 import sys, os
 sys.path.insert(0, os.path.dirname(__file__))
-from models import Category, Product, Variant, Attribute, AttributeImplementation, DataTypes
+from categories_fw.testing.models import Category, Product, Variant, Attribute, AttributeImplementation, DataTypes
 
 # ─── Demo data ────────────────────────────────────────────────────────────────
 

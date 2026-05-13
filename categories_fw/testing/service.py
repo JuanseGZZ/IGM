@@ -2,8 +2,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from models import Category, Product, Variant, Attribute, AttributeImplementation
-import repository as repo
+from categories_fw.testing.models import Category, Product, Variant, Attribute, AttributeImplementation
+import categories_fw.testing.repository as repo
 
 
 def load_catalog() -> dict:

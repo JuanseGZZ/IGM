@@ -5,8 +5,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-import repository as repo
-import service
+import categories_fw.testing.repository as repo
+import categories_fw.testing.service as service
 
 
 @asynccontextmanager
