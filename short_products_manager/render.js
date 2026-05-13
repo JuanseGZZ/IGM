@@ -212,7 +212,7 @@ const Render = {
 
     // ── Variants modal ───────────────────────────────────────────────────────
 
-    variantsModal(product) {
+    variantsModal(product, editingVariant = null) {
         const attrs = product.attributes;
 
         if (attrs.length === 0) {
@@ -224,29 +224,40 @@ const Render = {
         }
 
         const variantRows = product.variants.map(v => {
+            const isEditing = editingVariant?.id === v.id;
             const pills = attrs.map(a => {
                 const impl = v.implementations.find(i => i.attributeId === a.id);
-                return `<span class="badge bg-light text-dark border">
+                return `<span class="badge bg-light text-dark border ${isEditing ? 'border-primary' : ''}">
                     <span class="text-muted" style="font-size:.7rem">${esc(a.key)}:</span> ${esc(impl?.value ?? '?')}
                 </span>`;
             }).join(' ');
             return `
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom gap-2">
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom gap-2 ${isEditing ? 'bg-primary bg-opacity-10 rounded px-1' : ''}">
                     <div class="d-flex flex-wrap gap-1 align-items-center">
                         ${pills}
                         <span class="badge bg-success bg-opacity-10 text-success border">$${parseFloat(v.price).toFixed(2)}</span>
                     </div>
-                    <button class="btn btn-outline-danger flex-shrink-0"
-                            style="padding:.1rem .45rem;font-size:.72rem;line-height:1.4"
-                            data-action="delete-variant"
-                            data-product-id="${product.id}"
-                            data-id="${v.id}">×</button>
+                    <div class="d-flex gap-1 flex-shrink-0">
+                        <button class="btn btn-outline-secondary"
+                                style="padding:.1rem .45rem;font-size:.72rem;line-height:1.4"
+                                data-action="edit-variant"
+                                data-product-id="${product.id}"
+                                data-id="${v.id}">Edit</button>
+                        <button class="btn btn-outline-danger"
+                                style="padding:.1rem .45rem;font-size:.72rem;line-height:1.4"
+                                data-action="delete-variant"
+                                data-product-id="${product.id}"
+                                data-id="${v.id}">×</button>
+                    </div>
                 </div>
             `;
         }).join('');
 
         const selects = attrs.map(a => {
-            const opts = a.values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
+            const currentVal = editingVariant?.implementations.find(i => i.attributeId === a.id)?.value ?? '';
+            const opts = a.values.map(v =>
+                `<option value="${esc(v)}" ${v === currentVal ? 'selected' : ''}>${esc(v)}</option>`
+            ).join('');
             return `
                 <div class="mb-2">
                     <label class="form-label form-label-sm">${esc(a.key)}</label>
@@ -258,6 +269,7 @@ const Render = {
             `;
         }).join('');
 
+        const editing = !!editingVariant;
         return `
             <h6 class="fw-semibold mb-1">Variants — ${esc(product.name)}</h6>
             <p class="text-muted small mb-2">${attrs.map(a => esc(a.key)).join(' · ')}</p>
@@ -267,18 +279,23 @@ const Render = {
             </div>
 
             <hr class="my-2">
-            <p class="small fw-semibold mb-2">Add Variant</p>
+            <p class="small fw-semibold mb-2">${editing ? 'Edit Variant' : 'Add Variant'}</p>
             <form id="variant-form">
                 <input type="hidden" name="product-id" value="${product.id}">
+                <input type="hidden" name="variant-id" value="${editingVariant ? editingVariant.id : ''}">
                 ${selects}
                 <div class="mb-3">
                     <label class="form-label form-label-sm">Price</label>
                     <input type="number" class="form-control form-control-sm" name="price"
-                           min="0" step="0.01" placeholder="0.00" required>
+                           min="0" step="0.01" placeholder="0.00"
+                           value="${editing ? parseFloat(editingVariant.price).toFixed(2) : ''}" required>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" data-action="save-variant">Add Variant</button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="close-modal">Close</button>
+                    <button type="button" class="btn btn-primary btn-sm" data-action="save-variant">
+                        ${editing ? 'Update Variant' : 'Add Variant'}
+                    </button>
+                    ${editing ? `<button type="button" class="btn btn-outline-secondary btn-sm" data-action="cancel-edit-variant" data-product-id="${product.id}">Cancel</button>` : ''}
+                    <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" data-action="close-modal">Close</button>
                 </div>
             </form>
         `;

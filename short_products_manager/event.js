@@ -133,6 +133,19 @@ const App = {
             this.openModal('variants', { product });
             return;
         }
+        if (action === 'edit-variant') {
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            const variant = product?.variants.find(v => v.id === id);
+            if (!product || !variant) return;
+            document.getElementById('modal-body').innerHTML = Render.variantsModal(product, variant);
+            return;
+        }
+        if (action === 'cancel-edit-variant') {
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            if (!product) return;
+            document.getElementById('modal-body').innerHTML = Render.variantsModal(product);
+            return;
+        }
         if (action === 'delete-variant') {
             const product = this.state.products.find(p => p.id === target.dataset.productId);
             if (!product) return;
@@ -146,19 +159,26 @@ const App = {
             const data      = new FormData(form);
             const product   = this.state.products.find(p => p.id === data.get('product-id'));
             if (!product) return;
-            const price = parseFloat(data.get('price')) || 0;
+            const variantId = data.get('variant-id');
+            const price     = parseFloat(data.get('price')) || 0;
             const implementations = product.attributes.map(a =>
                 new AttributeImplementation(a.id, data.get(`attr-${a.id}`))
             );
-            const isDuplicate = product.variants.some(v =>
-                v.implementations.length === implementations.length &&
-                v.implementations.every(existing => {
-                    const incoming = implementations.find(i => i.attributeId === existing.attributeId);
-                    return incoming?.value === existing.value;
-                })
-            );
+            const isDuplicate = product.variants.some(v => {
+                if (variantId && v.id === variantId) return false; // skip self when editing
+                return v.implementations.length === implementations.length &&
+                    v.implementations.every(existing => {
+                        const incoming = implementations.find(i => i.attributeId === existing.attributeId);
+                        return incoming?.value === existing.value;
+                    });
+            });
             if (isDuplicate) { alert('This combination already exists.'); return; }
-            product.variants.push(new Variant(genId(), price, implementations));
+            if (variantId) {
+                const i = product.variants.findIndex(v => v.id === variantId);
+                if (i >= 0) product.variants[i] = new Variant(variantId, price, implementations);
+            } else {
+                product.variants.push(new Variant(genId(), price, implementations));
+            }
             document.getElementById('modal-body').innerHTML = Render.variantsModal(product);
             return;
         }
