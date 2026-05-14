@@ -328,9 +328,16 @@ const App = {
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && e.target.id === 'new-value-input') {
+            if (e.key !== 'Enter') return;
+            if (e.target.id === 'new-value-input') {
                 e.preventDefault();
                 document.querySelector('[data-action="add-value"]')?.click();
+                return;
+            }
+            // Prevent native form submission (page reload) and trigger save instead
+            if (e.target.matches('#modal-body input[type="text"]')) {
+                e.preventDefault();
+                e.target.closest('form')?.querySelector('[data-action^="save-"]')?.click();
             }
         });
 
