@@ -23,14 +23,11 @@ const Render = {
 
     attrRow(attr, productId) {
         const valueBadges = attr.values.map(v =>
-            `<span class="badge rounded-pill" style="background:#e0e7ff;color:#3730a3;font-weight:500">${esc(v)}</span>`
+            `<span class="pill">${esc(v)}</span>`
         ).join(' ');
         return `
-            <div class="d-flex align-items-center gap-2 py-1">
-                <span class="badge rounded-2 text-nowrap"
-                      style="background:#c7d2fe;color:#3730a3;font-size:.72rem;min-width:70px;text-align:center">
-                    ${esc(attr.key)}
-                </span>
+            <div class="attr-row">
+                <span class="attr-key" title="${esc(attr.key)}">${esc(attr.key)}</span>
                 <div class="d-flex flex-wrap gap-1 flex-grow-1">
                     ${valueBadges || '<small class="text-muted">—</small>'}
                 </div>
@@ -49,19 +46,18 @@ const Render = {
         const attrRows  = product.attributes.map(a => this.attrRow(a, product.id)).join('');
         const vCount    = product.variants.length;
         return `
-            <div class="card mb-3 shadow-sm" style="border-left:4px solid #6366f1">
-                <div class="card-body p-3">
+            <div class="card">
+                <div class="card-body">
 
                     <!-- Header -->
-                    <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
                         <div>
-                            <span class="fw-bold" style="font-size:1rem">${esc(product.name)}</span>
+                            <span class="prod-name">${esc(product.name)}</span>
                             ${brandName
-                                ? `<span class="badge ms-2 fw-normal"
-                                         style="background:#dcfce7;color:#166534;font-size:.75rem">${esc(brandName)}</span>`
+                                ? `<span class="chip-brand">${esc(brandName)}</span>`
                                 : ''}
                             ${product.description
-                                ? `<div class="text-muted mt-1" style="font-size:.82rem">${esc(product.description)}</div>`
+                                ? `<div class="prod-desc">${esc(product.description)}</div>`
                                 : ''}
                         </div>
                         <div class="d-flex gap-1 flex-shrink-0">
@@ -71,32 +67,28 @@ const Render = {
                     </div>
 
                     <!-- Attributes section -->
-                    <div class="rounded-2 p-2 mb-2" style="background:#f5f3ff">
-                        <div class="d-flex justify-content-between align-items-center mb-1">
-                            <span style="font-size:.65rem;font-weight:700;letter-spacing:.08em;color:#6366f1;text-transform:uppercase">
-                                Attributes
-                            </span>
+                    <div class="panel">
+                        <div class="panel-head">
+                            <span class="panel-label">Attributes</span>
                             <div class="d-flex gap-1">
-                                <button class="btn btn-xs" style="font-size:.72rem;padding:.1rem .5rem;color:#6366f1;border:1px solid #c7d2fe;background:#ede9fe"
+                                <button class="btn btn-outline-secondary btn-xs"
                                         data-action="new-attr" data-product-id="${product.id}">+ Add</button>
-                                <button class="btn btn-xs btn-outline-secondary" style="font-size:.72rem;padding:.1rem .5rem"
+                                <button class="btn btn-outline-secondary btn-xs"
                                         data-action="copy-attr" data-product-id="${product.id}">Copy</button>
                             </div>
                         </div>
-                        <div class="d-flex flex-column gap-1">
+                        <div class="d-flex flex-column">
                             ${attrRows || '<small class="text-muted">No attributes yet</small>'}
                         </div>
                     </div>
 
                     <!-- Variants section -->
-                    <div class="rounded-2 p-2" style="background:#f0fdf4">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span style="font-size:.65rem;font-weight:700;letter-spacing:.08em;color:#16a34a;text-transform:uppercase">
-                                Variants
-                                <span class="badge rounded-pill ms-1"
-                                      style="background:#bbf7d0;color:#166534;font-size:.65rem">${vCount}</span>
+                    <div class="panel">
+                        <div class="panel-head" style="margin-bottom:0">
+                            <span class="panel-label">
+                                Variants <span class="num">${vCount}</span>
                             </span>
-                            <button class="btn btn-xs" style="font-size:.72rem;padding:.1rem .5rem;color:#16a34a;border:1px solid #86efac;background:#dcfce7"
+                            <button class="btn btn-outline-secondary btn-xs"
                                     data-action="manage-variants" data-product-id="${product.id}">Manage</button>
                         </div>
                     </div>
@@ -108,13 +100,18 @@ const Render = {
 
     productsTab(products) {
         return `
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0 fw-semibold">Products</h6>
+            <div class="section-bar">
+                <div>
+                    <h6>Products<span class="count">${products.length} total</span></h6>
+                </div>
                 <button class="btn btn-primary btn-sm" data-action="new-product">+ New Product</button>
             </div>
             ${products.length
                 ? products.map(p => this.productCard(p)).join('')
-                : '<p class="text-muted small">No products yet.</p>'}
+                : `<div class="empty">
+                       <div class="empty-title">No products yet</div>
+                       <div>Create your first product to start adding attributes and variants.</div>
+                   </div>`}
         `;
     },
 
@@ -123,7 +120,7 @@ const Render = {
             `<option value="${b.id}" ${product?.brand?.id === b.id ? 'selected' : ''}>${esc(b.name)}</option>`
         ).join('');
         return `
-            <h6 class="fw-semibold mb-3">${product ? 'Edit Product' : 'New Product'}</h6>
+            <h6>${product ? 'Edit Product' : 'New Product'}</h6>
             <form id="product-form">
                 <input type="hidden" name="id" value="${product ? product.id : ''}">
                 <div class="mb-3">
@@ -156,28 +153,27 @@ const Render = {
         const key    = pendingKey    !== undefined ? pendingKey    : (attr ? attr.key    : '');
         const values = pendingValues !== undefined ? pendingValues : (attr ? attr.values : []);
         const valueBadges = values.map((v, i) => `
-            <span class="badge rounded-pill d-inline-flex align-items-center gap-1"
-                  style="background:#e0e7ff;color:#3730a3">
+            <span class="pill">
                 ${esc(v)}
-                <button type="button" class="btn-close" style="font-size:.5rem;filter:none;opacity:.6"
+                <button type="button" class="btn-close"
                         data-action="remove-value" data-index="${i}" aria-label="Remove"></button>
             </span>
         `).join(' ');
         return `
-            <h6 class="fw-semibold mb-3">${attr ? 'Edit Attribute' : 'New Attribute'}</h6>
+            <h6>${attr ? 'Edit Attribute' : 'New Attribute'}</h6>
             <form id="attr-form">
                 <input type="hidden" name="id" value="${attr ? attr.id : ''}">
                 <div class="mb-3">
-                    <label class="form-label form-label-sm">Key <small class="text-muted">(e.g. Color, Size)</small></label>
+                    <label class="form-label form-label-sm">Key <small>e.g. Color, Size</small></label>
                     <input type="text" class="form-control form-control-sm" name="key" value="${esc(key)}" required>
                 </div>
                 <div class="mb-3">
                     <label class="form-label form-label-sm">Values</label>
-                    <div class="d-flex flex-wrap gap-1 mb-2 p-2 rounded-2" style="min-height:36px;background:#f5f3ff" id="values-preview">
+                    <div class="d-flex flex-wrap gap-1 mb-2 p-2 rounded-2" style="min-height:44px" id="values-preview">
                         ${valueBadges || '<small class="text-muted">No values yet</small>'}
                     </div>
                     <div class="input-group input-group-sm">
-                        <input type="text" class="form-control" id="new-value-input" placeholder="Type and press Enter or Add...">
+                        <input type="text" class="form-control" id="new-value-input" placeholder="Type and press Enter…">
                         <button type="button" class="btn btn-outline-secondary" data-action="add-value">Add</button>
                     </div>
                 </div>
@@ -198,22 +194,24 @@ const Render = {
         });
         const rows = items.map(item => `
             <button type="button"
-                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2"
+                    class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
                     data-action="confirm-copy-attr"
                     data-source-product-id="${item.productId}"
                     data-attr-id="${item.attr.id}"
                     data-target-product-id="${targetProductId}">
-                <span class="badge rounded-2 me-2" style="background:#c7d2fe;color:#3730a3">${esc(item.attr.key)}</span>
-                <span class="d-flex align-items-center gap-1 flex-wrap flex-grow-1">
-                    ${item.attr.values.map(v =>
-                        `<small class="badge rounded-pill" style="background:#e0e7ff;color:#3730a3">${esc(v)}</small>`
-                    ).join('')}
+                <span class="d-flex align-items-center gap-2 flex-grow-1" style="min-width:0">
+                    <span class="attr-key" style="min-width:auto;max-width:none">${esc(item.attr.key)}</span>
+                    <span class="d-flex align-items-center gap-1 flex-wrap">
+                        ${item.attr.values.map(v =>
+                            `<span class="pill">${esc(v)}</span>`
+                        ).join('')}
+                    </span>
                 </span>
                 <small class="text-muted ms-2 flex-shrink-0">${esc(item.productName)}</small>
             </button>
         `).join('');
         return `
-            <h6 class="fw-semibold mb-2">Copy Attribute</h6>
+            <h6>Copy Attribute</h6>
             <p class="text-muted small mb-3">Pick one — a copy will be added to the product.</p>
             ${items.length
                 ? `<div class="list-group">${rows}</div>`
@@ -231,9 +229,14 @@ const Render = {
 
         if (attrs.length === 0) {
             return `
-                <h6 class="fw-semibold mb-3">Variants — ${esc(product.name)}</h6>
-                <p class="text-muted small">Add attributes to this product first.</p>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-action="close-modal">Close</button>
+                <h6>Variants <span class="text-muted" style="font-family:'Geist',sans-serif;font-size:.85rem;font-weight:400">· ${esc(product.name)}</span></h6>
+                <div class="empty">
+                    <div class="empty-title">No attributes</div>
+                    <div>Add attributes to this product first to create variants.</div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-action="close-modal">Close</button>
+                </div>
             `;
         }
 
@@ -241,19 +244,15 @@ const Render = {
             const isEditing = editingVariant?.id === v.id;
             const pills = attrs.map(a => {
                 const impl = v.implementations.find(i => i.attributeId === a.id);
-                return `<span class="badge rounded-pill" style="background:#e0e7ff;color:#3730a3">
-                    <span style="opacity:.6;font-size:.7em">${esc(a.key)}</span> ${esc(impl?.value ?? '?')}
+                return `<span class="pill pill-variant">
+                    <span class="pill-key">${esc(a.key)}</span>${esc(impl?.value ?? '?')}
                 </span>`;
             }).join(' ');
             return `
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom gap-2
-                            ${isEditing ? 'rounded px-2' : ''}"
-                     style="${isEditing ? 'background:#f5f3ff' : ''}">
+                <div class="variant-row ${isEditing ? 'editing' : ''}">
                     <div class="d-flex flex-wrap gap-1 align-items-center">
                         ${pills}
-                        <span class="badge rounded-pill ms-1" style="background:#dcfce7;color:#166534">
-                            $${parseFloat(v.price).toFixed(2)}
-                        </span>
+                        <span class="pill pill-price">$${parseFloat(v.price).toFixed(2)}</span>
                     </div>
                     <div class="d-flex gap-1 flex-shrink-0">
                         <button class="btn btn-outline-secondary btn-xs"
@@ -272,9 +271,7 @@ const Render = {
             ).join('');
             return `
                 <div class="mb-2">
-                    <label class="form-label form-label-sm d-flex align-items-center gap-1">
-                        <span class="badge rounded-2" style="background:#c7d2fe;color:#3730a3">${esc(a.key)}</span>
-                    </label>
+                    <label class="form-label form-label-sm">${esc(a.key)}</label>
                     <select class="form-select form-select-sm" name="attr-${a.id}" required>
                         <option value="">— Select —</option>
                         ${opts}
@@ -285,18 +282,15 @@ const Render = {
 
         const editing = !!editingVariant;
         return `
-            <div class="d-flex align-items-center gap-2 mb-1">
-                <h6 class="fw-semibold mb-0">Variants</h6>
-                <span class="text-muted small">— ${esc(product.name)}</span>
-            </div>
-            <p class="text-muted mb-2" style="font-size:.75rem">${attrs.map(a => esc(a.key)).join(' · ')}</p>
+            <h6>Variants <span class="text-muted" style="font-family:'Geist',sans-serif;font-size:.85rem;font-weight:400">· ${esc(product.name)}</span></h6>
+            <p class="panel-label mb-2" style="margin-top:-.4rem">${attrs.map(a => esc(a.key)).join(' · ')}</p>
 
-            <div style="max-height:200px;overflow-y:auto" class="mb-3">
-                ${variantRows || '<p class="text-muted small mb-0">No variants yet.</p>'}
+            <div style="max-height:220px;overflow-y:auto" class="mb-3">
+                ${variantRows || `<div class="empty" style="padding:1.25rem">No variants yet.</div>`}
             </div>
 
-            <hr class="my-2">
-            <p class="small fw-semibold mb-2" style="color:${editing ? '#6366f1' : 'inherit'}">
+            <hr class="my-3">
+            <p class="panel-label mb-2" style="color:${editing ? 'var(--accent)' : ''}">
                 ${editing ? 'Editing Variant' : 'Add Variant'}
             </p>
             <form id="variant-form">
@@ -325,13 +319,14 @@ const Render = {
     // ── Brands ────────────────────────────────────────────────────────────────
 
     brandCard(brand) {
+        const initial = (brand.name || '?').trim().charAt(0).toUpperCase();
         return `
-            <div class="card mb-2 shadow-sm" style="border-left:4px solid #16a34a">
-                <div class="card-body py-2 px-3">
+            <div class="card brand-card">
+                <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge rounded-2" style="background:#dcfce7;color:#166534;font-size:.7rem">Brand</span>
-                            <span class="fw-semibold">${esc(brand.name)}</span>
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="brand-mark">${esc(initial)}</span>
+                            <span class="brand-name">${esc(brand.name)}</span>
                         </div>
                         <div class="d-flex gap-1">
                             <button class="btn btn-sm btn-outline-secondary" data-action="edit-brand" data-id="${brand.id}">Edit</button>
@@ -345,19 +340,24 @@ const Render = {
 
     brandsTab(brands) {
         return `
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0 fw-semibold">Brands</h6>
+            <div class="section-bar">
+                <div>
+                    <h6>Brands<span class="count">${brands.length} total</span></h6>
+                </div>
                 <button class="btn btn-primary btn-sm" data-action="new-brand">+ New Brand</button>
             </div>
             ${brands.length
                 ? brands.map(b => this.brandCard(b)).join('')
-                : '<p class="text-muted small">No brands yet.</p>'}
+                : `<div class="empty">
+                       <div class="empty-title">No brands yet</div>
+                       <div>Add a brand to associate it with your products.</div>
+                   </div>`}
         `;
     },
 
     brandForm(brand) {
         return `
-            <h6 class="fw-semibold mb-3">${brand ? 'Edit Brand' : 'New Brand'}</h6>
+            <h6>${brand ? 'Edit Brand' : 'New Brand'}</h6>
             <form id="brand-form">
                 <input type="hidden" name="id" value="${brand ? brand.id : ''}">
                 <div class="mb-3">

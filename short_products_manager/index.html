@@ -5,12 +5,399 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Product Manager</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;1,6..72,500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: light dark;
+
+            /* Surface scale — body → outward, light to lightest */
+            --paper:        #ece8de;  /* s0  body */
+            --paper-2:      #e3ddd1;  /* tabs strip */
+            --card:         #f6f2ea;  /* s1  card */
+            --panel:        #fffcf5;  /* s2  panel inside card (lightest) */
+            --modal:        #fffcf5;  /* s3  modal */
+
+            --ink:          #1a1816;
+            --ink-inv:      #f4f1ec;
+            --ink-2:        #3a3631;
+            --muted:        #837c72;
+            --line:         #d8d1c2;
+
+            /* Emphasis (primary button / active tab / price pill / count badge) */
+            --emph-bg:      #1a1816;
+            --emph-fg:      #f4f1ec;
+
+            --accent:       #b4543a;
+            --accent-soft:  #f4e3dc;
+            --attr:         #ede6d8;
+            --attr-ink:     #5c4a2a;
+            --variant:      #dee6dc;
+            --variant-ink:  #2f4a37;
+            --brand:        #e2dce8;
+            --brand-ink:    #4b3b62;
+            --danger:       #a23a2a;
+            --danger-bg:    #f5e3df;
+            --danger-line:  #e7cfca;
+            --danger-line-2:#e3b9b0;
+
+            --shadow-card:   0 1px 0 rgba(20,16,12,.04), 0 12px 28px -18px rgba(20,16,12,.18);
+            --shadow-modal:  0 30px 60px -20px rgba(20,16,12,.4);
+            --focus-ring:    0 0 0 3px rgba(26,24,22,.08);
+            --overlay:       rgba(20,16,12,.42);
+            --select-arrow:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%231a1816' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                /* Dark elevation: body darkest, each nested level a step lighter — nothing glows */
+                --paper:        #0d0b07;  /* s0 body — deepest */
+                --paper-2:      #14110b;  /* tabs strip */
+                --card:         #181510;  /* s1 card */
+                --panel:        #221e16;  /* s2 panel inside card */
+                --modal:        #221e16;  /* s3 modal */
+
+                --ink:          #ebe5d8;
+                --ink-inv:      #14120e;
+                --ink-2:        #c5bfb1;
+                --muted:        #8a8175;
+                --line:         #2a261d;
+
+                /* Muted emphasis — no bright cream slabs */
+                --emph-bg:      #c8bea8;
+                --emph-fg:      #14120e;
+
+                --accent:       #c46748;
+                --accent-soft:  #2e2018;
+                --attr:         #2a2519;
+                --attr-ink:     #d6c597;
+                --variant:      #1d2620;
+                --variant-ink:  #b4c6ab;
+                --brand:        #25212b;
+                --brand-ink:    #beb1cf;
+                --danger:       #c46a55;
+                --danger-bg:    #2e1812;
+                --danger-line:  #3a2018;
+                --danger-line-2:#5a3225;
+
+                --shadow-card:   0 1px 0 rgba(0,0,0,.55), 0 14px 30px -14px rgba(0,0,0,.55);
+                --shadow-modal:  0 30px 60px -10px rgba(0,0,0,.75);
+                --focus-ring:    0 0 0 3px rgba(235,229,216,.10);
+                --overlay:       rgba(0,0,0,.62);
+                --select-arrow:  url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='%23ebe5d8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3E%3C/svg%3E");
+            }
+        }
+
+        html, body {
+            background: var(--paper);
+            color: var(--ink);
+            font-family: 'Geist', system-ui, -apple-system, sans-serif;
+            font-feature-settings: "ss01", "cv11";
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ── App shell ─────────────────────────────────────────────── */
+        .app-shell { max-width: 880px; margin: 0 auto; padding: 2.5rem 1.25rem 5rem; }
+
+        .app-header {
+            display: flex; align-items: flex-end; justify-content: space-between;
+            padding-bottom: 1.25rem; margin-bottom: 1.75rem;
+            border-bottom: 1px solid var(--line);
+        }
+        .app-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-weight: 500; font-size: 1.85rem; letter-spacing: -0.01em;
+            color: var(--ink); margin: 0; line-height: 1;
+        }
+        .app-sub {
+            font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+            color: var(--muted); margin-top: .35rem;
+        }
+
+        /* ── Tabs ──────────────────────────────────────────────────── */
+        #tabs.nav-tabs {
+            border: 0;
+            gap: .25rem;
+            background: var(--paper-2);
+            padding: .3rem;
+            border-radius: 999px;
+            display: inline-flex;
+            width: auto;
+        }
+        #tabs .nav-item { margin: 0; }
+        #tabs .nav-link {
+            border: 0; border-radius: 999px;
+            padding: .45rem 1.1rem;
+            font-size: .82rem; font-weight: 500;
+            color: var(--ink-2); background: transparent;
+        }
+        #tabs .nav-link:hover { color: var(--ink); }
+        #tabs .nav-link.active {
+            background: var(--emph-bg); color: var(--emph-fg);
+            box-shadow: 0 1px 2px rgba(0,0,0,.15);
+        }
+
+        /* ── Buttons ───────────────────────────────────────────────── */
+        .btn { border-radius: 8px; font-weight: 500; letter-spacing: -0.005em; }
+        .btn-sm { font-size: .82rem; padding: .35rem .75rem; }
+        .btn-xs { font-size: .72rem; padding: .2rem .55rem; border-radius: 6px; font-weight: 500; white-space: nowrap; }
+
+        .btn-primary {
+            background: var(--emph-bg); border-color: var(--emph-bg); color: var(--emph-fg);
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            background: var(--emph-bg); border-color: var(--emph-bg); color: var(--emph-fg);
+            filter: brightness(.94);
+        }
+        .btn-success {
+            background: var(--accent); border-color: var(--accent); color: #fff;
+        }
+        .btn-success:hover, .btn-success:focus {
+            background: var(--accent); border-color: var(--accent); color: #fff;
+            filter: brightness(.92);
+        }
+        .btn-outline-secondary {
+            border-color: var(--line); color: var(--ink-2); background: var(--card);
+        }
+        .btn-outline-secondary:hover {
+            background: var(--paper-2); border-color: var(--line); color: var(--ink);
+        }
+        .btn-outline-danger {
+            color: var(--danger); border-color: var(--danger-line); background: var(--card);
+        }
+        .btn-outline-danger:hover {
+            background: var(--danger-bg); border-color: var(--danger-line-2); color: var(--danger);
+        }
+
+        /* ── Section header (Products / Brands lists) ──────────────── */
+        .section-bar {
+            display: flex; justify-content: space-between; align-items: baseline;
+            margin-bottom: 1.25rem;
+        }
+        .section-bar h6 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-weight: 500; font-size: 1.15rem; letter-spacing: -0.005em;
+            color: var(--ink); margin: 0;
+        }
+        .section-bar .count {
+            font-size: .72rem; letter-spacing: .14em; text-transform: uppercase;
+            color: var(--muted); margin-left: .6rem;
+        }
+
+        /* ── Cards ─────────────────────────────────────────────────── */
+        .card {
+            border: 0 !important; border-left: 0 !important;
+            background: var(--card);
+            border-radius: 14px;
+            box-shadow: var(--shadow-card);
+            margin-bottom: .9rem !important;
+            overflow: hidden;
+            color: var(--ink);
+        }
+        .card .card-body { padding: 1.1rem 1.25rem 1rem; }
+
+        .prod-name {
+            font-family: 'Newsreader', Georgia, serif;
+            font-weight: 500; font-size: 1.25rem; letter-spacing: -0.01em;
+            color: var(--ink); line-height: 1.15;
+        }
+        .prod-desc {
+            color: var(--muted); font-size: .85rem; margin-top: .3rem;
+            max-width: 52ch; line-height: 1.45;
+        }
+
+        /* Brand chip on product card */
+        .chip-brand {
+            display: inline-flex; align-items: center; gap: .35rem;
+            background: var(--brand); color: var(--brand-ink);
+            font-size: .7rem; font-weight: 500; letter-spacing: .02em;
+            padding: .2rem .6rem; border-radius: 999px; margin-left: .55rem;
+            vertical-align: 0.18em;
+        }
+        .chip-brand::before {
+            content: ""; width: 5px; height: 5px; border-radius: 50%;
+            background: var(--brand-ink); opacity: .55;
+        }
+
+        /* ── Inner section panels (Attributes / Variants) ──────────── */
+        .panel {
+            background: var(--panel);
+            border-radius: 10px;
+            padding: .7rem .85rem;
+            margin-top: .85rem;
+        }
+        .panel-head {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: .5rem;
+        }
+        .panel-label {
+            font-size: .65rem; font-weight: 600; letter-spacing: .16em;
+            text-transform: uppercase; color: var(--muted);
+        }
+        .panel-label .num {
+            display: inline-block; min-width: 1.4em; text-align: center;
+            background: var(--emph-bg); color: var(--emph-fg);
+            font-size: .62rem; padding: .05rem .4rem; border-radius: 999px;
+            margin-left: .35rem; letter-spacing: 0;
+        }
+
+        /* ── Attribute rows ────────────────────────────────────────── */
+        .attr-row {
+            display: flex; align-items: center; gap: .6rem;
+            padding: .35rem .1rem;
+            border-bottom: 1px dashed var(--line);
+        }
+        .attr-row:last-child { border-bottom: 0; }
+
+        .attr-key {
+            display: inline-flex; align-items: center;
+            background: transparent; color: var(--ink);
+            font-size: .78rem; font-weight: 600;
+            min-width: 90px; max-width: 130px;
+            padding: 0; text-align: left;
+            letter-spacing: -0.005em;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .attr-key::before {
+            content: ""; width: 3px; height: 14px; background: var(--accent);
+            border-radius: 2px; margin-right: .55rem; opacity: .8;
+        }
+
+        .pill {
+            display: inline-flex; align-items: center;
+            background: var(--attr); color: var(--attr-ink);
+            font-size: .74rem; font-weight: 500;
+            padding: .18rem .55rem; border-radius: 999px;
+            line-height: 1.4;
+        }
+        .pill.pill-variant { background: var(--variant); color: var(--variant-ink); }
+        .pill.pill-price {
+            background: var(--emph-bg); color: var(--emph-fg); font-variant-numeric: tabular-nums;
+        }
+        .pill .pill-key {
+            font-size: .65rem; color: inherit; opacity: .55;
+            margin-right: .3rem; text-transform: uppercase; letter-spacing: .06em;
+        }
+
+        /* ── Variant rows in modal ─────────────────────────────────── */
+        .variant-row {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: .75rem; padding: .55rem .25rem;
+            border-bottom: 1px solid var(--line);
+        }
+        .variant-row:last-child { border-bottom: 0; }
+        .variant-row.editing {
+            background: var(--accent-soft);
+            border-radius: 8px;
+            padding-left: .65rem; padding-right: .65rem;
+            border-bottom-color: transparent;
+        }
+
+        /* ── Brand cards ───────────────────────────────────────────── */
+        .brand-card .card-body { padding: .8rem 1.1rem; }
+        .brand-name {
+            font-family: 'Newsreader', Georgia, serif;
+            font-weight: 500; font-size: 1.05rem;
+            color: var(--ink); letter-spacing: -0.005em;
+        }
+        .brand-mark {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: var(--brand); color: var(--brand-ink);
+            display: inline-flex; align-items: center; justify-content: center;
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1rem; font-weight: 600;
+        }
+
+        /* ── Forms ─────────────────────────────────────────────────── */
+        .form-label { font-size: .72rem; font-weight: 600; color: var(--ink-2);
+            letter-spacing: .04em; text-transform: uppercase; margin-bottom: .35rem; }
+        .form-label small { font-weight: 400; text-transform: none; letter-spacing: 0;
+            color: var(--muted); margin-left: .4rem; }
+        .form-control, .form-select {
+            border: 1px solid var(--line) !important;
+            background-color: var(--card) !important;
+            border-radius: 8px;
+            color: var(--ink) !important;
+            padding: .5rem .7rem; font-size: .9rem;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--ink) !important; box-shadow: var(--focus-ring);
+        }
+        .form-select { background-image: var(--select-arrow) !important; }
+        select, select option { background-color: var(--card); color: var(--ink); }
+        /* Kill Chrome autofill cream-yellow */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill,
+        select:-webkit-autofill {
+            -webkit-box-shadow: 0 0 0 1000px var(--card) inset !important;
+            -webkit-text-fill-color: var(--ink) !important;
+            caret-color: var(--ink);
+        }
+        .input-group .form-control { border-right: 0; }
+        .input-group .btn { border-radius: 0 8px 8px 0 !important; }
+
+        /* ── Modal ─────────────────────────────────────────────────── */
+        #modal-overlay { background: var(--overlay); backdrop-filter: blur(2px); }
+        #modal-box {
+            background: var(--modal) !important;
+            border-radius: 16px !important;
+            box-shadow: var(--shadow-modal) !important;
+            padding: 1.6rem 1.6rem 1.4rem !important;
+            color: var(--ink);
+        }
+        #modal-box h6 {
+            font-family: 'Newsreader', Georgia, serif;
+            font-weight: 500; font-size: 1.25rem; letter-spacing: -0.01em;
+            color: var(--ink); margin-bottom: 1rem !important;
+        }
+
+        /* Value preview in attr form */
+        #values-preview {
+            background: var(--panel) !important;
+            border: 1px dashed var(--line);
+        }
+        #values-preview .btn-close {
+            background: none !important; padding: 0 !important; margin-left: .15rem;
+            width: 12px; height: 12px; opacity: .5;
+        }
+        #values-preview .btn-close::after {
+            content: "×"; font-size: 14px; color: var(--attr-ink); line-height: 1;
+        }
+
+        /* Copy-attr picker list */
+        .list-group { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); }
+        .list-group-item {
+            border: 0 !important; border-bottom: 1px solid var(--line) !important;
+            padding: .65rem .85rem !important; background: var(--card); color: var(--ink);
+        }
+        .list-group-item:last-child { border-bottom: 0 !important; }
+        .list-group-item:hover { background: var(--panel); }
+
+        /* Empty states */
+        .empty {
+            text-align: center; padding: 2.5rem 1rem;
+            color: var(--muted); font-size: .9rem;
+            border: 1px dashed var(--line); border-radius: 12px;
+            background: var(--card);
+        }
+        .empty-title {
+            font-family: 'Newsreader', Georgia, serif;
+            font-size: 1.1rem; color: var(--ink-2); margin-bottom: .25rem;
+        }
+
+        /* Tiny utility */
+        .text-muted { color: var(--muted) !important; }
+        hr { border-color: var(--line); opacity: 1; }
+    </style>
+
     <style>
         #modal-overlay {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,.45);
             z-index: 1050;
             align-items: center;
             justify-content: center;
@@ -20,22 +407,27 @@
         .check-scroll { max-height: 160px; overflow-y: auto; }
     </style>
 </head>
-<body class="bg-light">
+<body>
 
-<div class="container py-4" style="max-width: 820px">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h5 class="fw-bold mb-0">Product Manager</h5>
+<div class="app-shell">
+
+    <header class="app-header">
+        <div>
+            <h1 class="app-title">Product Manager</h1>
+            <div class="app-sub">Catalog · Attributes · Variants</div>
+        </div>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-secondary btn-sm" data-action="db-bring">Bring</button>
             <button class="btn btn-success btn-sm" data-action="db-save">Save</button>
         </div>
-    </div>
+    </header>
+
     <ul class="nav nav-tabs mb-4" id="tabs"></ul>
     <div id="content"></div>
 </div>
 
 <div id="modal-overlay">
-    <div id="modal-box" class="bg-white rounded-3 p-4 shadow" style="width:100%; max-width:480px; max-height:90vh; overflow-y:auto;">
+    <div id="modal-box" class="bg-white rounded-3 p-4 shadow" style="width:100%; max-width:520px; max-height:90vh; overflow-y:auto;">
         <div id="modal-body"></div>
     </div>
 </div>

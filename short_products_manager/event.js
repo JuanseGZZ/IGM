@@ -340,7 +340,9 @@ const App = {
             this.state.products = data.products;
             this.state.brands   = data.brands;
             this.render();
-        }).catch(() => {});
+        }).catch(() => {
+            alert('No se pudo conectar con el backend. Levantá el servidor con:\n\ncd back\npython -m uvicorn app.main:app --reload');
+        });
     }
 };
 
