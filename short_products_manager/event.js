@@ -5,7 +5,8 @@ const App = {
         brands: [],
         modal: null,            // { type: 'product'|'attr'|'attr-copy'|'brand', data: any }
         attrPendingValues: [],
-        attrPendingKey: ''
+        attrPendingKey: '',
+        dirty: false
     },
 
     render() {
@@ -52,6 +53,18 @@ const App = {
         this.render();
     },
 
+    setDirty() {
+        this.state.dirty = true;
+        const el = document.getElementById('dirty-indicator');
+        if (el) el.style.display = 'inline';
+    },
+
+    clearDirty() {
+        this.state.dirty = false;
+        const el = document.getElementById('dirty-indicator');
+        if (el) el.style.display = 'none';
+    },
+
     rerenderAttrModal() {
         document.getElementById('modal-body').innerHTML =
             Render.attrForm(this.state.modal.data?.attr, this.state.attrPendingValues, this.state.attrPendingKey);
@@ -63,12 +76,14 @@ const App = {
         const i = this.state.products.findIndex(p => p.id === product.id);
         if (i >= 0) this.state.products[i] = product;
         else this.state.products.push(product);
+        this.setDirty();
     },
 
     upsertBrand(brand) {
         const i = this.state.brands.findIndex(b => b.id === brand.id);
         if (i >= 0) this.state.brands[i] = brand;
         else this.state.brands.push(brand);
+        this.setDirty();
     },
 
     // ── Action handler ────────────────────────────────────────────────────────
@@ -82,10 +97,12 @@ const App = {
             this.state.products = data.products;
             this.state.brands   = data.brands;
             this.render();
+            this.clearDirty();
             return;
         }
         if (action === 'db-save') {
             await API.save(this.state);
+            this.clearDirty();
             const btn = document.querySelector('[data-action="db-save"]');
             if (btn) {
                 const orig = btn.textContent;
@@ -104,6 +121,7 @@ const App = {
         if (action === 'delete-product') {
             if (!confirm('Delete this product?')) return;
             this.state.products = this.state.products.filter(p => p.id !== id);
+            this.setDirty();
             this.render();
             return;
         }
@@ -124,6 +142,7 @@ const App = {
             const product = this.state.products.find(p => p.id === target.dataset.productId);
             if (!product || !confirm('Delete this attribute?')) return;
             product.attributes = product.attributes.filter(a => a.id !== id);
+            this.setDirty();
             this.render();
             return;
         }
@@ -163,6 +182,7 @@ const App = {
             const variant = product?.variants.find(v => v.id === target.dataset.variantId);
             if (!product || !variant) return;
             variant.historical_stocks = variant.historical_stocks.filter(s => s.id !== id);
+            this.setDirty();
             document.getElementById('modal-body').innerHTML = Render.stockModal(product, variant);
             return;
         }
@@ -186,6 +206,7 @@ const App = {
             } else {
                 variant.historical_stocks.push(entry);
             }
+            this.setDirty();
             document.getElementById('modal-body').innerHTML = Render.stockModal(product, variant);
             return;
         }
@@ -198,6 +219,7 @@ const App = {
             const pct   = parseFloat(input?.value);
             if (isNaN(pct) || pct < 0 || pct > 100) { alert('Ingresá un porcentaje entre 0 y 100.'); return; }
             product.variants.forEach(v => { v.oferta = pct / 100; });
+            this.setDirty();
             document.getElementById('modal-body').innerHTML = Render.productForm(product, this.state.brands);
             return;
         }
@@ -205,6 +227,7 @@ const App = {
             const product = this.state.products.find(p => p.id === target.dataset.productId);
             if (!product) return;
             product.variants.forEach(v => { v.oferta = null; });
+            this.setDirty();
             document.getElementById('modal-body').innerHTML = Render.productForm(product, this.state.brands);
             return;
         }
@@ -232,6 +255,7 @@ const App = {
             const product = this.state.products.find(p => p.id === target.dataset.productId);
             if (!product) return;
             product.variants = product.variants.filter(v => v.id !== id);
+            this.setDirty();
             document.getElementById('modal-body').innerHTML = Render.variantsModal(product);
             return;
         }
@@ -266,6 +290,7 @@ const App = {
             } else {
                 product.variants.push(new Variant(genId(), price, implementations, [], oferta));
             }
+            this.setDirty();
             document.getElementById('modal-body').innerHTML = Render.variantsModal(product);
             return;
         }
@@ -281,6 +306,7 @@ const App = {
             const targetProduct = this.state.products.find(p => p.id === target.dataset.targetProductId);
             if (!sourceAttr || !targetProduct) return;
             targetProduct.attributes.push(new Attribute(genId(), sourceAttr.key, [...sourceAttr.values]));
+            this.setDirty();
             this.closeModal();
             return;
         }
@@ -291,6 +317,7 @@ const App = {
         if (action === 'delete-brand') {
             if (!confirm('Delete this brand?')) return;
             this.state.brands = this.state.brands.filter(b => b.id !== id);
+            this.setDirty();
             this.render();
             return;
         }
@@ -374,6 +401,7 @@ const App = {
             if (i >= 0) product.attributes[i] = newAttr;
             else product.attributes.push(newAttr);
 
+            this.setDirty();
             this.closeModal();
         } catch (err) {
             console.error('handleAttrSubmit:', err);
@@ -397,6 +425,10 @@ const App = {
     // ── Init ──────────────────────────────────────────────────────────────────
 
     init() {
+        window.addEventListener('beforeunload', (e) => {
+            if (this.state.dirty) e.preventDefault();
+        });
+
         document.addEventListener('click', (e) => {
             const btn = e.target.closest('[data-action]');
             if (btn) {

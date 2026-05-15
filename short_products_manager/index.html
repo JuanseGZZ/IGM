@@ -416,7 +416,9 @@
             <h1 class="app-title">Product Manager</h1>
             <div class="app-sub">Catalog · Attributes · Variants</div>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 align-items-center">
+            <span id="dirty-indicator"
+                  style="display:none;font-size:.75rem;font-weight:500;color:var(--accent)">● sin guardar</span>
             <button class="btn btn-outline-secondary btn-sm" data-action="db-bring">Bring</button>
             <button class="btn btn-success btn-sm" data-action="db-save">Save</button>
         </div>
