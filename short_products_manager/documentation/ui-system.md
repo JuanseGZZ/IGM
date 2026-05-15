@@ -74,10 +74,12 @@ document.addEventListener('click', (e) => {
 ### Variants
 | Action | Extra data attrs | Effect |
 |---|---|---|
-| `save-variant` | — | Add or update variant (checks uniqueness) |
+| `save-variant` | — | Add or update variant (checks uniqueness); reads `oferta` field (0–100 %) and stores as 0–1 fraction; preserves `historical_stocks` when editing |
 | `edit-variant` | `data-product-id`, `data-id` | Pre-fills form with variant data |
 | `cancel-edit-variant` | `data-product-id` | Resets form to "Add" mode |
 | `delete-variant` | `data-product-id`, `data-id` | Removes variant |
+| `set-all-oferta` | `data-product-id` | Reads `#global-oferta-input` (0–100 %), converts to 0–1, sets `oferta` on all variants of the product |
+| `clear-all-oferta` | `data-product-id` | Sets `oferta = null` on all variants of the product |
 
 ### Stock
 | Action | Extra data attrs | Effect |

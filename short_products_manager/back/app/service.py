@@ -40,6 +40,7 @@ class ProductService:
                 VariantDTO(
                     id=v["id"],
                     price=v["price"],
+                    oferta=v["oferta"],
                     implementations=[
                         AttributeImplementationDTO(**i)
                         for i in json.loads(v["implementations"])
@@ -105,6 +106,7 @@ class ProductService:
                         "id":              variant.id,
                         "product_id":      product.id,
                         "price":           variant.price,
+                        "oferta":          variant.oferta,
                         "implementations": json.dumps(
                             [i.model_dump() for i in variant.implementations]
                         ),

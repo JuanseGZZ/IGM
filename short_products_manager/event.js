@@ -190,6 +190,25 @@ const App = {
             return;
         }
 
+        // Variant offer (bulk actions from product form)
+        if (action === 'set-all-oferta') {
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            if (!product) return;
+            const input = document.getElementById('global-oferta-input');
+            const pct   = parseFloat(input?.value);
+            if (isNaN(pct) || pct < 0 || pct > 100) { alert('Ingresá un porcentaje entre 0 y 100.'); return; }
+            product.variants.forEach(v => { v.oferta = pct / 100; });
+            document.getElementById('modal-body').innerHTML = Render.productForm(product, this.state.brands);
+            return;
+        }
+        if (action === 'clear-all-oferta') {
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            if (!product) return;
+            product.variants.forEach(v => { v.oferta = null; });
+            document.getElementById('modal-body').innerHTML = Render.productForm(product, this.state.brands);
+            return;
+        }
+
         // Variants
         if (action === 'manage-variants') {
             const product = this.state.products.find(p => p.id === target.dataset.productId);
@@ -224,6 +243,8 @@ const App = {
             if (!product) return;
             const variantId = data.get('variant-id');
             const price     = parseFloat(data.get('price')) || 0;
+            const ofertaRaw = data.get('oferta');
+            const oferta    = ofertaRaw !== '' && ofertaRaw !== null ? parseFloat(ofertaRaw) / 100 : null;
             const implementations = product.attributes.map(a =>
                 new AttributeImplementation(a.id, data.get(`attr-${a.id}`))
             );
@@ -238,9 +259,12 @@ const App = {
             if (isDuplicate) { alert('This combination already exists.'); return; }
             if (variantId) {
                 const i = product.variants.findIndex(v => v.id === variantId);
-                if (i >= 0) product.variants[i] = new Variant(variantId, price, implementations);
+                if (i >= 0) {
+                    const stocks = product.variants[i].historical_stocks;
+                    product.variants[i] = new Variant(variantId, price, implementations, stocks, oferta);
+                }
             } else {
-                product.variants.push(new Variant(genId(), price, implementations));
+                product.variants.push(new Variant(genId(), price, implementations, [], oferta));
             }
             document.getElementById('modal-body').innerHTML = Render.variantsModal(product);
             return;

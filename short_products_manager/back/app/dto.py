@@ -24,6 +24,7 @@ class VariantDTO(BaseModel):
     price: float
     implementations: list[AttributeImplementationDTO] = []
     historical_stocks: list[StockDTO] = []
+    oferta: Optional[float] = None
 
 
 class AttributeDTO(BaseModel):

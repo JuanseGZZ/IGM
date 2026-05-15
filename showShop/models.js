@@ -63,18 +63,20 @@ class Stock {
 }
 
 class Variant {
-    constructor(id, price, implementations, historical_stocks = []) {
+    constructor(id, price, implementations, historical_stocks = [], oferta = null) {
         this.id                = id;
         this.price             = price;
         this.implementations   = implementations;    // AttributeImplementation[]
         this.historical_stocks = historical_stocks;  // Stock[]
+        this.oferta            = oferta;             // number 0–1 (discount fraction) | null
     }
     toJson() {
         return {
             id:                this.id,
             price:             this.price,
             implementations:   this.implementations.map(i => i.toJson()),
-            historical_stocks: this.historical_stocks.map(s => s.toJson())
+            historical_stocks: this.historical_stocks.map(s => s.toJson()),
+            oferta:            this.oferta
         };
     }
     static fromJson(d) {
@@ -82,7 +84,8 @@ class Variant {
             d.id,
             d.price,
             (d.implementations   || []).map(AttributeImplementation.fromJson),
-            (d.historical_stocks || []).map(Stock.fromJson)
+            (d.historical_stocks || []).map(Stock.fromJson),
+            d.oferta ?? null
         );
     }
 }

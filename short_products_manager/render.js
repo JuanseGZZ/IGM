@@ -154,6 +154,24 @@ const Render = {
                         : `<img id="photo-preview" src="" style="display:none;max-height:90px;max-width:100%;border-radius:8px;object-fit:cover;margin-bottom:.5rem">`}
                     <input type="file" id="photo-input" accept="image/*" class="form-control form-control-sm">
                 </div>
+                ${product ? `
+                <div class="mb-3">
+                    <label class="form-label form-label-sm fw-semibold">Oferta en variantes</label>
+                    <div class="d-flex gap-2 align-items-center mb-1">
+                        <div class="input-group input-group-sm" style="max-width:150px">
+                            <input type="number" class="form-control" id="global-oferta-input"
+                                   min="0" max="100" step="1" placeholder="%">
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <button type="button" class="btn btn-warning btn-sm"
+                                data-action="set-all-oferta" data-product-id="${product.id}">Aplicar a todas</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                data-action="clear-all-oferta" data-product-id="${product.id}">Quitar oferta</button>
+                    </div>
+                    <small class="text-muted">
+                        ${product.variants.filter(v => v.oferta != null).length} de ${product.variants.length} variantes con oferta activa
+                    </small>
+                </div>` : ''}
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary btn-sm" data-action="save-product">Save</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-action="close-modal">Cancel</button>
@@ -268,6 +286,7 @@ const Render = {
                     <div class="d-flex flex-wrap gap-1 align-items-center">
                         ${pills}
                         <span class="pill pill-price">$${parseFloat(v.price).toFixed(2)}</span>
+                        ${v.oferta != null ? `<span class="pill" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca">−${Math.round(v.oferta * 100)}%</span>` : ''}
                     </div>
                     <div class="d-flex gap-1 flex-shrink-0">
                         <button class="btn btn-xs"
@@ -320,6 +339,15 @@ const Render = {
                     <input type="number" class="form-control form-control-sm" name="price"
                            min="0" step="0.01" placeholder="0.00"
                            value="${editing ? parseFloat(editingVariant.price).toFixed(2) : ''}" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm">Oferta <small class="text-muted">% de descuento (dejar vacío para sin oferta)</small></label>
+                    <div class="input-group input-group-sm">
+                        <input type="number" class="form-control" name="oferta"
+                               min="0" max="100" step="1" placeholder="sin oferta"
+                               value="${editing && editingVariant.oferta != null ? Math.round(editingVariant.oferta * 100) : ''}">
+                        <span class="input-group-text">%</span>
+                    </div>
                 </div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary btn-sm" data-action="save-variant">

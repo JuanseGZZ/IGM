@@ -76,9 +76,19 @@ class VariantRepository(BaseRepository):
             id              TEXT PRIMARY KEY,
             product_id      TEXT NOT NULL,
             price           REAL NOT NULL DEFAULT 0,
-            implementations TEXT NOT NULL DEFAULT '[]'
+            implementations TEXT NOT NULL DEFAULT '[]',
+            oferta          REAL
         )
     """
+
+    def __init__(self, db_path: str = DB_PATH) -> None:
+        super().__init__(db_path)
+        from .db import _conn
+        with _conn(self._db) as conn:
+            try:
+                conn.execute("ALTER TABLE variants ADD COLUMN oferta REAL")
+            except Exception:
+                pass  # column already exists
 
     def get_by_product(self, product_id: str) -> list[dict]:
         return self.get_by_field("product_id", product_id)

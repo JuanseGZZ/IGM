@@ -58,8 +58,11 @@ Variant
 ├── id:                string
 ├── price:             number                     — unit sale price shown to visitor
 ├── implementations:   AttributeImplementation[]  — the combination that defines this variant
-└── historical_stocks: Stock[]                    — used to compute total available stock
+├── historical_stocks: Stock[]                    — used to compute total available stock
+└── oferta:            number | null              — discount fraction 0–1 (e.g. 0.15 = 15% off), null = no offer
 ```
+
+The discounted price = `price * (1 - oferta)`. `oferta` is set by the admin; the shop reads it and can display the discount badge.
 
 The visitor-facing stock level = `variant.historical_stocks.reduce((s, e) => s + e.quantity, 0)`. Currently the shop does not display stock level, but the data is available.
 

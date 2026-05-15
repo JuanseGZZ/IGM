@@ -105,21 +105,25 @@ Stock.fromJson(data)    // → Stock
 
 ## Variant
 
-A unique combination of one value per attribute, with a price and a stock history.
+A unique combination of one value per attribute, with a price, a stock history, and an optional discount.
 
 ```
 Variant
 ├── id:               string                     — unique identifier
 ├── price:            number                     — unit sale price
 ├── implementations:  AttributeImplementation[]  — one entry per product attribute
-└── historical_stocks: Stock[]                   — append-only list of stock entries (default [])
+├── historical_stocks: Stock[]                   — append-only list of stock entries (default [])
+└── oferta:           number | null              — discount fraction 0–1 (e.g. 0.2 = 20% off), null = no offer
 ```
 
 ```js
-new Variant(id, price, implementations, historical_stocks = [])
-variant.toJson()          // → { id, price, implementations: [...], historical_stocks: [...] }
+new Variant(id, price, implementations, historical_stocks = [], oferta = null)
+variant.toJson()          // → { id, price, implementations: [...], historical_stocks: [...], oferta }
 Variant.fromJson(data)    // → Variant
 ```
+
+**Offer display:** `Math.round(oferta * 100)` → percentage shown to the visitor. `null` means no active offer.  
+**Bulk offer:** The product form exposes "Aplicar a todas" / "Quitar oferta" buttons that set or clear `oferta` on every variant of the product at once.
 
 **Uniqueness rule:** Two variants are equal if every `AttributeImplementation` pair matches (same `attributeId` and same `value`). The UI enforces this on add and on edit (excluding self).
 
@@ -190,6 +194,7 @@ App state
             ├── quantity
             ├── date
             └── cost_unit_price
+        └── oferta  (number | null)
 ```
 
 Brands are stored by copy inside each product. If a brand is renamed in the Brands tab, existing product cards still show the old name until the product is re-saved.
