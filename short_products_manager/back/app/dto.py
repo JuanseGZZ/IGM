@@ -39,6 +39,7 @@ class ProductDTO(BaseModel):
     brand: Optional[BrandDTO] = None
     attributes: list[AttributeDTO] = []
     variants: list[VariantDTO] = []
+    photo: Optional[str] = None
 
 
 class StateDTO(BaseModel):

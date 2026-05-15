@@ -51,14 +51,20 @@ const Render = {
 
                     <!-- Header -->
                     <div class="d-flex justify-content-between align-items-start gap-3">
-                        <div>
-                            <span class="prod-name">${esc(product.name)}</span>
-                            ${brandName
-                                ? `<span class="chip-brand">${esc(brandName)}</span>`
+                        <div class="d-flex gap-3 align-items-start">
+                            ${product.photo
+                                ? `<img src="${product.photo}"
+                                        style="width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0">`
                                 : ''}
-                            ${product.description
-                                ? `<div class="prod-desc">${esc(product.description)}</div>`
-                                : ''}
+                            <div>
+                                <span class="prod-name">${esc(product.name)}</span>
+                                ${brandName
+                                    ? `<span class="chip-brand">${esc(brandName)}</span>`
+                                    : ''}
+                                ${product.description
+                                    ? `<div class="prod-desc">${esc(product.description)}</div>`
+                                    : ''}
+                            </div>
                         </div>
                         <div class="d-flex gap-1 flex-shrink-0">
                             <button class="btn btn-outline-secondary btn-sm" data-action="edit-product" data-id="${product.id}">Edit</button>
@@ -138,6 +144,15 @@ const Render = {
                         <option value="">— No brand —</option>
                         ${brandOpts}
                     </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label form-label-sm">Foto</label>
+                    <input type="hidden" name="photo" id="photo-data" value="${product?.photo ?? ''}">
+                    ${product?.photo
+                        ? `<img id="photo-preview" src="${product.photo}"
+                                style="display:block;max-height:90px;max-width:100%;border-radius:8px;object-fit:cover;margin-bottom:.5rem">`
+                        : `<img id="photo-preview" src="" style="display:none;max-height:90px;max-width:100%;border-radius:8px;object-fit:cover;margin-bottom:.5rem">`}
+                    <input type="file" id="photo-input" accept="image/*" class="form-control form-control-sm">
                 </div>
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary btn-sm" data-action="save-product">Save</button>

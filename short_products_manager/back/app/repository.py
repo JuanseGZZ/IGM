@@ -1,4 +1,4 @@
-from .db import BaseRepository
+from .db import BaseRepository, DB_PATH
 
 
 class BrandRepository(BaseRepository):
@@ -18,9 +18,19 @@ class ProductRepository(BaseRepository):
             id          TEXT PRIMARY KEY,
             name        TEXT NOT NULL,
             description TEXT NOT NULL DEFAULT '',
-            brand_id    TEXT
+            brand_id    TEXT,
+            photo       TEXT
         )
     """
+
+    def __init__(self, db_path: str = DB_PATH) -> None:
+        super().__init__(db_path)
+        from .db import _conn
+        with _conn(self._db) as conn:
+            try:
+                conn.execute("ALTER TABLE products ADD COLUMN photo TEXT")
+            except Exception:
+                pass  # column already exists
 
 
 class AttributeRepository(BaseRepository):

@@ -90,22 +90,24 @@ class Variant {
 }
 
 class Product {
-    constructor(id, name, description, attributes, brand, variants) {
-        this.id = id;
-        this.name = name;
+    constructor(id, name, description, attributes, brand, variants, photo = null) {
+        this.id          = id;
+        this.name        = name;
         this.description = description;
-        this.attributes = attributes; // Attribute[] assigned to this product
-        this.brand = brand;           // Brand | null
-        this.variants = variants;     // Variant[]
+        this.attributes  = attributes; // Attribute[]
+        this.brand       = brand;      // Brand | null
+        this.variants    = variants;   // Variant[]
+        this.photo       = photo;      // base64 data URL | null
     }
     toJson() {
         return {
-            id: this.id,
-            name: this.name,
+            id:          this.id,
+            name:        this.name,
             description: this.description,
-            attributes: this.attributes.map(a => a.toJson()),
-            brand: this.brand ? this.brand.toJson() : null,
-            variants: this.variants.map(v => v.toJson())
+            attributes:  this.attributes.map(a => a.toJson()),
+            brand:       this.brand ? this.brand.toJson() : null,
+            variants:    this.variants.map(v => v.toJson()),
+            photo:       this.photo
         };
     }
     static fromJson(d) {
@@ -115,7 +117,8 @@ class Product {
             d.description,
             (d.attributes || []).map(Attribute.fromJson),
             d.brand ? Brand.fromJson(d.brand) : null,
-            (d.variants || []).map(Variant.fromJson)
+            (d.variants  || []).map(Variant.fromJson),
+            d.photo ?? null
         );
     }
 }

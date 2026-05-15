@@ -323,12 +323,13 @@ const App = {
             const brandId     = data.get('brand');
             const brand       = brandId ? (this.state.brands.find(b => b.id === brandId) ?? null) : null;
             const existing    = this.state.products.find(p => p.id === id);
-            // Preserve attributes and variants when editing name/brand/desc
+            const photo       = data.get('photo') || null;
             this.upsertProduct(new Product(
                 id, name, description,
                 existing ? existing.attributes : [],
                 brand,
-                existing ? existing.variants : []
+                existing ? existing.variants   : [],
+                photo
             ));
             this.closeModal();
         } catch (err) {
@@ -388,6 +389,21 @@ const App = {
 
         document.getElementById('modal-overlay').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) this.closeModal();
+        });
+
+        document.addEventListener('change', (e) => {
+            if (e.target.id !== 'photo-input') return;
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const src = evt.target.result;
+                document.getElementById('photo-data').value = src;
+                const preview = document.getElementById('photo-preview');
+                preview.src   = src;
+                preview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
         });
 
         document.addEventListener('keydown', (e) => {

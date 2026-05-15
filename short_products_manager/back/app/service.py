@@ -60,6 +60,7 @@ class ProductService:
                     brand=brands_map.get(row["brand_id"]) if row["brand_id"] else None,
                     attributes=attrs,
                     variants=variants,
+                    photo=row["photo"],
                 )
             )
 
@@ -86,6 +87,7 @@ class ProductService:
                     "name":        product.name,
                     "description": product.description,
                     "brand_id":    product.brand.id if product.brand else None,
+                    "photo":       product.photo,
                 }
             )
             for attr in product.attributes:
