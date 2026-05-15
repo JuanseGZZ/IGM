@@ -12,10 +12,18 @@ class AttributeImplementationDTO(BaseModel):
     value: str
 
 
+class StockDTO(BaseModel):
+    id: str
+    quantity: float
+    date: str
+    cost_unit_price: float = 0.0
+
+
 class VariantDTO(BaseModel):
     id: str
     price: float
     implementations: list[AttributeImplementationDTO] = []
+    historical_stocks: list[StockDTO] = []
 
 
 class AttributeDTO(BaseModel):

@@ -255,6 +255,9 @@ const Render = {
                         <span class="pill pill-price">$${parseFloat(v.price).toFixed(2)}</span>
                     </div>
                     <div class="d-flex gap-1 flex-shrink-0">
+                        <button class="btn btn-xs"
+                                style="font-size:.72rem;padding:.1rem .5rem;color:#16a34a;border:1px solid #86efac;background:#dcfce7"
+                                data-action="manage-stock" data-product-id="${product.id}" data-id="${v.id}">Stock</button>
                         <button class="btn btn-outline-secondary btn-xs"
                                 data-action="edit-variant" data-product-id="${product.id}" data-id="${v.id}">Edit</button>
                         <button class="btn btn-outline-danger btn-xs"
@@ -368,6 +371,94 @@ const Render = {
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-primary btn-sm" data-action="save-brand">Save</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" data-action="close-modal">Cancel</button>
+                </div>
+            </form>
+        `;
+    },
+
+    // ── Stock modal ───────────────────────────────────────────────────────────
+
+    stockModal(product, variant) {
+        const today      = new Date().toISOString().split('T')[0];
+        const attrs      = product.attributes;
+        const pills      = attrs.map(a => {
+            const impl = variant.implementations.find(i => i.attributeId === a.id);
+            return `<span class="badge rounded-pill" style="background:#e0e7ff;color:#3730a3">
+                <span style="opacity:.6;font-size:.7em">${esc(a.key)}</span> ${esc(impl?.value ?? '?')}
+            </span>`;
+        }).join(' ');
+
+        const totalStock = variant.historical_stocks.reduce((sum, s) => sum + s.quantity, 0);
+
+        const rows = [...variant.historical_stocks].reverse().map(s => `
+            <tr>
+                <td>${esc(s.date)}</td>
+                <td class="text-end">${s.quantity}</td>
+                <td class="text-end">$${parseFloat(s.cost_unit_price).toFixed(2)}</td>
+                <td class="text-end">$${(s.quantity * s.cost_unit_price).toFixed(2)}</td>
+            </tr>
+        `).join('');
+
+        return `
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <h6 class="fw-semibold mb-0">Stock</h6>
+                <span class="text-muted small">— ${esc(product.name)}</span>
+            </div>
+            <div class="d-flex flex-wrap gap-1 mb-3">${pills || '<small class="text-muted">—</small>'}</div>
+
+            <div class="rounded-2 p-2 mb-3 d-flex align-items-center justify-content-between"
+                 style="background:#f0fdf4">
+                <span style="font-size:.7rem;font-weight:700;letter-spacing:.08em;color:#16a34a;text-transform:uppercase">
+                    Stock actual
+                </span>
+                <span class="badge rounded-pill" style="background:#bbf7d0;color:#166534;font-size:1rem;padding:.3rem .75rem">
+                    ${totalStock}
+                </span>
+            </div>
+
+            ${variant.historical_stocks.length ? `
+            <div style="max-height:160px;overflow-y:auto" class="mb-3">
+                <table class="table table-sm table-borderless mb-0" style="font-size:.8rem">
+                    <thead>
+                        <tr class="text-muted" style="font-size:.7rem">
+                            <th>Fecha</th>
+                            <th class="text-end">Cant.</th>
+                            <th class="text-end">Costo unit.</th>
+                            <th class="text-end">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>` : '<p class="text-muted small mb-3">Sin entradas aún.</p>'}
+
+            <hr class="my-2">
+            <p class="small fw-semibold mb-2">Agregar entrada</p>
+            <form id="stock-form">
+                <input type="hidden" name="product-id" value="${product.id}">
+                <input type="hidden" name="variant-id" value="${variant.id}">
+                <div class="row g-2 mb-3">
+                    <div class="col-4">
+                        <label class="form-label form-label-sm">Cantidad</label>
+                        <input type="number" class="form-control form-control-sm" name="quantity"
+                               min="1" step="1" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label form-label-sm">Fecha</label>
+                        <input type="date" class="form-control form-control-sm" name="date"
+                               value="${today}" required>
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label form-label-sm">Costo unit.</label>
+                        <input type="number" class="form-control form-control-sm" name="cost_unit_price"
+                               min="0" step="0.01" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary btn-sm" data-action="save-stock">Agregar</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                            data-action="back-to-variants" data-product-id="${product.id}">Volver</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm ms-auto"
+                            data-action="close-modal">Cerrar</button>
                 </div>
             </form>
         `;

@@ -43,6 +43,22 @@ class AttributeRepository(BaseRepository):
             conn.execute("DELETE FROM attributes WHERE product_id = ?", (product_id,))
 
 
+class StockRepository(BaseRepository):
+    table = "stocks"
+    create_sql = """
+        CREATE TABLE IF NOT EXISTS stocks (
+            id              TEXT PRIMARY KEY,
+            variant_id      TEXT NOT NULL,
+            quantity        REAL NOT NULL DEFAULT 0,
+            date            TEXT NOT NULL,
+            cost_unit_price REAL NOT NULL DEFAULT 0
+        )
+    """
+
+    def get_by_variant(self, variant_id: str) -> list[dict]:
+        return self.get_by_field("variant_id", variant_id)
+
+
 class VariantRepository(BaseRepository):
     table = "variants"
     create_sql = """

@@ -2,11 +2,11 @@ import json
 
 from .dto import (
     AttributeDTO, AttributeImplementationDTO,
-    BrandDTO, ProductDTO, StateDTO, VariantDTO,
+    BrandDTO, ProductDTO, StateDTO, StockDTO, VariantDTO,
 )
 from .repository import (
     AttributeRepository, BrandRepository,
-    ProductRepository, VariantRepository,
+    ProductRepository, StockRepository, VariantRepository,
 )
 
 
@@ -16,6 +16,7 @@ class ProductService:
         self._products = ProductRepository()
         self._attrs    = AttributeRepository()
         self._variants = VariantRepository()
+        self._stocks   = StockRepository()
 
     # ── Bring ─────────────────────────────────────────────────────────────────
 
@@ -43,6 +44,10 @@ class ProductService:
                         AttributeImplementationDTO(**i)
                         for i in json.loads(v["implementations"])
                     ],
+                    historical_stocks=[
+                        StockDTO(**s)
+                        for s in self._stocks.get_by_variant(v["id"])
+                    ],
                 )
                 for v in self._variants.get_by_product(pid)
             ]
@@ -65,6 +70,7 @@ class ProductService:
     def save(self, state: StateDTO) -> None:
         # Full replace — mirrors the frontend Bring/Save model.
         # Delete order avoids leaving orphaned child rows.
+        self._stocks.delete_all()
         self._variants.delete_all()
         self._attrs.delete_all()
         self._products.delete_all()
@@ -102,3 +108,13 @@ class ProductService:
                         ),
                     }
                 )
+                for stock in variant.historical_stocks:
+                    self._stocks.upsert(
+                        {
+                            "id":              stock.id,
+                            "variant_id":      variant.id,
+                            "quantity":        stock.quantity,
+                            "date":            stock.date,
+                            "cost_unit_price": stock.cost_unit_price,
+                        }
+                    )

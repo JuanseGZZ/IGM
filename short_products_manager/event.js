@@ -26,6 +26,7 @@ const App = {
             if (modal.type === 'attr-copy') html = Render.attrCopyPicker(products, modal.data?.targetProductId);
             if (modal.type === 'variants')  html = Render.variantsModal(modal.data.product);
             if (modal.type === 'brand')     html = Render.brandForm(modal.data);
+            if (modal.type === 'stock')     html = Render.stockModal(modal.data.product, modal.data.variant);
             document.getElementById('modal-body').innerHTML = html;
             overlay.classList.add('open');
             requestAnimationFrame(() => {
@@ -124,6 +125,37 @@ const App = {
             if (!product || !confirm('Delete this attribute?')) return;
             product.attributes = product.attributes.filter(a => a.id !== id);
             this.render();
+            return;
+        }
+
+        // Stock
+        if (action === 'manage-stock') {
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            const variant = product?.variants.find(v => v.id === id);
+            if (!product || !variant) return;
+            this.openModal('stock', { product, variant });
+            return;
+        }
+        if (action === 'back-to-variants') {
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            if (!product) return;
+            this.openModal('variants', { product });
+            return;
+        }
+        if (action === 'save-stock') {
+            const form = document.getElementById('stock-form');
+            if (!form.reportValidity()) return;
+            const data    = new FormData(form);
+            const product = this.state.products.find(p => p.id === data.get('product-id'));
+            const variant = product?.variants.find(v => v.id === data.get('variant-id'));
+            if (!product || !variant) return;
+            variant.historical_stocks.push(new Stock(
+                genId(),
+                parseFloat(data.get('quantity')),
+                data.get('date'),
+                parseFloat(data.get('cost_unit_price')) || 0
+            ));
+            document.getElementById('modal-body').innerHTML = Render.stockModal(product, variant);
             return;
         }
 
