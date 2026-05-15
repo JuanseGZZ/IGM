@@ -79,6 +79,16 @@ document.addEventListener('click', (e) => {
 | `cancel-edit-variant` | `data-product-id` | Resets form to "Add" mode |
 | `delete-variant` | `data-product-id`, `data-id` | Removes variant |
 
+### Stock
+| Action | Extra data attrs | Effect |
+|---|---|---|
+| `manage-stock` | `data-product-id`, `data-id` (variant) | Opens stock modal for that variant |
+| `save-stock` | — | Add new entry if `stock-id` hidden input is empty; update existing if set |
+| `edit-stock` | `data-product-id`, `data-variant-id`, `data-id` | Pre-fills form with entry data |
+| `cancel-edit-stock` | `data-product-id`, `data-variant-id` | Resets form to "Add" mode |
+| `delete-stock` | `data-product-id`, `data-variant-id`, `data-id` | Confirms + removes entry |
+| `back-to-variants` | `data-product-id` | Closes stock modal, reopens variants modal |
+
 ### Brands
 | Action | Extra data attrs | Effect |
 |---|---|---|
@@ -136,6 +146,7 @@ document.getElementById('modal-body').innerHTML = Render.variantsModal(product);
 | `'attr-copy'` | `{ targetProductId }` | `Render.attrCopyPicker(products, targetProductId)` |
 | `'variants'` | `{ product }` | `Render.variantsModal(product, editingVariant?)` |
 | `'brand'` | `Brand \| null` | `Render.brandForm(data)` |
+| `'stock'` | `{ product, variant }` | `Render.stockModal(product, variant, editingStock?)` |
 
 ---
 
@@ -207,8 +218,28 @@ On `openModal('attr', ...)` the staging is initialized from the existing attribu
 
 ---
 
+## Photo File Input
+
+The photo field in the product form uses a `change` event instead of the click-based action system, because file inputs fire `change` not `click`. A dedicated listener in `App.init()` handles it:
+
+```js
+document.addEventListener('change', (e) => {
+    if (e.target.id !== 'photo-input') return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        document.getElementById('photo-data').value = evt.target.result;  // hidden input
+        document.getElementById('photo-preview').src = evt.target.result; // img preview
+    };
+    reader.readAsDataURL(e.target.files[0]);
+});
+```
+
+When `save-product` fires, `FormData` picks up `photo-data` (the hidden input) and `handleProductSubmit` passes it to `new Product(...)`.
+
+---
+
 ## Adding a New Feature
 
 1. **Add HTML** in `render.js` — a new method or an addition to an existing card/form. Use `data-action="your-action"` on the trigger element.
 2. **Handle the action** in `event.js → handleAction` — add an `if (action === 'your-action')` block. Mutate `App.state`, then call `this.render()` (or re-render only `#modal-body` if inside a modal).
-3. **Persist shape** — if the action introduces new data, update the model in `models.js` (`toJson`/`fromJson`), and verify `LocalDB` in `service.js` saves/loads it correctly.
+3. **Persist shape** — if the action introduces new data, update the model in `models.js` (`toJson`/`fromJson`), the DTO in `back/app/dto.py`, and the repository + service in the backend.

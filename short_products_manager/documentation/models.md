@@ -5,6 +5,7 @@
 - [Brand](#brand)
 - [Attribute](#attribute)
 - [AttributeImplementation](#attributeimplementation)
+- [Stock](#stock)
 - [Variant](#variant)
 - [Product](#product)
 - [Serialization Contract](#serialization-contract)
@@ -80,20 +81,43 @@ AttributeImplementation.fromJson(d) // → AttributeImplementation
 
 ---
 
-## Variant
+## Stock
 
-A unique combination of one value per attribute, with a price.
+A single stock entry belonging to a variant. Stock is append-style: new deliveries are added as new entries. The current stock level = `sum(entry.quantity)` over all entries.
 
 ```
-Variant
-├── id:              string                     — unique identifier
-├── price:           number                     — unit price
-└── implementations: AttributeImplementation[]  — one entry per product attribute
+Stock
+├── id:              string   — unique identifier
+├── quantity:        number   — units in this entry (positive integer)
+├── date:            string   — ISO date, e.g. "2026-05-14"
+└── cost_unit_price: number   — purchase cost per unit (default 0)
 ```
 
 ```js
-new Variant(id, price, implementations)
-variant.toJson()          // → { id, price, implementations: [...] }
+new Stock(id, quantity, date, cost_unit_price)
+stock.toJson()          // → { id, quantity, date, cost_unit_price }
+Stock.fromJson(data)    // → Stock
+```
+
+**Total cost of entry:** `quantity × cost_unit_price` (computed in the UI, not stored).
+
+---
+
+## Variant
+
+A unique combination of one value per attribute, with a price and a stock history.
+
+```
+Variant
+├── id:               string                     — unique identifier
+├── price:            number                     — unit sale price
+├── implementations:  AttributeImplementation[]  — one entry per product attribute
+└── historical_stocks: Stock[]                   — append-only list of stock entries (default [])
+```
+
+```js
+new Variant(id, price, implementations, historical_stocks = [])
+variant.toJson()          // → { id, price, implementations: [...], historical_stocks: [...] }
 Variant.fromJson(data)    // → Variant
 ```
 
@@ -101,11 +125,13 @@ Variant.fromJson(data)    // → Variant
 
 **Completeness rule:** A valid variant has exactly one `AttributeImplementation` per product attribute. The form enforces this with required selects.
 
+**Stock level:** computed on the fly as `variant.historical_stocks.reduce((sum, s) => sum + s.quantity, 0)`. Never stored as a separate field.
+
 ---
 
 ## Product
 
-The root aggregate. Owns all attributes, variants, and a brand reference.
+The root aggregate. Owns all attributes, variants, a brand reference, and a photo.
 
 ```
 Product
@@ -114,17 +140,19 @@ Product
 ├── description: string
 ├── attributes:  Attribute[]   — defines the shape of variants
 ├── brand:       Brand | null
-└── variants:    Variant[]
+├── variants:    Variant[]
+└── photo:       string | null — base64 data URL, e.g. "data:image/jpeg;base64,..."
 ```
 
 ```js
-new Product(id, name, description, attributes, brand, variants)
-product.toJson()          // → { id, name, description, attributes, brand, variants }
+new Product(id, name, description, attributes, brand, variants, photo = null)
+product.toJson()          // → { id, name, description, attributes, brand, variants, photo }
 Product.fromJson(data)    // → Product  (recursively restores nested objects)
 ```
 
-**Editing name/brand/description** preserves `attributes` and `variants` unchanged.  
-**Deleting an attribute** does not automatically clean up variants that reference it — variants will show `?` for the missing attribute in the UI.
+**Editing name/brand/description/photo** preserves `attributes` and `variants` unchanged.  
+**Deleting an attribute** does not automatically clean up variants that reference it — variants will show `?` for the missing attribute in the UI.  
+**Photo** is stored as a base64 data URL. Selecting a file in the product form reads it with `FileReader.readAsDataURL` and stores it in a hidden input. It is passed through `toJson` and persisted in the `photo` column of the SQLite `products` table.
 
 ---
 
@@ -149,13 +177,19 @@ const restored = Product.fromJson(json);
 ```
 App state
 └── products[]
-    ├── brand            (copy — editing brand entity won't update product cards)
-    ├── attributes[]     (owned — not shared across products)
+    ├── brand             (copy — editing brand entity won't update product cards)
+    ├── photo             (base64 string | null — owned by product)
+    ├── attributes[]      (owned — not shared across products)
     │   └── values[]
     └── variants[]
-        └── implementations[]
-            ├── attributeId  (references Attribute.id on the same product)
-            └── value
+        ├── implementations[]
+        │   ├── attributeId  (references Attribute.id on the same product)
+        │   └── value
+        └── historical_stocks[]
+            ├── id
+            ├── quantity
+            ├── date
+            └── cost_unit_price
 ```
 
 Brands are stored by copy inside each product. If a brand is renamed in the Brands tab, existing product cards still show the old name until the product is re-saved.

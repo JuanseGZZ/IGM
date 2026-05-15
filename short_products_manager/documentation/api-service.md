@@ -2,85 +2,31 @@
 
 ## Index
 - [Overview](#overview)
-- [LocalDB (service.js)](#localdb-servicejs)
 - [API (api.js)](#api-apijs)
-- [Why Two Layers](#why-two-layers)
-- [Backend Migration](#backend-migration)
+- [FastAPI Backend](#fastapi-backend)
+- [SQLite Schema](#sqlite-schema)
 - [Error Handling](#error-handling)
 
 ---
 
 ## Overview
 
-Two thin layers sit between the UI and storage:
-
 ```
-event.js  →  API (api.js)  →  LocalDB (service.js)  →  localStorage
+event.js  →  API (api.js)  →  FastAPI backend (localhost:8000)  →  SQLite (products.db)
 ```
 
-The UI only ever calls `API.bring()` and `API.save(state)`. It never touches `LocalDB` or `localStorage` directly.
-
----
-
-## LocalDB (service.js)
-
-Reads and writes a **single JSON blob** under the key `spm_state`.
-
-```js
-const LocalDB = {
-  save(state) { ... },  // serializes and writes
-  load()      { ... }   // reads and deserializes
-};
-```
-
-### `LocalDB.save(state)`
-
-```js
-LocalDB.save(state)
-// → void
-```
-
-Calls `toJson()` on every product and brand, then writes:
-```js
-localStorage.setItem('spm_state', JSON.stringify({
-  products: state.products.map(p => p.toJson()),
-  brands:   state.brands.map(b => b.toJson())
-}));
-```
-
-Attributes and variants are nested inside products — no separate keys.
-
-### `LocalDB.load()`
-
-```js
-LocalDB.load()
-// → { products: Product[], brands: Brand[] }
-```
-
-Reads `spm_state`, parses JSON, calls `fromJson` on each item. Returns empty arrays on missing key or parse error (safe default).
-
-```js
-try {
-  const raw = JSON.parse(localStorage.getItem('spm_state') || '{}');
-  return {
-    products: (raw.products || []).map(Product.fromJson),
-    brands:   (raw.brands   || []).map(Brand.fromJson)
-  };
-} catch {
-  return { products: [], brands: [] };
-}
-```
+The UI only ever calls `API.bring()` and `API.save(state)`. The backend exposes two endpoints that map directly to those two operations.
 
 ---
 
 ## API (api.js)
 
-Wraps `LocalDB` with `Promise` wrappers so callers are already using the async pattern required by a real HTTP API.
-
 ```js
+const BASE = "http://localhost:8000/api";
+
 const API = {
-  bring: ()      => Promise.resolve(LocalDB.load()),
-  save:  (state) => { LocalDB.save(state); return Promise.resolve(); }
+  bring: async () => { ... },   // GET  /api/state
+  save:  async (state) => { ... } // PUT  /api/state
 };
 ```
 
@@ -91,13 +37,7 @@ API.bring()
 // → Promise<{ products: Product[], brands: Brand[] }>
 ```
 
-Resolves with the full deserialized state. Callers use `await`:
-
-```js
-const data = await API.bring();
-App.state.products = data.products;
-App.state.brands   = data.brands;
-```
+Fetches `GET /api/state`, deserializes the response with `fromJson` on every nested object, and resolves with typed arrays.
 
 ### `API.save(state)`
 
@@ -106,61 +46,115 @@ API.save(state)
 // → Promise<void>
 ```
 
-Persists the current in-memory state. Called only when the user presses **Save**.
+Sends `PUT /api/state` with the full state serialized via `toJson()`. Throws on non-2xx response so the caller can surface the error.
 
 ---
 
-## Why Two Layers
+## FastAPI Backend
 
-`LocalDB` knows about `localStorage` — it is the storage adapter.  
-`API` knows about the shape of the domain — it deserializes to model classes.
-
-When migrating to a backend:
-- `LocalDB` goes away entirely.
-- `API` grows `fetch` calls.
-- Nothing else changes.
-
-If in the future different parts of state need different endpoints (e.g., `/products` and `/brands` as separate routes), that split happens inside `API` — `event.js` still calls only `API.bring()` and `API.save()`.
-
----
-
-## Backend Migration
-
-Replace `api.js` only. Minimal example:
-
-```js
-const BASE = '/api';
-
-const API = {
-  bring: async () => {
-    const res = await fetch(`${BASE}/state`);
-    const raw = await res.json();
-    return {
-      products: raw.products.map(Product.fromJson),
-      brands:   raw.brands.map(Brand.fromJson)
-    };
-  },
-
-  save: (state) =>
-    fetch(`${BASE}/state`, {
-      method:  'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        products: state.products.map(p => p.toJson()),
-        brands:   state.brands.map(b => b.toJson())
-      })
-    })
-};
+Start with:
+```powershell
+cd short_products_manager\back
+python -m uvicorn app.main:app --reload
 ```
 
-If the backend uses granular endpoints instead of a single state blob, split the logic inside `bring` and `save` while keeping the same external interface.
+### Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/state` | Returns full state: products (with attributes, variants, stocks), brands |
+| `PUT` | `/api/state` | Full replace — deletes everything then re-inserts from request body |
+
+### Layer breakdown
+
+| File | Role |
+|---|---|
+| `main.py` | FastAPI app, CORS (`allow_origins=["*"]`), mounts `/api` router |
+| `api.py` | Route handlers — thin, delegates to `ProductService` |
+| `dto.py` | Pydantic models for request/response validation |
+| `service.py` | Orchestrates repositories; maps DB rows ↔ DTOs |
+| `repository.py` | `BaseRepository` + domain-specific repos (Brand, Product, Attribute, Variant, Stock) |
+| `db.py` | `_conn()` context manager, `BaseRepository` base class with generic CRUD |
+
+### DTOs (`dto.py`)
+
+```
+StateDTO
+├── products: list[ProductDTO]
+└── brands:   list[BrandDTO]
+
+ProductDTO
+├── id, name, description: str
+├── photo:             Optional[str]   — base64 data URL or null
+├── brand:             Optional[BrandDTO]
+├── attributes:        list[AttributeDTO]
+└── variants:          list[VariantDTO]
+
+VariantDTO
+├── id, price
+├── implementations:   list[AttributeImplementationDTO]
+└── historical_stocks: list[StockDTO]
+
+StockDTO
+├── id:              str
+├── quantity:        float
+├── date:            str
+└── cost_unit_price: float
+```
+
+---
+
+## SQLite Schema
+
+Database file: `short_products_manager/back/products.db`
+
+```sql
+CREATE TABLE brands (
+    id   TEXT PRIMARY KEY,
+    name TEXT NOT NULL
+);
+
+CREATE TABLE products (
+    id          TEXT PRIMARY KEY,
+    name        TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    brand_id    TEXT,
+    photo       TEXT          -- base64 data URL, nullable
+);
+
+CREATE TABLE attributes (
+    id          TEXT PRIMARY KEY,
+    product_id  TEXT NOT NULL,
+    key         TEXT NOT NULL,
+    attr_values TEXT NOT NULL DEFAULT '[]'  -- JSON array of strings
+);
+
+CREATE TABLE variants (
+    id              TEXT PRIMARY KEY,
+    product_id      TEXT NOT NULL,
+    price           REAL NOT NULL DEFAULT 0,
+    implementations TEXT NOT NULL DEFAULT '[]'  -- JSON array of {attributeId, value}
+);
+
+CREATE TABLE stocks (
+    id              TEXT PRIMARY KEY,
+    variant_id      TEXT NOT NULL,
+    quantity        REAL NOT NULL DEFAULT 0,
+    date            TEXT NOT NULL,
+    cost_unit_price REAL NOT NULL DEFAULT 0
+);
+```
+
+`attr_values` and `implementations` are stored as JSON strings (not normalized). `photo` is a TEXT column holding a full base64 data URL — it can be large for high-resolution images.
+
+The `photo` column is added automatically via `ALTER TABLE` when `ProductRepository` initializes, so existing databases without it are migrated on the next backend start.
 
 ---
 
 ## Error Handling
 
-Currently `API.bring()` never rejects — `LocalDB.load()` swallows parse errors and returns empty arrays. This means a corrupted `spm_state` key silently resets to empty instead of crashing the app.
+**Backend unreachable:** `API.bring()` rejects → `App.init()` shows an alert with instructions to start the server. The UI renders an empty state without crashing.
 
-`API.save()` does not handle localStorage quota errors. If the stored state grows too large, `localStorage.setItem` will throw a `QuotaExceededError`. This is only a concern for very large product catalogs.
+**Save failure:** `API.save()` throws if the response is not 2xx. The error propagates as an unhandled promise rejection (visible in the browser console). The save button does not show "Saved!" on failure.
 
-When migrating to a backend, add `.catch()` handling in the callers inside `event.js` (the `db-bring` and `db-save` actions) to surface network errors to the user.
+**Database migration:** The `photo` column is added via `ALTER TABLE products ADD COLUMN photo TEXT` inside `ProductRepository.__init__`. SQLite raises an error if the column already exists; that error is swallowed silently, so the migration is idempotent.
