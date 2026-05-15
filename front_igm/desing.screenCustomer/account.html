@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cuenta · Ventium</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .acc-hero {
+      padding: 48px 0 16px;
+    }
+    .acc-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+    }
+    .acc-card .row-info {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      padding: 22px 28px;
+      gap: 24px;
+      border-bottom: 1px solid var(--line-2);
+      align-items: center;
+    }
+    .acc-card .row-info:last-child { border-bottom: 0; }
+    @media (max-width: 640px){ .acc-card .row-info { grid-template-columns: 1fr; gap: 4px; padding: 18px 22px; } }
+    .acc-card .row-info .label {
+      font-family: var(--mono); font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.10em;
+      color: var(--mute); font-weight: 500;
+    }
+    .acc-card .row-info .value {
+      font-size: 17px; color: var(--ink); font-weight: 500;
+    }
+    .acc-card .row-info .value .small { color: var(--mute); font-size: 13px; font-weight: 400; }
+
+    .avatar {
+      width: 64px; height: 64px;
+      border-radius: 18px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: var(--paper);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--serif); font-style: italic; font-size: 32px;
+      letter-spacing: -0.02em;
+    }
+
+    .mp-row {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 16px;
+      background: var(--paper-2);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      padding: 14px 16px;
+    }
+    .mp-row .left { display: flex; align-items: center; gap: 14px; }
+    .mp-row .ic {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--card); border: 1px solid var(--line);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--mono); font-weight: 600;
+      color: var(--blue);
+    }
+
+    .nav-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+      margin-top: 22px;
+    }
+    @media (max-width: 640px){ .nav-grid { grid-template-columns: 1fr; } }
+    .nav-card {
+      display: flex; flex-direction: column; gap: 10px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      background: var(--card);
+      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+    }
+    .nav-card:hover { transform: translateY(-2px); box-shadow: var(--sh-2); border-color: var(--ink); }
+    .nav-card .top { display: flex; align-items: center; justify-content: space-between; }
+    .nav-card .ic-lg {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: var(--paper-2);
+      border: 1px solid var(--line);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--ink);
+    }
+    .nav-card .ic-lg svg { width: 22px; height: 22px; }
+    .nav-card .arrow { color: var(--mute); transition: transform .15s ease; }
+    .nav-card:hover .arrow { transform: translateX(4px); color: var(--ink); }
+    .nav-card .nm { font-family: var(--sans); font-weight: 600; font-size: 18px; margin-top: 8px; }
+    .nav-card .ds { color: var(--mute); font-size: 13.5px; }
+
+    .quick-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+      margin-top: 22px;
+    }
+    @media (max-width: 600px){ .quick-stats { grid-template-columns: 1fr; } }
+    .qs {
+      background: var(--paper-2);
+      border-radius: var(--r);
+      padding: 14px 16px;
+    }
+    .qs .l { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.10em; color: var(--mute); }
+    .qs .v { font-family: var(--sans); font-weight: 600; font-size: 20px; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">v</span>
+      Ventium<span class="dot-tag"></span>
+    </a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="dshb.shops.html">Mis tiendas</a></li>
+        <li><a href="payments.html">Pagos</a></li>
+        <li><a href="account.html" class="active">Cuenta</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap-sm">
+
+    <section class="acc-hero">
+      <span class="eyebrow"><span class="dot"></span>Mi cuenta</span>
+      <h1 class="display mt-3" style="font-size: clamp(40px, 6vw, 64px);">
+        <span class="roman">Hola,</span> Juan.
+      </h1>
+      <p class="lead mt-3" style="max-width: 50ch;">
+        Tu cuenta personal y los accesos a tiendas, pagos y suscripción. Editá lo que necesites.
+      </p>
+    </section>
+
+    <!-- profile card -->
+    <div class="acc-card">
+      <div class="row-info" style="padding-top: 28px; padding-bottom: 28px;">
+        <div class="label">Perfil</div>
+        <div style="display:flex; align-items:center; gap:18px;">
+          <span class="avatar">JP</span>
+          <div>
+            <div class="value">Juan Pérez</div>
+            <div class="small"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="29435c484707594c5b4c53695f4c475d405c44074046">[email&#160;protected]</a> · cliente desde 2024</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row-info">
+        <div class="label">Nombre</div>
+        <div class="value">Juan <span class="small">— editable</span></div>
+      </div>
+
+      <div class="row-info">
+        <div class="label">Apellido</div>
+        <div class="value">Pérez <span class="small">— editable</span></div>
+      </div>
+
+      <div class="row-info">
+        <div class="label">Email</div>
+        <div class="value"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="deb4abbfb0f0aebbacbba49ea8bbb0aab7abb3f0b7b1">[email&#160;protected]</a></div>
+      </div>
+
+      <div class="row-info">
+        <div class="label">Cuenta asociada</div>
+        <div>
+          <div class="mp-row">
+            <div class="left">
+              <span class="ic">MP</span>
+              <div>
+                <div style="font-weight:600; font-size:15px;">Mercado Pago</div>
+                <div class="mono" style="font-size:12px; color:var(--mute)">ID · shop_123456</div>
+              </div>
+            </div>
+            <span class="tag tag-success"><span class="dot"></span>Conectado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- quick stats -->
+    <div class="quick-stats">
+      <div class="qs"><div class="l">Tiendas</div><div class="v">2</div></div>
+      <div class="qs"><div class="l">Compras</div><div class="v">12</div></div>
+      <div class="qs"><div class="l">Total gastado</div><div class="v mono">$ 185.400</div></div>
+    </div>
+
+    <!-- access cards -->
+    <div class="nav-grid">
+      <a href="dshb.shops.html" class="nav-card">
+        <div class="top">
+          <span class="ic-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9 L4.5 4 H19.5 L21 9"/>
+              <path d="M4 9 V20 H20 V9"/>
+              <path d="M9 20 V14 H15 V20"/>
+            </svg>
+          </span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="nm">Mis tiendas</div>
+        <div class="ds">Gestioná tus tiendas, planes y catálogos.</div>
+      </a>
+
+      <a href="payments.html" class="nav-card">
+        <div class="top">
+          <span class="ic-lg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="6" width="18" height="13" rx="2"/>
+              <path d="M3 10 H21"/>
+              <path d="M7 15 H10"/>
+            </svg>
+          </span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="nm">Mis pagos</div>
+        <div class="ds">Historial completo de transacciones y facturas.</div>
+      </a>
+    </div>
+
+    <div class="mt-8" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;">
+      <p class="text-small muted">Datos sensibles, encriptados. Cambios aplicados al instante.</p>
+      <a href="#" id="logoutBtn" class="btn btn-ghost">Cerrar sesión</a>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <div class="wrap-sm row between center wrap-flex gap-4">
+      <div class="row center gap-3">
+        <span class="brand-mark">v</span>
+        <span class="mono text-xs">© <span id="year"></span> · Ventium SaaS</span>
+      </div>
+      <div class="row gap-4 wrap-flex">
+        <a href="index.html">Inicio</a>
+        <a href="dshb.shops.html">Tiendas</a>
+        <a href="payments.html">Pagos</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+  document.getElementById("logoutBtn").addEventListener("click", e => {
+    e.preventDefault();
+    localStorage.removeItem("logged");
+    window.location.href = "index.html";
+  });
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Suscripción · Ventium</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .page-head { padding: 40px 0 8px; }
+
+    .checkout-grid {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 28px;
+      align-items: start;
+      margin-top: 28px;
+    }
+    @media (max-width: 900px){ .checkout-grid { grid-template-columns: 1fr; } }
+
+    /* steps */
+    .stepper {
+      display: flex; align-items: center; gap: 10px;
+      margin: 18px 0 8px;
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--mute);
+    }
+    .stepper .s {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+    }
+    .stepper .s.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .stepper .s .n {
+      width: 18px; height: 18px; border-radius: 999px;
+      background: var(--paper-2); color: var(--ink-2);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 600;
+    }
+    .stepper .s.active .n { background: var(--accent); color: var(--paper); }
+    .stepper .ln { flex: 0 0 24px; height: 1px; background: var(--line); }
+
+    /* plan selector */
+    .plan-pick {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+    @media (max-width: 520px){ .plan-pick { grid-template-columns: 1fr; } }
+    .pp {
+      display: flex; flex-direction: column; gap: 8px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      background: var(--card);
+      cursor: pointer;
+      transition: border-color .15s ease, background .15s ease;
+      position: relative;
+    }
+    .pp:hover { border-color: var(--ink); }
+    .pp .pp-head { display: flex; align-items: center; justify-content: space-between; }
+    .pp .nm { font-family: var(--sans); font-weight: 600; font-size: 16px; }
+    .pp .ds { font-size: 12.5px; color: var(--mute); }
+    .pp .price-row { display: flex; align-items: baseline; gap: 6px; margin-top: 4px; }
+    .pp .px { font-family: var(--serif); font-style: italic; font-size: 28px; line-height: 1; }
+    .pp .per { font-size: 12px; color: var(--mute); }
+    .pp .radio {
+      width: 18px; height: 18px; border-radius: 999px;
+      border: 1.5px solid var(--line); flex-shrink: 0;
+      transition: all .15s ease;
+      position: relative;
+    }
+    .pp.sel { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+    .pp.sel .ds { color: rgba(241,238,230,.7); }
+    .pp.sel .per { color: rgba(241,238,230,.6); }
+    .pp.sel .radio { border-color: var(--accent); background: var(--accent); }
+    .pp.sel .radio::after { content: ""; position: absolute; inset: 4px; background: var(--paper); border-radius: 999px; }
+
+    /* range card */
+    .range-card {
+      margin-top: 18px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      background: linear-gradient(180deg, var(--card), var(--paper-2));
+    }
+    .range-card .head { display: flex; justify-content: space-between; align-items: end; margin-bottom: 16px; }
+    .range-card .val { font-family: var(--serif); font-style: italic; font-size: 40px; line-height: 1; letter-spacing: -0.02em; }
+    .range-bounds { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 11px; color: var(--mute); margin-top: 10px; }
+
+    /* summary */
+    .summary {
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: var(--r-xl);
+      padding: 28px;
+      position: sticky; top: 80px;
+    }
+    .summary h3 { color: var(--paper); }
+    .sum-row {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(241,238,230,.10);
+      color: rgba(241,238,230,.85);
+      font-size: 13.5px;
+    }
+    .sum-row:last-of-type { border-bottom: 0; }
+    .sum-row .v { color: var(--paper); font-weight: 500; font-family: var(--mono); }
+    .sum-total {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-top: 18px;
+    }
+    .sum-total .label-l { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(241,238,230,.6); }
+    .sum-total .px { font-family: var(--serif); font-style: italic; font-size: 56px; line-height: 1; letter-spacing: -0.02em; }
+    .sum-total .per { font-family: var(--sans); font-style: normal; font-size: 12px; color: rgba(241,238,230,.55); }
+
+    /* test action mini */
+    .test-actions {
+      display: flex; gap: 8px; margin-top: 12px;
+    }
+    .test-actions a {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--mute);
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">v</span>
+      Ventium<span class="dot-tag"></span>
+    </a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="dshb.shops.html">Volver a tiendas</a></li>
+        <li><a href="account.html">Cuenta</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap-sm">
+
+    <div class="page-head">
+      <span class="eyebrow"><span class="dot"></span>Checkout · paso 1 de 2</span>
+      <h1 class="display mt-3" style="font-size: clamp(40px, 6vw, 60px);">
+        <span class="roman">Tu plan,</span> <em class="serif-em">a medida.</em>
+      </h1>
+      <p class="lead mt-3">Elegí el plan, ponele nombre a tu nueva tienda y pasamos a pagar.</p>
+
+      <div class="stepper">
+        <span class="s active"><span class="n">1</span>Plan</span>
+        <span class="ln"></span>
+        <span class="s"><span class="n">2</span>Pago</span>
+        <span class="ln"></span>
+        <span class="s"><span class="n">3</span>Listo</span>
+      </div>
+    </div>
+
+    <div class="checkout-grid">
+      <!-- form -->
+      <div class="card pad-lg">
+
+        <div class="field mb-6">
+          <label class="label" for="shopName">Nombre de la tienda</label>
+          <input class="input" id="shopName" placeholder="Mi tienda" />
+          <span class="help">Lo podés cambiar después. Aparece en la url y en los mails.</span>
+        </div>
+
+        <div class="mb-3" style="display:flex; justify-content:space-between; align-items:end;">
+          <label class="label">Plan</label>
+          <span class="help">precios estimativos</span>
+        </div>
+
+        <div class="plan-pick" id="planPick">
+          <div class="pp" data-plan="free" data-price="0">
+            <div class="pp-head"><div class="nm">Free</div><span class="radio"></span></div>
+            <div class="ds">Para probar — 9 productos</div>
+            <div class="price-row"><span class="px">$0</span><span class="per">/ mes</span></div>
+          </div>
+          <div class="pp sel" data-plan="standard" data-price="14900">
+            <div class="pp-head"><div class="nm">Standard</div><span class="radio"></span></div>
+            <div class="ds">Para vender — 100 productos</div>
+            <div class="price-row"><span class="px">$14.900</span><span class="per">/ mes</span></div>
+          </div>
+          <div class="pp" data-plan="shop" data-price="29900">
+            <div class="pp-head"><div class="nm">Shop</div><span class="radio"></span></div>
+            <div class="ds">Catálogo grande — 500</div>
+            <div class="price-row"><span class="px">$29.900</span><span class="per">/ mes</span></div>
+          </div>
+          <div class="pp" data-plan="enterprise" data-price="custom">
+            <div class="pp-head"><div class="nm">Enterprise</div><span class="radio"></span></div>
+            <div class="ds">A medida — 600+ productos</div>
+            <div class="price-row"><span class="px">Custom</span></div>
+          </div>
+        </div>
+
+        <!-- enterprise slider -->
+        <div class="range-card hidden" id="rangeCard">
+          <div class="head">
+            <div>
+              <div class="label">Cantidad de productos</div>
+              <div class="val mono"><span id="rangeVal">601</span></div>
+            </div>
+            <div class="text-right">
+              <div class="label">Estimación</div>
+              <div class="mono" style="font-weight:600; font-size:18px;" id="rangeEst">$60.100</div>
+            </div>
+          </div>
+          <input class="range" id="customRange" type="range" min="601" max="100000" step="1" value="601" />
+          <div class="range-bounds">
+            <span>601</span>
+            <span>100.000</span>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="checkbox mb-4">
+          <input type="checkbox" id="agree" checked /> <span>Acepto términos y la facturación mensual recurrente.</span>
+        </div>
+
+        <div class="row gap-2 between center wrap-flex">
+          <a class="btn btn-ghost" href="dshb.shops.html">← Volver</a>
+          <a class="btn btn-primary btn-lg" href="dshb.payment.success.html" id="goPay">
+            Ir a pagar · <span class="mono" id="goPayPrice">$14.900</span>
+            <span class="arrow">→</span>
+          </a>
+        </div>
+
+        <div class="test-actions">
+          <span style="font-family:var(--mono); font-size:10.5px; color:var(--mute); text-transform:uppercase; letter-spacing:0.1em;">Test ·</span>
+          <a href="dshb.payment.success.html">simular pago ok</a>
+          <a href="dshb.payment.failure.html">simular pago fallido</a>
+        </div>
+
+      </div>
+
+      <!-- summary -->
+      <aside>
+        <div class="summary">
+          <span class="eyebrow" style="color:var(--accent)"><span class="dot"></span>Resumen</span>
+          <h3 class="mt-3 mb-4">Tu suscripción</h3>
+
+          <div class="sum-row">
+            <span>Tienda</span>
+            <span class="v" id="sumShop">— sin nombre —</span>
+          </div>
+          <div class="sum-row">
+            <span>Plan</span>
+            <span class="v" id="sumPlan">Standard</span>
+          </div>
+          <div class="sum-row">
+            <span>Productos</span>
+            <span class="v" id="sumProds">100</span>
+          </div>
+          <div class="sum-row">
+            <span>Ciclo</span>
+            <span class="v">Mensual</span>
+          </div>
+
+          <div class="sum-total">
+            <div>
+              <div class="label-l">Total / mes</div>
+              <div class="px" id="sumPrice">$14.900</div>
+            </div>
+            <span class="tag" style="background:var(--accent); color:var(--paper)"><span class="dot" style="background:var(--paper)"></span>IVA incluido</span>
+          </div>
+
+          <p class="mt-4 text-xs" style="color:rgba(241,238,230,.5)">
+            Cargo recurrente vía Mercado Pago. Cancelás cuando quieras desde tu cuenta.
+          </p>
+        </div>
+      </aside>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <div class="wrap-sm row between center wrap-flex gap-4">
+      <div class="row center gap-3">
+        <span class="brand-mark">v</span>
+        <span class="mono text-xs">© <span id="year"></span> · Ventium SaaS</span>
+      </div>
+      <div class="row gap-4 wrap-flex">
+        <a href="dshb.shops.html">Tiendas</a>
+        <a href="account.html">Cuenta</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  const fmt = n => "$" + new Intl.NumberFormat("es-AR").format(n);
+
+  const planEls = document.querySelectorAll(".pp");
+  const rangeCard = document.getElementById("rangeCard");
+  const rangeInp  = document.getElementById("customRange");
+  const rangeVal  = document.getElementById("rangeVal");
+  const rangeEst  = document.getElementById("rangeEst");
+  const shopName  = document.getElementById("shopName");
+  const sumShop   = document.getElementById("sumShop");
+  const sumPlan   = document.getElementById("sumPlan");
+  const sumProds  = document.getElementById("sumProds");
+  const sumPrice  = document.getElementById("sumPrice");
+  const goPayPx   = document.getElementById("goPayPrice");
+
+  let state = { plan: "standard", price: 14900, prods: 100 };
+  const planMeta = {
+    free:       { name: "Free",       prods: 9,   price: 0 },
+    standard:   { name: "Standard",   prods: 100, price: 14900 },
+    shop:       { name: "Shop",       prods: 500, price: 29900 },
+    enterprise: { name: "Enterprise", prods: 601, price: 60100 }
+  };
+
+  function render(){
+    sumShop.textContent = shopName.value.trim() || "— sin nombre —";
+    sumPlan.textContent = planMeta[state.plan].name;
+    sumProds.textContent = new Intl.NumberFormat("es-AR").format(state.prods);
+    if (state.plan === "enterprise") {
+      sumPrice.innerHTML = fmt(state.price) + '<span class="per"> / mes</span>';
+    } else if (state.plan === "free") {
+      sumPrice.textContent = "$0";
+    } else {
+      sumPrice.innerHTML = fmt(state.price) + '<span class="per"> / mes</span>';
+    }
+    goPayPx.textContent = state.plan === "free" ? "Gratis" : fmt(state.price);
+  }
+
+  planEls.forEach(el => {
+    el.addEventListener("click", () => {
+      planEls.forEach(e => e.classList.remove("sel"));
+      el.classList.add("sel");
+      const plan = el.dataset.plan;
+      state.plan = plan;
+      if (plan === "enterprise") {
+        rangeCard.classList.remove("hidden");
+        const v = +rangeInp.value;
+        state.prods = v;
+        state.price = Math.round(v * 100);
+        rangeVal.textContent = new Intl.NumberFormat("es-AR").format(v);
+        rangeEst.textContent = fmt(state.price);
+      } else {
+        rangeCard.classList.add("hidden");
+        state.prods = planMeta[plan].prods;
+        state.price = planMeta[plan].price;
+      }
+      render();
+    });
+  });
+
+  rangeInp.addEventListener("input", e => {
+    const v = +e.target.value;
+    state.prods = v;
+    state.price = Math.round(v * 100);
+    rangeVal.textContent = new Intl.NumberFormat("es-AR").format(v);
+    rangeEst.textContent = fmt(state.price);
+    render();
+  });
+
+  shopName.addEventListener("input", render);
+  render();
+</script>
+</body>
+</html>

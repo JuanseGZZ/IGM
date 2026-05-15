@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pago exitoso · Ventium</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .canvas {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 40px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .canvas::before {
+      content: "";
+      position: absolute; inset: -200px;
+      background: radial-gradient(closest-side, var(--accent-soft), transparent 70%);
+      opacity: .6;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .ticket {
+      position: relative; z-index: 1;
+      width: 100%; max-width: 480px;
+      background: var(--card);
+      border-radius: 28px;
+      border: 1px solid var(--line);
+      box-shadow: var(--sh-3);
+      overflow: hidden;
+    }
+    .ticket-top {
+      background: var(--ink); color: var(--paper);
+      padding: 36px 32px 28px;
+      text-align: center;
+    }
+    .check {
+      width: 72px; height: 72px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--paper);
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 18px;
+      box-shadow: 0 0 0 8px rgba(14,94,63,.18);
+      animation: pop .6s cubic-bezier(.2,.9,.3,1.4) both;
+    }
+    @keyframes pop {
+      0%   { transform: scale(.4); opacity: 0; }
+      100% { transform: scale(1);  opacity: 1; }
+    }
+    .check svg { width: 36px; height: 36px; }
+    .ticket-top h1 {
+      font-family: var(--serif); font-style: italic; font-weight: 400;
+      font-size: 38px; line-height: 1.05; letter-spacing: -0.02em;
+      color: var(--paper);
+      margin: 0 0 8px;
+    }
+    .ticket-top p { color: rgba(241,238,230,.7); font-size: 14.5px; max-width: 32ch; margin: 0 auto; }
+
+    .perf {
+      position: relative; height: 24px;
+      background: var(--ink);
+    }
+    .perf::before, .perf::after {
+      content: ""; position: absolute; top: 50%; transform: translateY(-50%);
+      width: 24px; height: 24px; background: var(--paper);
+      border-radius: 999px;
+    }
+    .perf::before { left: -12px; }
+    .perf::after  { right: -12px; }
+    .perf-line {
+      position: absolute; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
+      border-top: 1.5px dashed rgba(241,238,230,.25);
+    }
+
+    .ticket-body { padding: 28px 32px 12px; }
+    .row-sum {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px dashed var(--line);
+      font-size: 14px; color: var(--ink-2);
+    }
+    .row-sum:last-child { border-bottom: 0; }
+    .row-sum .l { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.10em; color: var(--mute); }
+    .row-sum .v { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .row-sum.total .v { font-family: var(--serif); font-style: italic; font-size: 28px; }
+
+    .ticket-foot {
+      padding: 20px 32px 28px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .countdown-row {
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      color: var(--mute); font-size: 13px;
+    }
+    .countdown {
+      font-family: var(--mono); font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      color: var(--ink);
+      background: var(--paper-2);
+      border-radius: 6px;
+      padding: 2px 8px;
+      min-width: 28px; text-align: center;
+      display: inline-block;
+    }
+    .br { padding: 10px 32px 16px; color: var(--mute); font-size: 11px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.12em; text-align: center; border-top: 1px solid var(--line-2); }
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">v</span>
+      Ventium<span class="dot-tag"></span>
+    </a>
+    <span class="tag tag-success"><span class="dot"></span>Transacción aprobada</span>
+  </div>
+</header>
+
+<div class="canvas">
+  <div class="ticket">
+    <div class="ticket-top">
+      <div class="check">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12 L10 17 L19 7"/>
+        </svg>
+      </div>
+      <h1>¡Listo!<br/>Pago aprobado.</h1>
+      <p>Tu suscripción está activa. Te enviamos el recibo a tu mail.</p>
+    </div>
+
+    <div class="perf">
+      <div class="perf-line"></div>
+    </div>
+
+    <div class="ticket-body">
+      <div class="row-sum">
+        <span class="l">Operación</span>
+        <span class="v mono">VTM-29A1F0</span>
+      </div>
+      <div class="row-sum">
+        <span class="l">Fecha</span>
+        <span class="v" id="todayDate">—</span>
+      </div>
+      <div class="row-sum">
+        <span class="l">Método</span>
+        <span class="v">Mercado Pago · ●●●● 24</span>
+      </div>
+      <div class="row-sum">
+        <span class="l">Plan</span>
+        <span class="v">Standard / mes</span>
+      </div>
+      <div class="row-sum total">
+        <span class="l">Total</span>
+        <span class="v">$14.900</span>
+      </div>
+    </div>
+
+    <div class="ticket-foot">
+      <a class="btn btn-accent btn-block btn-lg" href="dshb.shops.html">Ir a mis tiendas <span class="arrow">→</span></a>
+      <a class="btn btn-outline btn-block" href="index.html">Volver al inicio</a>
+      <div class="countdown-row">
+        Redirigiendo en <span class="countdown" id="counter">10</span> segundos.
+      </div>
+    </div>
+
+    <div class="br">Ventium SaaS · gracias.</div>
+  </div>
+</div>
+
+<script>
+  // date
+  const d = new Date();
+  document.getElementById("todayDate").textContent = d.toLocaleDateString("es-AR", { day: "2-digit", month: "long", year: "numeric" });
+
+  // countdown
+  let seconds = 10;
+  const counter = document.getElementById("counter");
+  const t = setInterval(() => {
+    seconds--;
+    counter.textContent = seconds;
+    if (seconds <= 0) { clearInterval(t); window.location.href = "index.html"; }
+  }, 1000);
+</script>
+</body>
+</html>

@@ -1,2 +1,0 @@
-- hacer el stock
-- agregar foto a los productos

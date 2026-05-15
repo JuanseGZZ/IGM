@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pagos · Ventium</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .page-head { padding: 40px 0 24px; }
+
+    .filters {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .seg {
+      display: inline-flex;
+      background: var(--paper-2);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px;
+      gap: 2px;
+    }
+    .seg button {
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--mute);
+      background: transparent;
+      border: 0;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .seg button.active {
+      background: var(--ink); color: var(--paper);
+    }
+    .search {
+      position: relative;
+      flex: 1; min-width: 220px;
+    }
+    .search input {
+      width: 100%;
+      padding: 9px 14px 9px 36px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--card);
+      font-size: 13.5px;
+      outline: none;
+    }
+    .search svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: var(--mute);
+    }
+
+    .stack {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      overflow: hidden;
+    }
+    .stack-row {
+      display: grid;
+      grid-template-columns: 110px 1fr auto auto;
+      gap: 16px;
+      align-items: center;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--line-2);
+      transition: background .12s ease;
+    }
+    .stack-row:last-child { border-bottom: 0; }
+    .stack-row:hover { background: rgba(20,18,14,.025); }
+    @media (max-width: 720px){
+      .stack-row { grid-template-columns: 1fr auto; gap: 8px; padding: 14px 16px; }
+      .stack-row .date, .stack-row .total { grid-column: 1 / -1; }
+      .stack-row .total { font-size: 18px; }
+    }
+    .date {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--mute);
+      letter-spacing: 0.04em;
+    }
+    .date strong { display: block; color: var(--ink); font-size: 13px; font-weight: 500; }
+    .pay-info .nm {
+      font-family: var(--sans); font-weight: 600; font-size: 15px;
+      letter-spacing: -0.005em;
+    }
+    .pay-info .meta {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      margin-top: 3px;
+      font-size: 12.5px; color: var(--mute);
+      font-family: var(--mono);
+    }
+    .total {
+      font-family: var(--sans);
+      font-weight: 600; font-size: 20px;
+      letter-spacing: -0.01em;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .total .cur { font-size: 12px; color: var(--mute); font-weight: 400; }
+    .table-foot {
+      padding: 14px 22px;
+      background: var(--paper-2);
+      font-size: 12.5px; color: var(--mute);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+  </style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a href="index.html" class="brand">
+      <span class="brand-mark">v</span>
+      Ventium<span class="dot-tag"></span>
+    </a>
+    <nav>
+      <ul class="nav-links">
+        <li><a href="index.html">Inicio</a></li>
+        <li><a href="dshb.shops.html">Mis tiendas</a></li>
+        <li><a href="payments.html" class="active">Pagos</a></li>
+        <li><a href="account.html">Cuenta</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap-sm">
+
+    <div class="page-head">
+      <span class="eyebrow"><span class="dot"></span>Historial</span>
+      <div class="row between center wrap-flex gap-4 mt-3">
+        <h1 class="display" style="font-size: clamp(40px, 6vw, 64px);">
+          <span class="roman">Tus</span> <em class="serif-em">pagos.</em>
+        </h1>
+        <a class="btn btn-outline" href="account.html">← Cuenta</a>
+      </div>
+      <p class="lead mt-3">Cada cargo, cada reembolso. Ordenado por fecha y filtrable por estado.</p>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="grid-3 mb-6">
+      <div class="kpi">
+        <span class="k-label">Compras totales</span>
+        <span class="k-value">12</span>
+        <span class="k-trend">5 este año</span>
+      </div>
+      <div class="kpi">
+        <span class="k-label">Total gastado</span>
+        <span class="k-value mono">$185.400</span>
+        <span class="k-trend up">▲ +18% vs 2025</span>
+      </div>
+      <div class="kpi">
+        <span class="k-label">Última compra</span>
+        <span class="k-value" style="font-family:var(--serif); font-style:italic; font-weight:400; letter-spacing:-0.02em;">1 Mar</span>
+        <span class="k-trend">hace 73 días</span>
+      </div>
+    </div>
+
+    <!-- filters -->
+    <div class="filters">
+      <div class="seg" id="seg">
+        <button class="active" data-f="all">Todos</button>
+        <button data-f="paid">Pagados</button>
+        <button data-f="pending">Pendientes</button>
+        <button data-f="rejected">Rechazados</button>
+      </div>
+      <div class="search">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3" stroke-linecap="round"/></svg>
+        <input placeholder="Buscar por orden, tienda…" id="search" />
+      </div>
+    </div>
+
+    <div class="stack" id="rows">
+
+      <div class="stack-row" data-status="paid">
+        <div class="date">2026<strong>1 Mar</strong></div>
+        <div class="pay-info">
+          <div class="nm">#A1029 · Mi Tienda</div>
+          <div class="meta">
+            <span class="tag tag-success"><span class="dot"></span>Pagado</span>
+            <span>2 ítems</span>
+            <span style="color:var(--mute-2)">·</span>
+            <span>MP — visa **24</span>
+          </div>
+        </div>
+        <div class="total">$ 24.800 <span class="cur">ARS</span></div>
+        <a class="btn btn-outline btn-sm" href="#">Detalle</a>
+      </div>
+
+      <div class="stack-row" data-status="pending">
+        <div class="date">2026<strong>18 Feb</strong></div>
+        <div class="pay-info">
+          <div class="nm">#A1012 · Urban Shop</div>
+          <div class="meta">
+            <span class="tag tag-gold"><span class="dot"></span>Pendiente</span>
+            <span>1 ítem</span>
+            <span style="color:var(--mute-2)">·</span>
+            <span>Esperando confirmación</span>
+          </div>
+        </div>
+        <div class="total">$ 9.999 <span class="cur">ARS</span></div>
+        <a class="btn btn-outline btn-sm" href="#">Detalle</a>
+      </div>
+
+      <div class="stack-row" data-status="paid">
+        <div class="date">2026<strong>2 Feb</strong></div>
+        <div class="pay-info">
+          <div class="nm">#A0993 · Mi Tienda</div>
+          <div class="meta">
+            <span class="tag tag-success"><span class="dot"></span>Pagado</span>
+            <span>4 ítems</span>
+            <span style="color:var(--mute-2)">·</span>
+            <span>MP — mc **08</span>
+          </div>
+        </div>
+        <div class="total">$ 56.200 <span class="cur">ARS</span></div>
+        <a class="btn btn-outline btn-sm" href="#">Detalle</a>
+      </div>
+
+      <div class="stack-row" data-status="rejected">
+        <div class="date">2026<strong>20 Ene</strong></div>
+        <div class="pay-info">
+          <div class="nm">#A0977 · Deco House</div>
+          <div class="meta">
+            <span class="tag tag-danger"><span class="dot"></span>Rechazado</span>
+            <span>3 ítems</span>
+            <span style="color:var(--mute-2)">·</span>
+            <span>Fondos insuficientes</span>
+          </div>
+        </div>
+        <div class="total">$ 18.500 <span class="cur">ARS</span></div>
+        <a class="btn btn-outline btn-sm" href="#">Detalle</a>
+      </div>
+
+      <div class="stack-row" data-status="paid">
+        <div class="date">2026<strong>5 Ene</strong></div>
+        <div class="pay-info">
+          <div class="nm">#A0951 · Mi Tienda</div>
+          <div class="meta">
+            <span class="tag tag-success"><span class="dot"></span>Pagado</span>
+            <span>2 ítems</span>
+            <span style="color:var(--mute-2)">·</span>
+            <span>MP — visa **24</span>
+          </div>
+        </div>
+        <div class="total">$ 11.900 <span class="cur">ARS</span></div>
+        <a class="btn btn-outline btn-sm" href="#">Detalle</a>
+      </div>
+
+      <div class="table-foot">
+        <span>Mostrando 5 de 12 pagos</span>
+        <a class="mono" href="#" style="color:var(--ink); text-decoration:underline;">Cargar más →</a>
+      </div>
+    </div>
+
+    <p class="muted text-small mt-6 text-center">
+      Datos de prueba. La integración con Mercado Pago llega en la próxima iteración.
+    </p>
+  </div>
+
+  <footer class="footer">
+    <div class="wrap-sm row between center wrap-flex gap-4">
+      <div class="row center gap-3">
+        <span class="brand-mark">v</span>
+        <span class="mono text-xs">© <span id="year"></span> · Ventium SaaS</span>
+      </div>
+      <div class="row gap-4 wrap-flex">
+        <a href="account.html">Cuenta</a>
+        <a href="dshb.shops.html">Tiendas</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // segment filter
+  const seg = document.getElementById("seg");
+  const rows = document.querySelectorAll("#rows .stack-row");
+  seg.addEventListener("click", e => {
+    if (e.target.tagName !== "BUTTON") return;
+    seg.querySelectorAll("button").forEach(b => b.classList.remove("active"));
+    e.target.classList.add("active");
+    const f = e.target.dataset.f;
+    rows.forEach(r => {
+      r.style.display = (f === "all" || r.dataset.status === f) ? "" : "none";
+    });
+  });
+  // search
+  document.getElementById("search").addEventListener("input", e => {
+    const q = e.target.value.toLowerCase().trim();
+    rows.forEach(r => {
+      const txt = r.textContent.toLowerCase();
+      r.style.display = txt.includes(q) ? "" : "none";
+    });
+  });
+</script>
+<script src="auth.js"></script>
+</body>
+</html>

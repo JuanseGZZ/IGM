@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard tienda · Ventium</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* dashboard topbar */
+    .dash-top {
+      background: var(--ink);
+      color: var(--paper);
+      border-bottom: 1px solid #000;
+      position: sticky; top: 0; z-index: 40;
+    }
+    .dash-top .nav-inner { height: 60px; }
+    .dash-top .brand { color: var(--paper); }
+    .dash-top .brand .brand-mark { background: var(--paper); color: var(--ink); }
+    .crumb {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-size: 13px;
+      color: rgba(241,238,230,.55);
+    }
+    .crumb a { color: rgba(241,238,230,.85); }
+    .crumb a:hover { color: var(--paper); }
+    .crumb .sep { color: rgba(241,238,230,.25); }
+    .crumb .shop {
+      color: var(--paper);
+      font-weight: 500;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .crumb .shop .dot-mark {
+      width: 22px; height: 22px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: var(--paper);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-family: var(--serif); font-style: italic; font-size: 14px;
+      line-height: 1;
+    }
+    .id-pill {
+      font-family: var(--mono); font-size: 11px;
+      background: rgba(241,238,230,.10);
+      color: rgba(241,238,230,.7);
+      padding: 4px 10px; border-radius: 999px;
+      letter-spacing: 0.04em;
+    }
+
+    .dash-page-head {
+      padding: 32px 0 18px;
+      display: flex; justify-content: space-between; align-items: end; gap: 18px; flex-wrap: wrap;
+    }
+    .dash-page-head h1 { font-size: 30px; font-family: var(--sans); font-weight: 600; letter-spacing: -0.02em; }
+    .dash-page-head h1 em { font-family: var(--serif); font-style: italic; font-weight: 400; }
+
+    /* big container */
+    .dash-wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+    /* form rows */
+    .frow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 540px){ .frow { grid-template-columns: 1fr; } }
+
+    /* photo upload */
+    .photo-up {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px;
+      border: 1.5px dashed var(--line);
+      border-radius: var(--r);
+      background: var(--paper-2);
+      cursor: pointer;
+    }
+    .photo-up:hover { border-color: var(--ink); }
+    .photo-up .icon {
+      width: 44px; height: 44px; border-radius: 10px;
+      background: var(--card); border: 1px solid var(--line);
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--ink-2);
+    }
+    .photo-up .t { font-size: 13.5px; font-weight: 500; }
+    .photo-up .d { font-size: 12px; color: var(--mute); }
+    .photo-up input { display: none; }
+
+    /* product table thumb */
+    .prod-row { display: flex; align-items: center; gap: 12px; }
+    .prod-row .ph { width: 44px; height: 44px; border-radius: 10px; font-size: 9px; }
+
+    /* stat layout */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 900px){ .stat-grid { grid-template-columns: 1fr; } }
+
+    .donut-list { display: flex; flex-direction: column; gap: 14px; }
+    .donut-list .it { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .donut-list .it .l { font-size: 13.5px; color: var(--ink-2); display: flex; align-items: center; gap: 8px; }
+    .donut-list .it .l .sw { width: 10px; height: 10px; border-radius: 3px; }
+    .donut-list .it .r { font-family: var(--mono); font-size: 13px; font-weight: 600; }
+
+    .ord-meta {
+      display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+      font-size: 13px;
+    }
+    .ord-meta .mail {
+      font-family: var(--mono); font-size: 12.5px; color: var(--mute);
+    }
+
+    /* small action button group */
+    .btn-group { display: inline-flex; }
+    .btn-group .btn { border-radius: 0; padding: 7px 10px; }
+    .btn-group .btn:first-child { border-radius: 8px 0 0 8px; }
+    .btn-group .btn:last-child  { border-radius: 0 8px 8px 0; border-left: 0; }
+    .btn-group .btn:not(:first-child):not(:last-child) { border-left: 0; border-right: 0; }
+
+    /* refresh fab */
+    .head-tools { display: flex; align-items: center; gap: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- ====== DARK TOPBAR ====== -->
+<header class="dash-top nav">
+  <div class="dash-wrap nav-inner">
+    <div class="crumb">
+      <a href="dshb.shops.html">Mis tiendas</a>
+      <span class="sep">/</span>
+      <span class="shop">
+        <span class="dot-mark">U</span>
+        Urban Sneakers
+      </span>
+    </div>
+    <div class="head-tools">
+      <span class="id-pill hide-sm">shop_id · <span id="shopIdLabel">shop_001</span></span>
+      <a class="btn btn-outline btn-sm" href="dshb.shops.html" style="background:transparent; color:var(--paper); border-color:rgba(241,238,230,.22)">← Tiendas</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="dash-wrap">
+
+    <div class="dash-page-head">
+      <div>
+        <span class="eyebrow"><span class="dot"></span>Dashboard de tienda</span>
+        <h1 class="mt-2">Panel de <em>Urban Sneakers</em>.</h1>
+      </div>
+      <div class="row gap-2 wrap-flex">
+        <span class="tag tag-accent"><span class="dot"></span>Plan Standard</span>
+        <button class="btn btn-outline btn-sm" id="btnRefreshAll">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8a5 5 0 0 1 9-3 M3 4v3 h3"/><path d="M13 8a5 5 0 0 1-9 3 M13 12v-3 h-3"/></svg>
+          Refrescar
+        </button>
+      </div>
+    </div>
+
+    <!-- ====== TABS ====== -->
+    <div class="dtabs" role="tablist">
+      <button class="dtab active" data-pane="paneProducts">Productos</button>
+      <button class="dtab" data-pane="paneOrders">Pedidos</button>
+      <button class="dtab" data-pane="paneStats">Estadísticas</button>
+      <button class="dtab" data-pane="paneCampains">Campañas</button>
+      <span class="grow"></span>
+    </div>
+
+    <!-- ====== PRODUCTS ====== -->
+    <section class="pane active" id="paneProducts">
+      <div class="split-5-7">
+        <div class="card pad-lg">
+          <span class="eyebrow"><span class="dot"></span>Crear / editar</span>
+          <h3 class="h3 mt-3 mb-4">Producto</h3>
+
+          <div class="field mb-3">
+            <label class="label">ID</label>
+            <input class="input mono" id="prodId" value="P001" />
+          </div>
+          <div class="field mb-3">
+            <label class="label">Título</label>
+            <input class="input" id="prodTitle" value="Coca Cola 500ml" />
+          </div>
+          <div class="frow mb-3">
+            <div class="field">
+              <label class="label">Precio</label>
+              <input class="input mono" id="prodPrice" type="number" value="1200.00" />
+            </div>
+            <div class="field">
+              <label class="label">Stock</label>
+              <input class="input mono" type="number" value="48" />
+            </div>
+          </div>
+          <div class="field mb-3">
+            <label class="label">Descripción</label>
+            <textarea class="textarea" id="prodDesc" rows="3">Bebida gaseosa, 500 ml. Vidrio retornable.</textarea>
+          </div>
+          <div class="field mb-4">
+            <label class="label">Foto</label>
+            <label class="photo-up">
+              <span class="icon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v3a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3v-3"/>
+                  <path d="M7 9 L12 4 L17 9"/><path d="M12 4v12"/>
+                </svg>
+              </span>
+              <div>
+                <div class="t">Subir imagen</div>
+                <div class="d">PNG o JPG hasta 5 MB · 800×800px</div>
+              </div>
+              <input type="file" id="prodPhoto" accept="image/*" />
+            </label>
+          </div>
+
+          <div class="row gap-2">
+            <button class="btn btn-primary" disabled>Guardar producto</button>
+            <button class="btn btn-outline" disabled>Limpiar</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="row between center mb-3">
+            <h3 class="h3">Listado <span class="muted" style="font-weight:400; font-size:14px;">· 3 productos</span></h3>
+            <div class="row gap-2">
+              <div class="search" style="position:relative;">
+                <input class="input" placeholder="Buscar…" style="padding-left:34px; font-size:13px; padding-top:8px; padding-bottom:8px;" />
+                <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" style="position:absolute; left:11px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:var(--mute);"><circle cx="7" cy="7" r="5"/><path d="M11 11l3 3" stroke-linecap="round"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="overflow:hidden;">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>ID</th>
+                    <th class="end">Stock</th>
+                    <th class="end">Precio</th>
+                    <th class="end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>
+                      <div class="prod-row">
+                        <div class="ph">CC</div>
+                        <div>
+                          <div style="font-weight:500;">Coca Cola 500ml</div>
+                          <div class="muted text-xs">Bebida · vidrio retornable</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><code>P001</code></td>
+                    <td class="end mono">48</td>
+                    <td class="end mono">$ 1.200</td>
+                    <td class="end">
+                      <span class="btn-group">
+                        <button class="btn btn-outline btn-sm" disabled>Editar</button>
+                        <button class="btn btn-danger-soft btn-sm" disabled>Borrar</button>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="prod-row">
+                        <div class="ph">HC</div>
+                        <div>
+                          <div style="font-weight:500;">Hamburguesa completa</div>
+                          <div class="muted text-xs">Sandwich · carne + queso</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><code>P002</code></td>
+                    <td class="end mono">12</td>
+                    <td class="end mono">$ 4.500</td>
+                    <td class="end">
+                      <span class="btn-group">
+                        <button class="btn btn-outline btn-sm" disabled>Editar</button>
+                        <button class="btn btn-danger-soft btn-sm" disabled>Borrar</button>
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <div class="prod-row">
+                        <div class="ph">PF</div>
+                        <div>
+                          <div style="font-weight:500;">Papas fritas</div>
+                          <div class="muted text-xs">Acompañamiento</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><code>P003</code></td>
+                    <td class="end mono">120</td>
+                    <td class="end mono">$ 2.500</td>
+                    <td class="end">
+                      <span class="btn-group">
+                        <button class="btn btn-outline btn-sm" disabled>Editar</button>
+                        <button class="btn btn-danger-soft btn-sm" disabled>Borrar</button>
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== ORDERS ====== -->
+    <section class="pane" id="paneOrders">
+      <div class="split-5-7">
+        <div class="card pad-lg">
+          <span class="eyebrow"><span class="dot"></span>Filtros</span>
+          <h3 class="h3 mt-3 mb-4">Acciones / filtros</h3>
+
+          <div class="field mb-3">
+            <label class="label">Estado</label>
+            <select class="select" id="ordStatus">
+              <option>Todos</option>
+              <option>Pendiente</option>
+              <option>Pagado</option>
+              <option>Cancelado</option>
+              <option>Expirado</option>
+            </select>
+          </div>
+
+          <div class="field mb-3">
+            <label class="label">Email del cliente</label>
+            <input class="input" id="ordEmail" placeholder="cliente@mail.com" />
+          </div>
+
+          <div class="frow mb-4">
+            <div class="field">
+              <label class="label">Desde</label>
+              <input class="input" type="date" value="2026-01-01" />
+            </div>
+            <div class="field">
+              <label class="label">Hasta</label>
+              <input class="input" type="date" value="2026-02-28" />
+            </div>
+          </div>
+
+          <div class="row gap-2">
+            <button class="btn btn-primary" disabled>Aplicar</button>
+            <button class="btn btn-outline" disabled>Limpiar</button>
+          </div>
+
+          <hr class="divider" />
+          <div class="muted text-small">
+            Sin pedidos por filtrar. Vamos a conectar la API de Mercado Pago en la próxima iteración.
+          </div>
+        </div>
+
+        <div>
+          <div class="row between center mb-3">
+            <h3 class="h3">Pedidos <span class="muted" style="font-weight:400; font-size:14px;">· últimos 30 días</span></h3>
+            <span class="tag tag-outline">2 nuevos</span>
+          </div>
+
+          <!-- Order 1 -->
+          <div class="acc-item open" data-acc>
+            <button class="acc-head" type="button">
+              <div class="ord-meta">
+                <span class="mono" style="font-weight:600;">#1001</span>
+                <span class="tag tag-gold"><span class="dot"></span>Pendiente</span>
+                <span class="mail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="1e746b7f705e737f7772307d7173">[email&#160;protected]</a></span>
+              </div>
+              <div class="row center gap-3">
+                <span class="mono" style="font-weight:600; font-size:15px;">$ 8.200</span>
+                <span class="acc-chev">▾</span>
+              </div>
+            </button>
+            <div class="acc-body">
+              <table class="tbl" style="margin:0 -2px;">
+                <thead>
+                  <tr><th>Producto</th><th class="end">Qty</th><th class="end">Precio</th><th class="end">Subtotal</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Coca Cola 500ml <code>P001</code></td><td class="end mono">2</td><td class="end mono">$ 1.200</td><td class="end mono">$ 2.400</td></tr>
+                  <tr><td>Hamburguesa completa <code>P002</code></td><td class="end mono">1</td><td class="end mono">$ 4.500</td><td class="end mono">$ 4.500</td></tr>
+                  <tr><td>Papas fritas <code>P003</code></td><td class="end mono">1</td><td class="end mono">$ 1.300</td><td class="end mono">$ 1.300</td></tr>
+                </tbody>
+                <tfoot>
+                  <tr><td colspan="3" class="end" style="border-top: 1px solid var(--line);"><strong>Total</strong></td><td class="end mono" style="border-top: 1px solid var(--line);"><strong>$ 8.200</strong></td></tr>
+                </tfoot>
+              </table>
+              <div class="row gap-2 mt-3">
+                <button class="btn btn-accent btn-sm" disabled>Marcar pagado</button>
+                <button class="btn btn-outline btn-sm" disabled>Reenviar mail</button>
+                <button class="btn btn-danger-soft btn-sm" disabled>Cancelar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order 2 -->
+          <div class="acc-item" data-acc>
+            <button class="acc-head" type="button">
+              <div class="ord-meta">
+                <span class="mono" style="font-weight:600;">#1002</span>
+                <span class="tag tag-success"><span class="dot"></span>Pagado</span>
+                <span class="mail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="e5848b84a588848c89cb868a88">[email&#160;protected]</a></span>
+              </div>
+              <div class="row center gap-3">
+                <span class="mono" style="font-weight:600; font-size:15px;">$ 3.700</span>
+                <span class="acc-chev">▾</span>
+              </div>
+            </button>
+            <div class="acc-body">
+              <table class="tbl" style="margin:0 -2px;">
+                <thead>
+                  <tr><th>Producto</th><th class="end">Qty</th><th class="end">Precio</th><th class="end">Subtotal</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Papas fritas <code>P003</code></td><td class="end mono">1</td><td class="end mono">$ 2.500</td><td class="end mono">$ 2.500</td></tr>
+                  <tr><td>Coca Cola 500ml <code>P001</code></td><td class="end mono">1</td><td class="end mono">$ 1.200</td><td class="end mono">$ 1.200</td></tr>
+                </tbody>
+                <tfoot>
+                  <tr><td colspan="3" class="end" style="border-top: 1px solid var(--line);"><strong>Total</strong></td><td class="end mono" style="border-top: 1px solid var(--line);"><strong>$ 3.700</strong></td></tr>
+                </tfoot>
+              </table>
+              <div class="row gap-2 mt-3">
+                <button class="btn btn-outline btn-sm" disabled>Ver detalle</button>
+                <button class="btn btn-danger-soft btn-sm" disabled>Reembolsar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Order 3 -->
+          <div class="acc-item" data-acc>
+            <button class="acc-head" type="button">
+              <div class="ord-meta">
+                <span class="mono" style="font-weight:600;">#1003</span>
+                <span class="tag tag-blue"><span class="dot"></span>Enviado</span>
+                <span class="mail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="95f8f4e7e1f4d5f8f4fcf9bbf6faf8">[email&#160;protected]</a></span>
+              </div>
+              <div class="row center gap-3">
+                <span class="mono" style="font-weight:600; font-size:15px;">$ 23.000</span>
+                <span class="acc-chev">▾</span>
+              </div>
+            </button>
+            <div class="acc-body">
+              <table class="tbl" style="margin:0 -2px;">
+                <thead><tr><th>Producto</th><th class="end">Qty</th><th class="end">Subtotal</th></tr></thead>
+                <tbody>
+                  <tr><td>Hamburguesa completa <code>P002</code></td><td class="end mono">3</td><td class="end mono">$ 13.500</td></tr>
+                  <tr><td>Coca Cola 500ml <code>P001</code></td><td class="end mono">3</td><td class="end mono">$ 3.600</td></tr>
+                  <tr><td>Papas fritas <code>P003</code></td><td class="end mono">2</td><td class="end mono">$ 5.000</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== STATISTICS ====== -->
+    <section class="pane" id="paneStats">
+      <div class="row between center mb-6 wrap-flex gap-3">
+        <div>
+          <span class="eyebrow"><span class="dot"></span>Período · últimos 7 días</span>
+          <h3 class="h3 mt-2">Estadísticas en tiempo real.</h3>
+        </div>
+        <div class="row gap-2">
+          <select class="select" style="min-width: 180px;">
+            <option>Últimos 7 días</option>
+            <option>Hoy</option>
+            <option>Últimos 30 días</option>
+            <option>Rango personalizado</option>
+          </select>
+          <button class="btn btn-outline btn-sm" disabled>Exportar</button>
+        </div>
+      </div>
+
+      <div class="grid-4 mb-6">
+        <div class="kpi">
+          <span class="k-label">Revenue total</span>
+          <span class="k-value mono">$1.245.300</span>
+          <span class="k-trend up">▲ +12% vs período anterior</span>
+        </div>
+        <div class="kpi">
+          <span class="k-label">Pedidos</span>
+          <span class="k-value mono">342</span>
+          <span class="k-trend">Ticket prom · <span class="mono">$3.640</span></span>
+        </div>
+        <div class="kpi">
+          <span class="k-label">Conversión</span>
+          <span class="k-value">3,8%</span>
+          <span class="k-trend up">▲ +0,4 pp</span>
+        </div>
+        <div class="kpi">
+          <span class="k-label">Unidades vendidas</span>
+          <span class="k-value mono">890</span>
+          <span class="k-trend down">▼ −3% vs período anterior</span>
+        </div>
+      </div>
+
+      <div class="stat-grid mb-4">
+        <!-- chart -->
+        <div class="card pad-lg">
+          <div class="row between center mb-4">
+            <h4>Ventas en el tiempo</h4>
+            <div class="row gap-2 center">
+              <span class="tag tag-outline"><span class="dot" style="background:var(--accent)"></span>Revenue</span>
+              <span class="text-xs muted mono">últimos 12 meses</span>
+            </div>
+          </div>
+
+          <div class="chart" id="chart">
+            <div class="bar-col" style="height: 28%;" data-mo="Mar"></div>
+            <div class="bar-col" style="height: 42%;" data-mo="Abr"></div>
+            <div class="bar-col" style="height: 38%;" data-mo="May"></div>
+            <div class="bar-col" style="height: 55%;" data-mo="Jun"></div>
+            <div class="bar-col" style="height: 48%;" data-mo="Jul"></div>
+            <div class="bar-col" style="height: 62%;" data-mo="Ago"></div>
+            <div class="bar-col" style="height: 70%;" data-mo="Sep"></div>
+            <div class="bar-col" style="height: 65%;" data-mo="Oct"></div>
+            <div class="bar-col" style="height: 78%;" data-mo="Nov"></div>
+            <div class="bar-col" style="height: 88%;" data-mo="Dic"></div>
+            <div class="bar-col" style="height: 72%;" data-mo="Ene"></div>
+            <div class="bar-col" style="height: 92%;" data-mo="Feb"></div>
+          </div>
+          <p class="muted text-xs mt-6" style="margin-top:32px;">Datos de prueba — gráfico se reemplazará por Chart.js cuando llegue el backend.</p>
+        </div>
+
+        <!-- breakdown -->
+        <div class="card pad-lg">
+          <h4 class="mb-4">Pedidos por estado</h4>
+          <div class="donut-list">
+            <div class="it">
+              <span class="l"><span class="sw" style="background:var(--accent)"></span>Pagados</span>
+              <span class="r">62%</span>
+            </div>
+            <div class="bar green"><span style="width:62%"></span></div>
+
+            <div class="it">
+              <span class="l"><span class="sw" style="background:var(--gold)"></span>Pendientes</span>
+              <span class="r">24%</span>
+            </div>
+            <div class="bar gold"><span style="width:24%"></span></div>
+
+            <div class="it">
+              <span class="l"><span class="sw" style="background:var(--coral)"></span>Cancelados</span>
+              <span class="r">10%</span>
+            </div>
+            <div class="bar coral"><span style="width:10%"></span></div>
+
+            <div class="it">
+              <span class="l"><span class="sw" style="background:var(--mute-2)"></span>Expirados</span>
+              <span class="r">4%</span>
+            </div>
+            <div class="bar"><span style="width:4%; background: var(--mute-2);"></span></div>
+          </div>
+          <hr class="divider" />
+          <div class="muted text-small">Total pedidos · <span class="mono" style="color:var(--ink)">342</span></div>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <!-- top products -->
+        <div class="card pad-lg">
+          <div class="row between center mb-4">
+            <h4>Top productos</h4>
+            <button class="btn btn-ghost btn-sm" disabled>Ver todos →</button>
+          </div>
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead>
+                <tr><th>#</th><th>Producto</th><th class="end">Unidades</th><th class="end">Revenue</th><th class="end">% total</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono muted">01</td>
+                  <td><strong>Hamburguesa completa</strong> <code>P002</code></td>
+                  <td class="end mono">120</td>
+                  <td class="end mono">$ 540.000</td>
+                  <td class="end"><span class="tag tag-accent">34%</span></td>
+                </tr>
+                <tr>
+                  <td class="mono muted">02</td>
+                  <td><strong>Coca Cola 500ml</strong> <code>P001</code></td>
+                  <td class="end mono">98</td>
+                  <td class="end mono">$ 117.600</td>
+                  <td class="end">9%</td>
+                </tr>
+                <tr>
+                  <td class="mono muted">03</td>
+                  <td><strong>Papas fritas</strong> <code>P003</code></td>
+                  <td class="end mono">86</td>
+                  <td class="end mono">$ 215.000</td>
+                  <td class="end">7%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- customers -->
+        <div class="card pad-lg">
+          <h4 class="mb-4">Clientes</h4>
+          <div class="row between mb-2"><span class="text-small">Nuevos</span><span class="mono">41%</span></div>
+          <div class="bar green mb-3"><span style="width:41%"></span></div>
+          <div class="row between mb-2"><span class="text-small">Recurrentes</span><span class="mono">59%</span></div>
+          <div class="bar" style="margin-bottom: 16px;"><span style="width:59%; background:var(--ink);"></span></div>
+
+          <hr class="divider" />
+          <div class="eyebrow mb-3"><span class="dot"></span>Top clientes</div>
+          <div class="donut-list">
+            <div class="it"><span class="l mono" style="font-size:12.5px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="cfaea1ae8fa2aea6a3e1aca0a2">[email&#160;protected]</a></span><span class="r">$ 58.200</span></div>
+            <div class="it"><span class="l mono" style="font-size:12.5px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="deb4abbfb09eb3bfb7b2f0bdb1b3">[email&#160;protected]</a></span><span class="r">$ 44.900</span></div>
+            <div class="it"><span class="l mono" style="font-size:12.5px;"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="345955465d557459555d581a575b59">[email&#160;protected]</a></span><span class="r">$ 39.300</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== CAMPAINS ====== -->
+    <section class="pane" id="paneCampains">
+      <div class="split-5-7">
+        <div>
+          <div class="card pad-lg">
+            <span class="eyebrow"><span class="dot"></span>Nueva</span>
+            <h3 class="h3 mt-3 mb-4">Crear campaña</h3>
+
+            <div class="frow mb-3">
+              <div class="field">
+                <label class="label">ID</label>
+                <input class="input mono" value="CAMP_001" />
+              </div>
+              <div class="field">
+                <label class="label">Estado</label>
+                <select class="select">
+                  <option>Borrador</option>
+                  <option selected>Activa</option>
+                  <option>Pausada</option>
+                  <option>Finalizada</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="field mb-3">
+              <label class="label">Nombre</label>
+              <input class="input" value="Promo Verano 2026" />
+            </div>
+
+            <div class="frow mb-3">
+              <div class="field">
+                <label class="label">Tipo</label>
+                <select class="select">
+                  <option selected>% Descuento</option>
+                  <option>Descuento fijo</option>
+                  <option>2 × 1</option>
+                  <option>Envío gratis</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="label">% Descuento</label>
+                <div style="position:relative;">
+                  <input class="input mono" type="number" value="15" style="padding-right:32px;" />
+                  <span style="position:absolute; right:14px; top:50%; transform:translateY(-50%); color:var(--mute); font-family:var(--mono); font-size:14px;">%</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="field mb-3">
+              <label class="label">Código</label>
+              <input class="input mono" value="VERANO15" style="letter-spacing:0.05em;" />
+              <span class="help">Lo usan tus clientes en el checkout</span>
+            </div>
+
+            <div class="frow mb-3">
+              <div class="field">
+                <label class="label">Inicio</label>
+                <input class="input" type="date" value="2026-01-01" />
+              </div>
+              <div class="field">
+                <label class="label">Fin</label>
+                <input class="input" type="date" value="2026-01-31" />
+              </div>
+            </div>
+
+            <div class="frow mb-4">
+              <div class="field">
+                <label class="label">Max usos</label>
+                <input class="input mono" type="number" value="500" />
+              </div>
+              <div class="field">
+                <label class="label">Target</label>
+                <select class="select">
+                  <option selected>Todos los productos</option>
+                  <option>Productos específicos</option>
+                  <option>Categoría</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row gap-2">
+              <button class="btn btn-primary" disabled>Crear campaña</button>
+              <button class="btn btn-outline" disabled>Limpiar</button>
+            </div>
+          </div>
+
+          <!-- simulator -->
+          <div class="card pad-lg mt-4" style="background: var(--paper-2); border-style: dashed;">
+            <span class="eyebrow"><span class="dot" style="background:var(--coral)"></span>Simulador</span>
+            <h3 class="h3 mt-3 mb-4">Impacto del descuento</h3>
+
+            <div class="field mb-3">
+              <label class="label">Producto</label>
+              <select class="select">
+                <option selected>Hamburguesa completa · P002</option>
+                <option>Coca Cola 500ml · P001</option>
+                <option>Papas fritas · P003</option>
+              </select>
+            </div>
+
+            <div class="frow">
+              <div>
+                <div class="label mb-2">Precio original</div>
+                <div class="card pad" style="text-align:center; background:var(--card);">
+                  <div class="mono" style="font-size:22px; font-weight:600;">$ 4.500</div>
+                </div>
+              </div>
+              <div>
+                <div class="label mb-2" style="color:var(--accent)">Con descuento</div>
+                <div class="card pad" style="text-align:center; background:var(--accent-soft); border-color:transparent;">
+                  <div class="mono" style="font-size:22px; font-weight:600; color: var(--accent-ink);">$ 3.825</div>
+                </div>
+              </div>
+            </div>
+            <div class="muted text-small mt-3">Ahorro · <span class="mono" style="color:var(--accent)">$675 (15%)</span></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="row between center mb-3">
+            <h3 class="h3">Campañas activas</h3>
+            <span class="tag tag-outline">3 campañas</span>
+          </div>
+
+          <div class="card mb-4" style="overflow:hidden;">
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr><th>Código</th><th>Nombre</th><th>Estado</th><th>Período</th><th class="end">Revenue</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>VERANO2026</code></td>
+                    <td><strong>Promo Verano</strong><div class="muted text-xs">15% desc · 847 usos</div></td>
+                    <td><span class="tag tag-success"><span class="dot"></span>Activa</span></td>
+                    <td class="mono text-xs muted">01 Ene → 31 Ene</td>
+                    <td class="end mono">$ 234.500</td>
+                  </tr>
+                  <tr>
+                    <td><code>BIENVENIDO</code></td>
+                    <td><strong>Welcome 20</strong><div class="muted text-xs">20% desc · 234 usos</div></td>
+                    <td><span class="tag tag-success"><span class="dot"></span>Activa</span></td>
+                    <td class="mono text-xs muted">always-on</td>
+                    <td class="end mono">$ 89.200</td>
+                  </tr>
+                  <tr>
+                    <td><code>NAVIDAD25</code></td>
+                    <td><strong>Navidad 2025</strong><div class="muted text-xs">25% desc · 1.203 usos</div></td>
+                    <td><span class="tag tag-outline"><span class="dot" style="background:var(--mute-2)"></span>Expirada</span></td>
+                    <td class="mono text-xs muted">01 Dic → 31 Dic</td>
+                    <td class="end mono">$ 567.800</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- performance -->
+          <div class="card pad-lg ink" style="background: var(--ink); color: var(--paper); border-color: var(--ink);">
+            <span class="eyebrow" style="color:var(--accent)"><span class="dot"></span>Rendimiento</span>
+            <h3 class="h3 mt-3" style="color:var(--paper)">Promo Verano · acumulado</h3>
+
+            <div class="grid-4 mt-6">
+              <div>
+                <div class="label" style="color: rgba(241,238,230,.5)">Ingresos</div>
+                <div class="mono" style="font-size:24px; font-weight:600; margin-top:4px;">$234.500</div>
+              </div>
+              <div>
+                <div class="label" style="color: rgba(241,238,230,.5)">Pedidos</div>
+                <div class="mono" style="font-size:24px; font-weight:600; margin-top:4px;">847</div>
+              </div>
+              <div>
+                <div class="label" style="color: rgba(241,238,230,.5)">Ticket prom</div>
+                <div class="mono" style="font-size:24px; font-weight:600; margin-top:4px;">$2.769</div>
+              </div>
+              <div>
+                <div class="label" style="color: rgba(241,238,230,.5)">Tasa uso</div>
+                <div class="mono" style="font-size:24px; font-weight:600; margin-top:4px;">68%</div>
+              </div>
+            </div>
+
+            <hr style="border:0; border-top: 1px solid rgba(241,238,230,.12); margin: 22px 0;" />
+
+            <div class="text-small" style="color: rgba(241,238,230,.7)">
+              847 de 1.245 usos disponibles · <span style="color:var(--accent)">descuento bien recibido</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer mt-10">
+    <div class="dash-wrap row between center wrap-flex gap-4">
+      <div class="row center gap-3">
+        <span class="brand-mark">v</span>
+        <span class="mono text-xs">© <span id="year"></span> · Ventium SaaS · panel de tienda</span>
+      </div>
+      <div class="row gap-4 wrap-flex">
+        <a href="dshb.shops.html">Tiendas</a>
+        <a href="account.html">Cuenta</a>
+        <a href="index.html">Inicio</a>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+  document.getElementById("year").textContent = new Date().getFullYear();
+
+  // shop_id from query
+  const params = new URLSearchParams(location.search);
+  const shopId = params.get("shop_id") || "shop_001";
+  document.getElementById("shopIdLabel").textContent = shopId;
+
+  // tabs
+  document.querySelectorAll(".dtab").forEach(t => {
+    t.addEventListener("click", () => {
+      document.querySelectorAll(".dtab").forEach(x => x.classList.remove("active"));
+      document.querySelectorAll(".pane").forEach(x => x.classList.remove("active"));
+      t.classList.add("active");
+      document.getElementById(t.dataset.pane).classList.add("active");
+    });
+  });
+
+  // accordion
+  document.querySelectorAll("[data-acc] .acc-head").forEach(head => {
+    head.addEventListener("click", () => {
+      const item = head.parentElement;
+      item.classList.toggle("open");
+    });
+  });
+</script>
+<script src="auth.js"></script>
+</body>
+</html>
