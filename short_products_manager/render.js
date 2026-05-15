@@ -378,10 +378,10 @@ const Render = {
 
     // ── Stock modal ───────────────────────────────────────────────────────────
 
-    stockModal(product, variant) {
-        const today      = new Date().toISOString().split('T')[0];
-        const attrs      = product.attributes;
-        const pills      = attrs.map(a => {
+    stockModal(product, variant, editingStock = null) {
+        const today  = new Date().toISOString().split('T')[0];
+        const attrs  = product.attributes;
+        const pills  = attrs.map(a => {
             const impl = variant.implementations.find(i => i.attributeId === a.id);
             return `<span class="badge rounded-pill" style="background:#e0e7ff;color:#3730a3">
                 <span style="opacity:.6;font-size:.7em">${esc(a.key)}</span> ${esc(impl?.value ?? '?')}
@@ -390,15 +390,28 @@ const Render = {
 
         const totalStock = variant.historical_stocks.reduce((sum, s) => sum + s.quantity, 0);
 
-        const rows = [...variant.historical_stocks].reverse().map(s => `
-            <tr>
+        const rows = [...variant.historical_stocks].reverse().map(s => {
+            const isEditing = editingStock?.id === s.id;
+            return `
+            <tr style="${isEditing ? 'background:#f5f3ff' : ''}">
                 <td>${esc(s.date)}</td>
                 <td class="text-end">${s.quantity}</td>
                 <td class="text-end">$${parseFloat(s.cost_unit_price).toFixed(2)}</td>
                 <td class="text-end">$${(s.quantity * s.cost_unit_price).toFixed(2)}</td>
-            </tr>
-        `).join('');
+                <td>
+                    <div class="d-flex gap-1 justify-content-end">
+                        <button class="btn btn-outline-secondary btn-xs"
+                                data-action="edit-stock"
+                                data-product-id="${product.id}" data-variant-id="${variant.id}" data-id="${s.id}">Edit</button>
+                        <button class="btn btn-outline-danger btn-xs"
+                                data-action="delete-stock"
+                                data-product-id="${product.id}" data-variant-id="${variant.id}" data-id="${s.id}">×</button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
 
+        const editing = !!editingStock;
         return `
             <div class="d-flex align-items-center gap-2 mb-2">
                 <h6 class="fw-semibold mb-0">Stock</h6>
@@ -425,6 +438,7 @@ const Render = {
                             <th class="text-end">Cant.</th>
                             <th class="text-end">Costo unit.</th>
                             <th class="text-end">Total</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
@@ -432,29 +446,38 @@ const Render = {
             </div>` : '<p class="text-muted small mb-3">Sin entradas aún.</p>'}
 
             <hr class="my-2">
-            <p class="small fw-semibold mb-2">Agregar entrada</p>
+            <p class="small fw-semibold mb-2" style="color:${editing ? '#6366f1' : 'inherit'}">
+                ${editing ? 'Editando entrada' : 'Agregar entrada'}
+            </p>
             <form id="stock-form">
                 <input type="hidden" name="product-id" value="${product.id}">
                 <input type="hidden" name="variant-id" value="${variant.id}">
+                <input type="hidden" name="stock-id"   value="${editing ? editingStock.id : ''}">
                 <div class="row g-2 mb-3">
                     <div class="col-4">
                         <label class="form-label form-label-sm">Cantidad</label>
                         <input type="number" class="form-control form-control-sm" name="quantity"
-                               min="1" step="1" required>
+                               min="1" step="1" value="${editing ? editingStock.quantity : ''}" required>
                     </div>
                     <div class="col-4">
                         <label class="form-label form-label-sm">Fecha</label>
                         <input type="date" class="form-control form-control-sm" name="date"
-                               value="${today}" required>
+                               value="${editing ? editingStock.date : today}" required>
                     </div>
                     <div class="col-4">
                         <label class="form-label form-label-sm">Costo unit.</label>
                         <input type="number" class="form-control form-control-sm" name="cost_unit_price"
-                               min="0" step="0.01" placeholder="0.00">
+                               min="0" step="0.01" placeholder="0.00"
+                               value="${editing ? editingStock.cost_unit_price : ''}">
                     </div>
                 </div>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-primary btn-sm" data-action="save-stock">Agregar</button>
+                    <button type="button" class="btn btn-primary btn-sm" data-action="save-stock">
+                        ${editing ? 'Guardar' : 'Agregar'}
+                    </button>
+                    ${editing ? `<button type="button" class="btn btn-outline-secondary btn-sm"
+                                         data-action="cancel-edit-stock"
+                                         data-product-id="${product.id}" data-variant-id="${variant.id}">Cancelar</button>` : ''}
                     <button type="button" class="btn btn-outline-secondary btn-sm"
                             data-action="back-to-variants" data-product-id="${product.id}">Volver</button>
                     <button type="button" class="btn btn-outline-secondary btn-sm ms-auto"

@@ -142,6 +142,30 @@ const App = {
             this.openModal('variants', { product });
             return;
         }
+        if (action === 'edit-stock') {
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            const variant = product?.variants.find(v => v.id === target.dataset.variantId);
+            const stock   = variant?.historical_stocks.find(s => s.id === id);
+            if (!product || !variant || !stock) return;
+            document.getElementById('modal-body').innerHTML = Render.stockModal(product, variant, stock);
+            return;
+        }
+        if (action === 'cancel-edit-stock') {
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            const variant = product?.variants.find(v => v.id === target.dataset.variantId);
+            if (!product || !variant) return;
+            document.getElementById('modal-body').innerHTML = Render.stockModal(product, variant);
+            return;
+        }
+        if (action === 'delete-stock') {
+            if (!confirm('¿Eliminar esta entrada de stock?')) return;
+            const product = this.state.products.find(p => p.id === target.dataset.productId);
+            const variant = product?.variants.find(v => v.id === target.dataset.variantId);
+            if (!product || !variant) return;
+            variant.historical_stocks = variant.historical_stocks.filter(s => s.id !== id);
+            document.getElementById('modal-body').innerHTML = Render.stockModal(product, variant);
+            return;
+        }
         if (action === 'save-stock') {
             const form = document.getElementById('stock-form');
             if (!form.reportValidity()) return;
@@ -149,12 +173,19 @@ const App = {
             const product = this.state.products.find(p => p.id === data.get('product-id'));
             const variant = product?.variants.find(v => v.id === data.get('variant-id'));
             if (!product || !variant) return;
-            variant.historical_stocks.push(new Stock(
-                genId(),
+            const stockId = data.get('stock-id');
+            const entry   = new Stock(
+                stockId || genId(),
                 parseFloat(data.get('quantity')),
                 data.get('date'),
                 parseFloat(data.get('cost_unit_price')) || 0
-            ));
+            );
+            if (stockId) {
+                const i = variant.historical_stocks.findIndex(s => s.id === stockId);
+                if (i >= 0) variant.historical_stocks[i] = entry;
+            } else {
+                variant.historical_stocks.push(entry);
+            }
             document.getElementById('modal-body').innerHTML = Render.stockModal(product, variant);
             return;
         }
